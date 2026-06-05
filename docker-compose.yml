@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: sbqs-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: db_sbqs
+    ports:
+      - "5432:5432"
+    volumes:
+      - sbqs_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/01-init-sbqs.sql
+      - ./docker/postgres/keycloak-db.sql:/docker-entrypoint-initdb.d/02-keycloak-db.sql
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: sbqs-redis
+    ports:
+      - "6379:6379"
+
+  keycloak-iam:
+    image: quay.io/keycloak/keycloak:24.0
+    container_name: sbqs-keycloak
+    command: start-dev
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-db:5432/db_keycloak
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+
+volumes:
+  sbqs_postgres_data:
