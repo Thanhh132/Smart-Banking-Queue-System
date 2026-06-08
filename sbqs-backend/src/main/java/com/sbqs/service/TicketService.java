@@ -63,4 +63,18 @@ public class TicketService {
 
         return ticketRepository.save(nextTicket);
     }
+
+    public Ticket completeTicket(Long ticketId) {
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy ticket"));
+
+        if (!"SERVING".equals(ticket.getStatus())) {
+            throw new RuntimeException("Chỉ ticket đang phục vụ mới được hoàn thành");
+        }
+
+        ticket.setStatus("COMPLETED");
+
+        return ticketRepository.save(ticket);
+    }
 }

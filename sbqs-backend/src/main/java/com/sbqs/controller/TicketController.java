@@ -42,4 +42,9 @@ public class TicketController {
     public ResponseEntity<Ticket> callNextTicket() {
         return ResponseEntity.ok(ticketService.callNextTicket());
     }
+
+    @PostMapping("/{ticketId}/complete")
+    public ResponseEntity<Ticket> completeTicket(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.completeTicket(ticketId));
+    }
 }
