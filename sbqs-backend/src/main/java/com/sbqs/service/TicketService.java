@@ -1,6 +1,8 @@
 package com.sbqs.service;
 
+import com.sbqs.entity.QueueMachineServiceMapping;
 import com.sbqs.entity.Ticket;
+import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.TicketRepository;
 import org.springframework.stereotype.Service;
 
@@ -10,9 +12,13 @@ import java.util.List;
 public class TicketService {
 
     private final TicketRepository ticketRepository;
+    private final QueueMachineServiceMappingRepository mappingRepository;
 
-    public TicketService(TicketRepository ticketRepository) {
+    public TicketService(
+            TicketRepository ticketRepository,
+            QueueMachineServiceMappingRepository mappingRepository) {
         this.ticketRepository = ticketRepository;
+        this.mappingRepository = mappingRepository;
     }
 
     public List<Ticket> getAllTickets() {
@@ -32,6 +38,11 @@ public class TicketService {
         }
 
         ticket.setTicketNumber(nextTicketNumber);
+
+        QueueMachineServiceMapping mapping = mappingRepository.findFirstByService(ticket.getService())
+                .orElseThrow(() -> new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
+
+        ticket.setQueueMachine(mapping.getQueueMachine());
 
         return ticketRepository.save(ticket);
     }

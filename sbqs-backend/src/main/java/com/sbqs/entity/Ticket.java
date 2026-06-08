@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class Ticket {
+    
+    @ManyToOne
+    @JoinColumn(name = "queue_machine_id")
+    private QueueMachine queueMachine;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
