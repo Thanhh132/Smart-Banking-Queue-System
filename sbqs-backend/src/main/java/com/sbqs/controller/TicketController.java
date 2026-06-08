@@ -27,8 +27,7 @@ public class TicketController {
             @PathVariable String status) {
 
         return ResponseEntity.ok(
-                ticketService.getTicketsByStatus(status)
-        );
+                ticketService.getTicketsByStatus(status));
     }
 
     @PostMapping
@@ -36,7 +35,11 @@ public class TicketController {
             @RequestBody Ticket ticket) {
 
         return ResponseEntity.ok(
-                ticketService.createTicket(ticket)
-        );
+                ticketService.createTicket(ticket));
+    }
+
+    @PostMapping("/call-next")
+    public ResponseEntity<Ticket> callNextTicket() {
+        return ResponseEntity.ok(ticketService.callNextTicket());
     }
 }

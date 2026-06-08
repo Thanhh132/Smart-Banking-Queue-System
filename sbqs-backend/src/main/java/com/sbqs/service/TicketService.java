@@ -50,4 +50,17 @@ public class TicketService {
     public List<Ticket> getTicketsByStatus(String status) {
         return ticketRepository.findByStatus(status);
     }
+
+    public Ticket callNextTicket() {
+
+        Ticket nextTicket = ticketRepository.findFirstByStatusOrderByTicketNumberAsc("WAITING");
+
+        if (nextTicket == null) {
+            throw new RuntimeException("Không còn khách đang chờ");
+        }
+
+        nextTicket.setStatus("SERVING");
+
+        return ticketRepository.save(nextTicket);
+    }
 }
