@@ -11,6 +11,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class Counter {
+    @ManyToOne
+    @JoinColumn(name = "current_ticket_id")
+    private Ticket currentTicket;
+
+    @ManyToOne
+    @JoinColumn(name = "queue_machine_id")
+    private QueueMachine queueMachine;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

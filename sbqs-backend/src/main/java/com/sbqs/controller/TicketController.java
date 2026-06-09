@@ -39,8 +39,10 @@ public class TicketController {
     }
 
     @PostMapping("/call-next")
-    public ResponseEntity<Ticket> callNextTicket() {
-        return ResponseEntity.ok(ticketService.callNextTicket());
+    public ResponseEntity<Ticket> callNextTicket(
+            @RequestParam Long counterId) {
+
+        return ResponseEntity.ok(ticketService.callNextTicket(counterId));
     }
 
     @PostMapping("/{ticketId}/complete")

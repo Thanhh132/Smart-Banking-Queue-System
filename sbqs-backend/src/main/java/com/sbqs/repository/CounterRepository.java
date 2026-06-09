@@ -11,4 +11,8 @@ import java.util.List;
 public interface CounterRepository extends JpaRepository<Counter, Long> {
 
     List<Counter> findByBranch(Branch branch);
+
+    List<Counter> findByStatus(String status);
+
+    List<Counter> findByBranchBranchId(Long branchId);
 }

@@ -12,7 +12,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/counters")
 public class CounterController {
-
     private final CounterService counterService;
     private final BranchRepository branchRepository;
 
