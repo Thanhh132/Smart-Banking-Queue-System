@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class Ticket {
-    
+
     @ManyToOne
     @JoinColumn(name = "queue_machine_id")
     private QueueMachine queueMachine;
@@ -23,7 +23,7 @@ public class Ticket {
     @Column(name = "ticket_id")
     private Long ticketId;
 
-    @Column(name = "ticket_number", nullable = false, unique = true)
+    @Column(name = "ticket_number", nullable = false)
     private Integer ticketNumber;
 
     @ManyToOne
