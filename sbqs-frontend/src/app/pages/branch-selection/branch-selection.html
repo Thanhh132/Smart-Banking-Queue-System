@@ -1,13 +1,18 @@
-<h2>Danh sách chi nhánh</h2>
-
-<p>Số chi nhánh: {{ branches.length }}</p>
+<h2>Chọn chi nhánh</h2>
 
 @if (errorMessage) {
   <p>{{ errorMessage }}</p>
 }
 
+@if (branches.length === 0 && !errorMessage) {
+  <p>Đang tải danh sách chi nhánh...</p>
+}
+
 @for (branch of branches; track branch.branchId) {
-  <div>
+  <button (click)="selectBranch(branch.branchId)">
     {{ branch.branchName }}
-  </div>
+  </button>
+
+  <br />
+  <br />
 }
