@@ -1,6 +1,6 @@
 package com.sbqs.controller;
 
-import com.sbqs.entity.History;
+import com.sbqs.dto.HistoryResponse;
 import com.sbqs.service.HistoryService;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,14 +13,12 @@ public class HistoryController {
 
     private final HistoryService historyService;
 
-    public HistoryController(
-            HistoryService historyService) {
-
+    public HistoryController(HistoryService historyService) {
         this.historyService = historyService;
     }
 
     @GetMapping
-    public List<History> getAllHistory() {
+    public List<HistoryResponse> getAllHistory() {
         return historyService.getAllHistory();
     }
 }
