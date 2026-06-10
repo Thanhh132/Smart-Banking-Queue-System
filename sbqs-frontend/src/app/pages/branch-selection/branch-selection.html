@@ -1,1 +1,13 @@
-<p>branch-selection works!</p>
+<h2>Danh sách chi nhánh</h2>
+
+<p>Số chi nhánh: {{ branches.length }}</p>
+
+@if (errorMessage) {
+  <p>{{ errorMessage }}</p>
+}
+
+@for (branch of branches; track branch.branchId) {
+  <div>
+    {{ branch.branchName }}
+  </div>
+}
