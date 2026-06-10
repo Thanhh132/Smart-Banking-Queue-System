@@ -1,1 +1,20 @@
-<p>service-selection works!</p>
+<h2>Chọn dịch vụ</h2>
+
+@if (errorMessage) {
+  <p>{{ errorMessage }}</p>
+}
+
+@if (services.length === 0 && !errorMessage) {
+  <p>Đang tải danh sách dịch vụ...</p>
+}
+
+@for (service of services; track service.serviceId) {
+
+  <button>
+    {{ service.serviceName }}
+  </button>
+
+  <br />
+  <br />
+
+}
