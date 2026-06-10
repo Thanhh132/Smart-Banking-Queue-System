@@ -42,8 +42,7 @@ public class TicketService {
 
         QueueMachineServiceMapping mapping = mappingRepository
                 .findFirstByService(ticket.getService())
-                .orElseThrow(() ->
-                        new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
+                .orElseThrow(() -> new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
 
         QueueMachine queueMachine = mapping.getQueueMachine();
 
@@ -72,8 +71,7 @@ public class TicketService {
     public Ticket callNextTicket(Long counterId) {
 
         Counter counter = counterRepository.findById(counterId)
-                .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy quầy"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy quầy"));
 
         if (counter.getCurrentTicket() != null
                 && "SERVING".equals(counter.getCurrentTicket().getStatus())) {
@@ -108,8 +106,7 @@ public class TicketService {
     public Ticket completeTicket(Long ticketId) {
 
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy ticket"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy ticket"));
 
         if (!"SERVING".equals(ticket.getStatus())) {
             throw new RuntimeException(
@@ -120,9 +117,8 @@ public class TicketService {
 
         Counter counter = counterRepository.findAll()
                 .stream()
-                .filter(c ->
-                        c.getCurrentTicket() != null
-                                && c.getCurrentTicket()
+                .filter(c -> c.getCurrentTicket() != null
+                        && c.getCurrentTicket()
                                 .getTicketId()
                                 .equals(ticketId))
                 .findFirst()
@@ -136,7 +132,8 @@ public class TicketService {
         history.setCounter(counter);
         history.setService(ticket.getService());
         history.setTicketNumber(ticket.getTicketNumber());
-
+        history.setStartedAt(
+                ticket.getServingStartedAt());
         history.setCompletedAt(LocalDateTime.now());
 
         history.setStaffNote("Hoàn thành phục vụ khách hàng");
