@@ -23,6 +23,9 @@ public class Ticket {
     @Column(name = "ticket_id")
     private Long ticketId;
 
+    @Column(name = "serving_started_at")
+    private LocalDateTime servingStartedAt;
+
     @Column(name = "ticket_number", nullable = false)
     private Integer ticketNumber;
 

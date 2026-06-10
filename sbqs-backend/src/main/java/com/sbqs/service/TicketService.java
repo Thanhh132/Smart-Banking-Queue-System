@@ -1,14 +1,17 @@
 package com.sbqs.service;
 
+import com.sbqs.entity.Counter;
+import com.sbqs.entity.History;
 import com.sbqs.entity.QueueMachine;
 import com.sbqs.entity.QueueMachineServiceMapping;
 import com.sbqs.entity.Ticket;
+import com.sbqs.repository.CounterRepository;
+import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.TicketRepository;
 import org.springframework.stereotype.Service;
-import com.sbqs.entity.Counter;
-import com.sbqs.repository.CounterRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,15 +20,18 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
     private final CounterRepository counterRepository;
+    private final HistoryRepository historyRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
             QueueMachineServiceMappingRepository mappingRepository,
-            CounterRepository counterRepository) {
+            CounterRepository counterRepository,
+            HistoryRepository historyRepository) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
         this.counterRepository = counterRepository;
+        this.historyRepository = historyRepository;
     }
 
     public List<Ticket> getAllTickets() {
@@ -36,7 +42,8 @@ public class TicketService {
 
         QueueMachineServiceMapping mapping = mappingRepository
                 .findFirstByService(ticket.getService())
-                .orElseThrow(() -> new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
+                .orElseThrow(() ->
+                        new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
 
         QueueMachine queueMachine = mapping.getQueueMachine();
 
@@ -65,11 +72,14 @@ public class TicketService {
     public Ticket callNextTicket(Long counterId) {
 
         Counter counter = counterRepository.findById(counterId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy quầy"));
+                .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy quầy"));
 
         if (counter.getCurrentTicket() != null
                 && "SERVING".equals(counter.getCurrentTicket().getStatus())) {
-            throw new RuntimeException("Quầy đang phục vụ khách, vui lòng hoàn thành trước khi gọi số mới");
+
+            throw new RuntimeException(
+                    "Quầy đang phục vụ khách, vui lòng hoàn thành trước khi gọi số mới");
         }
 
         if (counter.getQueueMachine() == null) {
@@ -86,7 +96,7 @@ public class TicketService {
         }
 
         nextTicket.setStatus("SERVING");
-
+        nextTicket.setServingStartedAt(LocalDateTime.now());
         Ticket savedTicket = ticketRepository.save(nextTicket);
 
         counter.setCurrentTicket(savedTicket);
@@ -98,25 +108,46 @@ public class TicketService {
     public Ticket completeTicket(Long ticketId) {
 
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy ticket"));
+                .orElseThrow(() ->
+                        new RuntimeException("Không tìm thấy ticket"));
 
         if (!"SERVING".equals(ticket.getStatus())) {
-            throw new RuntimeException("Chỉ ticket đang phục vụ mới được hoàn thành");
+            throw new RuntimeException(
+                    "Chỉ ticket đang phục vụ mới được hoàn thành");
         }
 
         ticket.setStatus("COMPLETED");
+
         Counter counter = counterRepository.findAll()
                 .stream()
-                .filter(c -> c.getCurrentTicket() != null
-                        && c.getCurrentTicket().getTicketId()
+                .filter(c ->
+                        c.getCurrentTicket() != null
+                                && c.getCurrentTicket()
+                                .getTicketId()
                                 .equals(ticketId))
                 .findFirst()
                 .orElse(null);
+
+        History history = new History();
+
+        history.setTicket(ticket);
+        history.setBranch(ticket.getBranch());
+        history.setQueueMachine(ticket.getQueueMachine());
+        history.setCounter(counter);
+        history.setService(ticket.getService());
+        history.setTicketNumber(ticket.getTicketNumber());
+
+        history.setCompletedAt(LocalDateTime.now());
+
+        history.setStaffNote("Hoàn thành phục vụ khách hàng");
+
+        historyRepository.save(history);
 
         if (counter != null) {
             counter.setCurrentTicket(null);
             counterRepository.save(counter);
         }
+
         return ticketRepository.save(ticket);
     }
 }
