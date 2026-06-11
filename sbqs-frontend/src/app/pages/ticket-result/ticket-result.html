@@ -1,1 +1,16 @@
-<p>ticket-result works!</p>
+@if (ticket) {
+
+  <h1>🎫 Phiếu giao dịch</h1>
+
+  <h2>Số thứ tự</h2>
+
+  <h1>
+    {{ ticket.ticketNumber }}
+  </h1>
+
+  <p>
+    Trạng thái:
+    {{ ticket.status }}
+  </p>
+
+}

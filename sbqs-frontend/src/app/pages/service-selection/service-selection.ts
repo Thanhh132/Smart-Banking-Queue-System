@@ -9,6 +9,8 @@ import { CommonModule } from '@angular/common';
 
 import { Service } from '../../core/models/service.model';
 import { ServicesService } from '../../core/services/services.service';
+import { Router } from '@angular/router';
+import { TicketService } from '../../core/services/ticket.service';
 
 @Component({
   selector: 'app-service-selection',
@@ -20,6 +22,9 @@ export class ServiceSelection implements OnInit {
 
   private servicesService = inject(ServicesService);
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
+  private ticketService =
+    inject(TicketService);
 
   services: Service[] = [];
 
@@ -57,6 +62,42 @@ export class ServiceSelection implements OnInit {
             'Không tải được danh sách dịch vụ';
 
           this.cdr.detectChanges();
+
+          console.error(err);
+        }
+
+      });
+  }
+
+  selectService(serviceId: number) {
+
+    const branchId =
+      Number(
+        localStorage.getItem(
+          'selectedBranchId'
+        )
+      );
+
+    this.ticketService
+      .createTicket(
+        branchId,
+        serviceId
+      )
+      .subscribe({
+
+        next: (ticket: any) => {
+
+          localStorage.setItem(
+            'currentTicket',
+            JSON.stringify(ticket)
+          );
+
+          this.router.navigate([
+            '/ticket'
+          ]);
+        },
+
+        error: (err) => {
 
           console.error(err);
         }
