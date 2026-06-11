@@ -1,1 +1,63 @@
-<p>queue-monitor works!</p>
+<app-header
+  [title]="'Màn hình theo dõi hàng đợi'">
+</app-header>
+
+@if (errorMessage) {
+
+  <p>{{ errorMessage }}</p>
+
+}
+
+@if (monitor) {
+
+  <app-card>
+
+    <h2>
+      {{ monitor.branchName }}
+    </h2>
+
+    <h3>
+      Khách đang chờ:
+      {{ monitor.waitingCount }}
+    </h3>
+
+  </app-card>
+
+  <app-card>
+
+    <h2>
+      Quầy đang phục vụ
+    </h2>
+
+    @if (
+      monitor.servingCounters.length === 0
+    ) {
+
+      <p>
+        Chưa có quầy nào phục vụ
+      </p>
+
+    }
+
+    @for (
+      counter of monitor.servingCounters;
+      track counter.counterName
+    ) {
+
+      <div class="counter-row">
+
+        <span>
+          {{ counter.counterName }}
+        </span>
+
+        <strong>
+          {{ counter.ticketNumber }}
+        </strong>
+
+      </div>
+
+    }
+
+  </app-card>
+
+}

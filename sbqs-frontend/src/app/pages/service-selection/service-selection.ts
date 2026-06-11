@@ -11,10 +11,16 @@ import { Service } from '../../core/models/service.model';
 import { ServicesService } from '../../core/services/services.service';
 import { Router } from '@angular/router';
 import { TicketService } from '../../core/services/ticket.service';
+import { AppHeader } from '../../shared/components/app-header/app-header';
+import { AppButton } from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-service-selection',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    AppHeader,
+    AppButton
+  ],
   templateUrl: './service-selection.html',
   styleUrl: './service-selection.scss',
 })

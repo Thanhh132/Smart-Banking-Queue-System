@@ -35,7 +35,7 @@ export class BranchSelection implements OnInit {
 
     this.router.navigate(['/services']);
   }
-  
+
   ngOnInit(): void {
     this.branchService.getBranches()
       .subscribe({

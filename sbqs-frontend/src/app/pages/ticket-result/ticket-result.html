@@ -1,21 +1,23 @@
 @if (ticket) {
 
-<div class="ticket-card">
+  <app-header
+    [title]="'Phiếu giao dịch'">
+  </app-header>
 
-  <h1>🎫 PHIẾU GIAO DỊCH</h1>
+  <app-card>
 
-  <div class="ticket-number">
-    {{ ticket.ticketNumber }}
-  </div>
+    <div class="ticket-number">
+      {{ ticket.ticketNumber }}
+    </div>
 
-  <div class="ticket-status">
-    {{ ticket.status }}
-  </div>
+    <div class="ticket-status">
+      {{ ticket.status }}
+    </div>
 
-  <p>
-    Vui lòng chờ đến lượt giao dịch
-  </p>
+    <p>
+      Vui lòng chờ đến lượt giao dịch
+    </p>
 
-</div>
+  </app-card>
 
 }

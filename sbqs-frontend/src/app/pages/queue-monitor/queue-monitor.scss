@@ -1,0 +1,21 @@
+h2 {
+  text-align: center;
+}
+
+h3 {
+  text-align: center;
+  color: #0066b3;
+}
+
+.counter-row {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  padding: 12px;
+
+  border-bottom: 1px solid #eee;
+
+  font-size: 20px;
+}

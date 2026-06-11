@@ -1,20 +1,23 @@
-<h2>Chọn dịch vụ</h2>
+<app-header
+  [title]="'Chọn dịch vụ'">
+</app-header>
 
 @if (errorMessage) {
-<p>{{ errorMessage }}</p>
+  <p>{{ errorMessage }}</p>
 }
 
 @if (services.length === 0 && !errorMessage) {
-<p>Đang tải danh sách dịch vụ...</p>
+  <p>Đang tải danh sách dịch vụ...</p>
 }
 
 @for (service of services; track service.serviceId) {
 
-<button (click)="selectService(service.serviceId)">
-  {{ service.serviceName }}
-</button>
+  <app-button
+    [label]="service.serviceName"
+    (clicked)="selectService(service.serviceId)">
+  </app-button>
 
-<br />
-<br />
+  <br />
+  <br />
 
 }
