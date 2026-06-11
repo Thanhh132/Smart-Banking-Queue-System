@@ -3,13 +3,20 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Branch } from '../../core/models/branch.model';
 import { BranchService } from '../../core/services/branch.service';
+import { AppHeader } from '../../shared/components/app-header/app-header';
+import { AppButton } from '../../shared/components/app-button/app-button';
 
 @Component({
   selector: 'app-branch-selection',
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    AppHeader,
+    AppButton
+  ],
   templateUrl: './branch-selection.html',
   styleUrl: './branch-selection.scss',
 })
+
 export class BranchSelection implements OnInit {
 
   private branchService = inject(BranchService);

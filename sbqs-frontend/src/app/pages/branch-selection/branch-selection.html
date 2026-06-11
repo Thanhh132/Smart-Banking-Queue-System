@@ -1,4 +1,6 @@
-<h2>Chọn chi nhánh</h2>
+<app-header
+  [title]="'Chọn chi nhánh'">
+</app-header>
 
 @if (errorMessage) {
   <p>{{ errorMessage }}</p>
@@ -9,10 +11,13 @@
 }
 
 @for (branch of branches; track branch.branchId) {
-  <button (click)="selectBranch(branch.branchId)">
-    {{ branch.branchName }}
-  </button>
+
+  <app-button
+    [label]="branch.branchName"
+    (clicked)="selectBranch(branch.branchId)">
+  </app-button>
 
   <br />
   <br />
+
 }
