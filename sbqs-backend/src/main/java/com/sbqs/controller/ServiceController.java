@@ -24,8 +24,7 @@ public class ServiceController {
     @GetMapping
     public ResponseEntity<List<Services>> getServices(
             @RequestParam(required = false) Long branchId,
-            @RequestParam(required = false) String serviceType
-    ) {
+            @RequestParam(required = false) String serviceType) {
         if (branchId == null) {
             return ResponseEntity.ok(serviceService.getAllServices());
         }
@@ -46,5 +45,24 @@ public class ServiceController {
     public ResponseEntity<Services> createService(@RequestBody Services service) {
         Services saved = serviceService.createService(service);
         return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Services> updateService(
+            @PathVariable Long id,
+            @RequestBody Services service) {
+
+        return ResponseEntity.ok(
+                serviceService.updateService(id, service));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteService(
+            @PathVariable Long id) {
+
+        serviceService.deleteService(id);
+
+        return ResponseEntity.ok(
+                "Xóa dịch vụ thành công");
     }
 }

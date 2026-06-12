@@ -2,6 +2,7 @@ import {
   ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   OnInit
 } from '@angular/core';
 
@@ -10,13 +11,8 @@ import { CommonModule } from '@angular/common';
 import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
 
-import {
-  QueueMonitor
-} from '../../core/models/queue-monitor.model';
-
-import {
-  QueueMonitorService
-} from '../../core/services/queue-monitor.service';
+import { QueueMonitor } from '../../core/models/queue-monitor.model';
+import { QueueMonitorService } from '../../core/services/queue-monitor.service';
 
 @Component({
   selector: 'app-queue-monitor',
@@ -28,53 +24,50 @@ import {
   templateUrl: './queue-monitor.html',
   styleUrl: './queue-monitor.scss',
 })
-export class QueueMonitorComponent implements OnInit {
+export class QueueMonitorComponent implements OnInit, OnDestroy {
 
-  private monitorService =
-    inject(QueueMonitorService);
-
-  private cdr =
-    inject(ChangeDetectorRef);
+  private monitorService = inject(QueueMonitorService);
+  private cdr = inject(ChangeDetectorRef);
 
   monitor: QueueMonitor | null = null;
-
   errorMessage = '';
 
-  ngOnInit(): void {
+  private intervalId: any;
 
-    const branchId =
-      localStorage.getItem(
-        'selectedBranchId'
-      );
+  ngOnInit(): void {
+    this.loadMonitor();
+
+    this.intervalId = setInterval(() => {
+      this.loadMonitor();
+    }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+  }
+
+  loadMonitor(): void {
+    const branchId = localStorage.getItem('selectedBranchId');
 
     if (!branchId) {
-
-      this.errorMessage =
-        'Chưa chọn chi nhánh';
-
+      this.errorMessage = 'Chưa chọn chi nhánh';
+      this.cdr.detectChanges();
       return;
     }
 
     this.monitorService
       .getMonitor(Number(branchId))
       .subscribe({
-
         next: (data) => {
-
           this.monitor = data;
-
+          this.errorMessage = '';
           this.cdr.detectChanges();
-
-          console.log(data);
         },
-
         error: (err) => {
-
-          this.errorMessage =
-            'Không tải được dữ liệu monitor';
-
+          this.errorMessage = 'Không tải được dữ liệu monitor';
           this.cdr.detectChanges();
-
           console.error(err);
         }
       });

@@ -1,0 +1,40 @@
+<app-header [title]="'Quản lý dịch vụ'">
+</app-header>
+
+<app-card>
+  <h2>Thêm dịch vụ</h2>
+
+  <p>Mã dịch vụ</p>
+  <input [(ngModel)]="newService.serviceCode">
+
+  <p>Tên dịch vụ</p>
+  <input [(ngModel)]="newService.serviceName">
+
+  <p>Loại dịch vụ</p>
+  <input [(ngModel)]="newService.serviceType">
+
+  <br />
+  <br />
+
+  <app-button
+    [label]="'Thêm dịch vụ'"
+    (clicked)="createService()">
+  </app-button>
+</app-card>
+
+@for (service of services; track service.serviceId) {
+  <app-card>
+    <h3>{{ service.serviceName }}</h3>
+
+    <p>Mã: {{ service.serviceCode }}</p>
+
+    <p>Loại: {{ service.serviceType }}</p>
+
+    <p>Trạng thái: {{ service.status }}</p>
+
+    <app-button
+      [label]="'Xóa'"
+      (clicked)="deleteService(service.serviceId)">
+    </app-button>
+  </app-card>
+}

@@ -1,0 +1,34 @@
+<app-header [title]="'Màn hình giao dịch viên'">
+</app-header>
+
+@if (!currentTicket) {
+<app-card>
+  <app-button [label]="'Gọi khách tiếp theo'" (clicked)="callNext()">
+  </app-button>
+</app-card>
+}
+@if (currentTicket) {
+
+<app-card>
+
+  <h2>
+    Số:
+    {{ currentTicket.ticketNumber }}
+  </h2>
+
+  <p>
+    Dịch vụ:
+    {{ currentTicket.service.serviceName }}
+  </p>
+
+  <p>
+    Trạng thái:
+    {{ currentTicket.status }}
+  </p>
+
+  <app-button [label]="'Hoàn thành'" (clicked)="complete()">
+  </app-button>
+
+</app-card>
+
+}
