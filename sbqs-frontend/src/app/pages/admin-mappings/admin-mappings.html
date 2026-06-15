@@ -1,0 +1,58 @@
+<app-header [title]="'Cấu hình máy bốc số - dịch vụ'">
+</app-header>
+
+<app-card>
+  <h2>Thêm cấu hình</h2>
+
+  <p>Máy bốc số</p>
+  <select [(ngModel)]="selectedQueueMachineId">
+    <option [ngValue]="null">
+      -- Chọn máy bốc số --
+    </option>
+
+    @for (machine of queueMachines; track machine.queueMachineId) {
+      <option [ngValue]="machine.queueMachineId">
+        {{ machine.machineName }}
+      </option>
+    }
+  </select>
+
+  <p>Dịch vụ</p>
+  <select [(ngModel)]="selectedServiceId">
+    <option [ngValue]="null">
+      -- Chọn dịch vụ --
+    </option>
+
+    @for (service of services; track service.serviceId) {
+      <option [ngValue]="service.serviceId">
+        {{ service.serviceName }}
+      </option>
+    }
+  </select>
+
+  <br />
+  <br />
+
+  <app-button
+    [label]="'Thêm mapping'"
+    (clicked)="createMapping()">
+  </app-button>
+</app-card>
+
+@for (mapping of mappings; track mapping.id.queueMachineId + '-' + mapping.id.serviceId) {
+  <app-card>
+    <h3>
+      {{ mapping.queueMachine.machineName }}
+    </h3>
+
+    <p>
+      Dịch vụ:
+      {{ mapping.service.serviceName }}
+    </p>
+
+    <app-button
+      [label]="'Xóa mapping'"
+      (clicked)="deleteMapping(mapping)">
+    </app-button>
+  </app-card>
+}

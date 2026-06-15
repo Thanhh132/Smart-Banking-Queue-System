@@ -7,6 +7,8 @@ import { TicketResult } from './pages/ticket-result/ticket-result';
 import { QueueMonitorComponent } from './pages/queue-monitor/queue-monitor';
 import { StaffDashboard } from './pages/staff-dashboard/staff-dashboard';
 import { AdminServices } from './pages/admin-services/admin-services';
+import { AdminMappings } from './pages/admin-mappings/admin-mappings';
+import { AdminBranchSetup } from './pages/admin-branch-setup/admin-branch-setup';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -16,4 +18,6 @@ export const routes: Routes = [
   { path: 'monitor', component: QueueMonitorComponent },
   { path: 'staff', component: StaffDashboard },
   {path: 'admin/services',component: AdminServices},
+  {path: 'admin/mappings',component: AdminMappings},
+  {path: 'admin/branch-setup',component: AdminBranchSetup}
 ];

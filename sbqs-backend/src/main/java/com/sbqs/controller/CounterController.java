@@ -6,6 +6,7 @@ import com.sbqs.repository.BranchRepository;
 import com.sbqs.service.CounterService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -25,7 +26,8 @@ public class CounterController {
         List<Counter> counters;
         if (branchId != null) {
             Branch branch = branchRepository.findById(branchId).orElse(null);
-            if (branch == null) return ResponseEntity.notFound().build();
+            if (branch == null)
+                return ResponseEntity.notFound().build();
             counters = counterService.getCountersByBranch(branch);
         } else {
             counters = counterService.getAllCounters();
@@ -33,8 +35,9 @@ public class CounterController {
         return ResponseEntity.ok(counters);
     }
 
-    @PostMapping
-    public ResponseEntity<Counter> createCounter(@RequestBody Counter counter) {
+   @PostMapping
+    public ResponseEntity<Counter> createCounter(
+        @Valid @RequestBody Counter counter) {
         Counter saved = counterService.createCounter(counter);
         return ResponseEntity.ok(saved);
     }

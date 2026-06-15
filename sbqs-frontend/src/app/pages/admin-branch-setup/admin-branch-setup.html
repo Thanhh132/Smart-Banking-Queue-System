@@ -1,0 +1,172 @@
+<app-header [title]="'Cấu hình chi nhánh'">
+</app-header>
+<app-card>
+
+  <h2>Thêm máy bốc số</h2>
+
+  <p>Mã máy</p>
+
+  <input [(ngModel)]="newQueueMachine.machineCode">
+
+  <p>Tên máy</p>
+
+  <input [(ngModel)]="newQueueMachine.machineName">
+
+  <p>Vị trí</p>
+
+  <input [(ngModel)]="newQueueMachine.locationNote">
+
+  <p>Hướng dẫn</p>
+
+  <input [(ngModel)]="newQueueMachine.instructionNote">
+
+  <br>
+  <br>
+
+  <app-button [label]="'Thêm máy bốc số'" (clicked)="createQueueMachine()">
+  </app-button>
+
+</app-card>
+
+<app-card>
+
+  <h2>Thêm dịch vụ</h2>
+
+  <p>Mã dịch vụ</p>
+
+  <input [(ngModel)]="newService.serviceCode">
+
+  <p>Tên dịch vụ</p>
+
+  <input [(ngModel)]="newService.serviceName">
+
+  <p>Loại dịch vụ</p>
+
+  <input [(ngModel)]="newService.serviceType">
+
+  <p>Thời gian xử lý (phút)</p>
+
+  <input type="number" [(ngModel)]="newService.estimatedTime">
+
+  <br>
+  <br>
+
+  <app-button [label]="'Thêm dịch vụ'" (clicked)="createService()">
+  </app-button>
+
+</app-card>
+
+<app-card>
+
+  <h2>Gán dịch vụ cho máy bốc số</h2>
+
+  <p>Máy bốc số</p>
+
+  <select [(ngModel)]="selectedQueueMachineId">
+
+    <option [ngValue]="null">
+      -- Chọn máy --
+    </option>
+
+    @for (
+    machine of queueMachines;
+    track machine.queueMachineId
+    ) {
+
+    <option [ngValue]="machine.queueMachineId">
+
+      {{ machine.machineName }}
+
+    </option>
+
+    }
+
+  </select>
+
+  <p>Dịch vụ</p>
+
+  @for (
+  service of services;
+  track service.serviceId
+  ) {
+
+  <div>
+
+    <input type="checkbox" [checked]="selectedServiceIds.includes(service.serviceId)"
+      (change)="toggleService(service.serviceId)">
+
+    {{ service.serviceName }}
+
+  </div>
+
+  }
+
+  <br>
+  <br>
+
+  <app-button [label]="'Thêm Mapping'" (clicked)="createMapping()">
+  </app-button>
+
+</app-card>
+
+@if (branch) {
+<app-card>
+  <h2>Thông tin chi nhánh</h2>
+
+  <p><b>Ngân hàng:</b> {{ branch.bankName }}</p>
+  <p><b>Mã chi nhánh:</b> {{ branch.branchCode }}</p>
+  <p><b>Tên chi nhánh:</b> {{ branch.branchName }}</p>
+  <p><b>Địa chỉ:</b> {{ branch.address || 'Chưa cập nhật' }}</p>
+  <p><b>Số điện thoại:</b> {{ branch.phone || 'Chưa cập nhật' }}</p>
+  <p><b>Tọa độ:</b> {{ branch.latitude }}, {{ branch.longitude }}</p>
+  <p><b>Trạng thái:</b> {{ branch.status }}</p>
+</app-card>
+}
+
+<app-card>
+  <h2>Máy bốc số</h2>
+
+  @for (machine of queueMachines; track machine.queueMachineId) {
+  <p>
+    <b>{{ machine.machineName }}</b>
+    - {{ machine.locationNote }}
+    - {{ machine.status }}
+  </p>
+  }
+</app-card>
+
+<app-card>
+  <h2>Quầy giao dịch</h2>
+
+  @for (counter of counters; track counter.counterId) {
+  <p>
+    <b>{{ counter.counterName }}</b>
+    - {{ counter.status }}
+    - Máy: {{ counter.queueMachine?.machineName }}
+  </p>
+  }
+</app-card>
+
+<app-card>
+  <h2>Dịch vụ</h2>
+
+  @for (service of services; track service.serviceId) {
+  <p>
+    <b>{{ service.serviceName }}</b>
+    - {{ service.serviceType }}
+    - {{ service.status }}
+  </p>
+  }
+</app-card>
+
+<app-card>
+  <h2>Mapping máy bốc số - dịch vụ</h2>
+
+  @for (mapping of mappings; track mapping.id.queueMachineId + '-' + mapping.id.serviceId) {
+  <p>
+    <b>{{ mapping.queueMachine.machineName }}</b>
+    →
+    {{ mapping.service.serviceName }}
+  </p>
+  }
+</app-card>

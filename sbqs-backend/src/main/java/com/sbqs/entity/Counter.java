@@ -1,5 +1,6 @@
 package com.sbqs.entity;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,9 +25,11 @@ public class Counter {
     @Column(name = "counter_id")
     private Long counterId;
 
+    @NotBlank(message = "Mã quầy không được để trống")
     @Column(name = "counter_code", nullable = false, unique = true)
     private String counterCode;
 
+    @NotBlank(message = "Tên quầy không được để trống")
     @Column(name = "counter_name", nullable = false)
     private String counterName;
 

@@ -4,6 +4,9 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.service.ServicesService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +45,8 @@ public class ServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<Services> createService(@RequestBody Services service) {
+    public ResponseEntity<Services> createService(
+            @Valid @RequestBody Services service) {
         Services saved = serviceService.createService(service);
         return ResponseEntity.ok(saved);
     }
