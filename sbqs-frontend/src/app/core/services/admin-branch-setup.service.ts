@@ -64,4 +64,12 @@ export class AdminBranchSetupService {
       }
     );
   }
+
+  createCounter(counter: any) {
+    return this.http.post(
+      this.countersApi,
+      counter
+    );
+  }
+
 }

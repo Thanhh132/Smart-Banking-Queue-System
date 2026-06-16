@@ -64,6 +64,18 @@ export class AdminBranchSetup implements OnInit {
     }
   };
 
+  newCounter = {
+    counterCode: '',
+    counterName: '',
+    status: 'ACTIVE',
+    branch: {
+      branchId: 1
+    },
+    queueMachine: {
+      queueMachineId: null
+    }
+  };
+
   ngOnInit(): void {
     this.loadSetupData();
   }
@@ -223,6 +235,37 @@ export class AdminBranchSetup implements OnInit {
 
       this.selectedServiceIds.push(serviceId);
     }
+  }
+
+  createCounter(): void {
+    if (!this.newCounter.queueMachine.queueMachineId) {
+      return;
+    }
+
+    this.setupService
+      .createCounter(this.newCounter)
+      .subscribe({
+        next: () => {
+          this.loadSetupData();
+
+          this.newCounter = {
+            counterCode: '',
+            counterName: '',
+            status: 'ACTIVE',
+            branch: {
+              branchId: this.branchId
+            },
+            queueMachine: {
+              queueMachineId: null
+            }
+          };
+
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          console.error(err);
+        }
+      });
   }
 
 }

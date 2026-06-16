@@ -109,6 +109,37 @@
 
 </app-card>
 
+<app-card>
+
+  <h2>Thêm quầy giao dịch</h2>
+
+  <p>Mã quầy</p>
+  <input [(ngModel)]="newCounter.counterCode">
+
+  <p>Tên quầy</p>
+  <input [(ngModel)]="newCounter.counterName">
+
+  <p>Máy bốc số phụ trách</p>
+  <select [(ngModel)]="newCounter.queueMachine.queueMachineId">
+    <option [ngValue]="null">
+      -- Chọn máy bốc số --
+    </option>
+
+    @for (machine of queueMachines; track machine.queueMachineId) {
+    <option [ngValue]="machine.queueMachineId">
+      {{ machine.machineName }}
+    </option>
+    }
+  </select>
+
+  <br>
+  <br>
+
+  <app-button [label]="'Thêm quầy'" (clicked)="createCounter()">
+  </app-button>
+
+</app-card>
+
 @if (branch) {
 <app-card>
   <h2>Thông tin chi nhánh</h2>

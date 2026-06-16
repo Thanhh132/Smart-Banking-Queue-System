@@ -1,5 +1,7 @@
 package com.sbqs.repository;
 
+import java.util.List;
+import com.sbqs.entity.Branch;
 import com.sbqs.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -9,6 +11,7 @@ public interface UserRepository
         extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
+    List<User> findByBranch(Branch branch);
 
     boolean existsByEmail(String email);
 }
