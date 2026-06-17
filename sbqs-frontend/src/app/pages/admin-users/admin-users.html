@@ -1,0 +1,53 @@
+<app-header [title]="'Quản lý nhân viên'">
+</app-header>
+
+<app-card>
+
+  <h2>Thêm nhân viên</h2>
+
+  <p>Họ tên</p>
+  <input [(ngModel)]="newStaff.fullName">
+
+  <p>Email</p>
+  <input [(ngModel)]="newStaff.email">
+
+  <p>Mật khẩu</p>
+  <input type="password" [(ngModel)]="newStaff.password">
+
+  <p>Số điện thoại</p>
+  <input [(ngModel)]="newStaff.phone">
+
+  <br>
+  <br>
+
+  <app-button [label]="'Thêm nhân viên'" (clicked)="createStaff()">
+  </app-button>
+
+</app-card>
+
+@for (
+user of users;
+track user.userId
+) {
+
+<app-card>
+
+  <h3>
+    {{ user.fullName }}
+  </h3>
+
+  <p>
+    {{ user.email }}
+  </p>
+
+  <p>
+    {{ user.role }}
+  </p>
+
+  <p>
+    {{ user.status }}
+  </p>
+
+</app-card>
+
+}

@@ -9,6 +9,7 @@ import { StaffDashboard } from './pages/staff-dashboard/staff-dashboard';
 import { AdminServices } from './pages/admin-services/admin-services';
 import { AdminMappings } from './pages/admin-mappings/admin-mappings';
 import { AdminBranchSetup } from './pages/admin-branch-setup/admin-branch-setup';
+import { AdminUsers } from './pages/admin-users/admin-users';
 
 export const routes: Routes = [
   { path: '', component: Home },
@@ -19,5 +20,6 @@ export const routes: Routes = [
   { path: 'staff', component: StaffDashboard },
   {path: 'admin/services',component: AdminServices},
   {path: 'admin/mappings',component: AdminMappings},
-  {path: 'admin/branch-setup',component: AdminBranchSetup}
+  {path: 'admin/branch-setup',component: AdminBranchSetup},
+  {path: 'admin/users',component: AdminUsers}
 ];
