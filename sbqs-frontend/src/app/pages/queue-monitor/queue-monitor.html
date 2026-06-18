@@ -1,63 +1,85 @@
-<app-header
-  [title]="'Màn hình theo dõi hàng đợi'">
-</app-header>
+<app-dashboard-layout title="Queue Monitor">
+  <app-page-header
+    title="Màn hình hàng đợi"
+    subtitle="Theo dõi trạng thái phục vụ tại các quầy giao dịch"
+  >
+  </app-page-header>
 
-@if (errorMessage) {
+  <div class="admin-summary-grid">
+    <div class="admin-summary-card">
+      <span>Trạng thái</span>
+      <strong>{{ errorMessage ? 'OFF' : 'LIVE' }}</strong>
+      <p>Tự động cập nhật mỗi giây</p>
+    </div>
 
-  <p>{{ errorMessage }}</p>
+    <div class="admin-summary-card">
+      <span>Chi nhánh</span>
+      <strong>{{ monitor ? 'OK' : '-' }}</strong>
+      <p>Dữ liệu monitor</p>
+    </div>
 
-}
+    <div class="admin-summary-card">
+      <span>Kết nối</span>
+      <strong>{{ errorMessage ? 'ERR' : 'ON' }}</strong>
+      <p>API Queue Monitor</p>
+    </div>
 
-@if (monitor) {
+    <div class="admin-summary-card">
+      <span>Module</span>
+      <strong>REALTIME</strong>
+      <p>Queue display</p>
+    </div>
+  </div>
 
-  <app-card>
+  <div class="admin-grid">
+    <app-card>
+      <div class="admin-section-title">
+        <div>
+          <h2>Thông tin monitor</h2>
+          <p>Dữ liệu hàng đợi được lấy từ backend theo chi nhánh</p>
+        </div>
 
-    <h2>
-      {{ monitor.branchName }}
-    </h2>
-
-    <h3>
-      Khách đang chờ:
-      {{ monitor.waitingCount }}
-    </h3>
-
-  </app-card>
-
-  <app-card>
-
-    <h2>
-      Quầy đang phục vụ
-    </h2>
-
-    @if (
-      monitor.servingCounters.length === 0
-    ) {
-
-      <p>
-        Chưa có quầy nào phục vụ
-      </p>
-
-    }
-
-    @for (
-      counter of monitor.servingCounters;
-      track counter.counterName
-    ) {
-
-      <div class="counter-row">
-
-        <span>
-          {{ counter.counterName }}
+        <span class="admin-badge">
+          {{ errorMessage ? 'ERROR' : 'LIVE' }}
         </span>
-
-        <strong>
-          {{ counter.ticketNumber }}
-        </strong>
-
       </div>
 
-    }
+      <div class="admin-empty" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
 
-  </app-card>
+      <div class="queue-board" *ngIf="!errorMessage">
+        <div class="queue-board__item">
+          <span>Trạng thái kết nối</span>
+          <strong>LIVE</strong>
+          <p>Monitor đang hoạt động</p>
+        </div>
 
-}
+        <div class="queue-board__item">
+          <span>Dữ liệu backend</span>
+          <strong>{{ monitor ? 'OK' : '-' }}</strong>
+          <p>Đã gọi API monitor</p>
+        </div>
+
+        <div class="queue-board__item">
+          <span>Cập nhật</span>
+          <strong>1s</strong>
+          <p>Tự động refresh</p>
+        </div>
+      </div>
+    </app-card>
+
+    <app-card>
+      <div class="admin-section-title">
+        <div>
+          <h2>Queue Monitor Preview</h2>
+          <p>Khu vực này sẽ hiển thị ticket khi backend trả dữ liệu chi tiết</p>
+        </div>
+      </div>
+
+      <div class="admin-empty">
+        Chưa có dữ liệu ticket chi tiết để hiển thị.
+      </div>
+    </app-card>
+  </div>
+</app-dashboard-layout>

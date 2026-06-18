@@ -1,23 +1,52 @@
-@if (ticket) {
+<app-dashboard-layout>
+  <app-page-header
+    title="Phiếu giao dịch"
+    subtitle="Xem thông tin phiếu của bạn">
+  </app-page-header>
 
-  <app-header
-    [title]="'Phiếu giao dịch'">
-  </app-header>
+  @if (ticket) {
+    <div class="ticket-result-container">
+      <app-card>
+        <div class="card-header">
+          <h2>Phiếu giao dịch của bạn</h2>
+        </div>
 
-  <app-card>
+        <div class="ticket-info-grid">
+          <div class="ticket-info-item">
+            <h3>Số phiếu</h3>
+            <p class="ticket-number">{{ ticket.ticketNumber }}</p>
+          </div>
 
-    <div class="ticket-number">
-      {{ ticket.ticketNumber }}
+          <div class="ticket-info-item">
+            <h3>Trạng thái</h3>
+            <p class="ticket-status" [ngClass]="'status-' + ticket.status?.toLowerCase()">
+              {{ ticket.status || 'Chờ xử lý' }}
+            </p>
+          </div>
+
+          <div class="ticket-info-item">
+            <h3>Dịch vụ</h3>
+            <p>{{ ticket.serviceName || 'Chưa xác định' }}</p>
+          </div>
+
+          <div class="ticket-info-item">
+            <h3>Chi nhánh</h3>
+            <p>{{ ticket.branchName || 'Chưa xác định' }}</p>
+          </div>
+        </div>
+
+        <div class="ticket-notice">
+          <p>Vui lòng chờ đến lượt giao dịch. Hệ thống sẽ gọi bạn khi đến lượt.</p>
+        </div>
+      </app-card>
     </div>
+  }
 
-    <div class="ticket-status">
-      {{ ticket.status }}
-    </div>
-
-    <p>
-      Vui lòng chờ đến lượt giao dịch
-    </p>
-
-  </app-card>
-
-}
+  @if (!ticket) {
+    <app-card>
+      <div class="empty-state">
+        <p>Chưa có phiếu giao dịch nào</p>
+      </div>
+    </app-card>
+  }
+</app-dashboard-layout>

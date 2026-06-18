@@ -1,21 +1,186 @@
-h2 {
-  text-align: center;
+// Professional Color Scheme
+$primary-color: #0066b3;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$light-bg: #f9fafb;
+$border-color: #e5e7eb;
+$text-primary: #1f2937;
+$text-secondary: #6b7280;
+
+// Summary Grid
+.queue-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+
+  app-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border-left: 4px solid $primary-color;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+
+    h3 {
+      color: $text-secondary;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 32px;
+      font-weight: 700;
+      color: $primary-color;
+      margin: 8px 0;
+    }
+
+    small {
+      color: $text-secondary;
+      font-size: 12px;
+      display: block;
+      margin-top: 4px;
+    }
+  }
 }
 
-h3 {
-  text-align: center;
-  color: #0066b3;
+// Monitor Grid
+.queue-monitor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+
+  app-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+  }
 }
 
-.counter-row {
-
+// Card Header
+.card-header {
   display: flex;
-
   justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid $light-bg;
+  margin-bottom: 16px;
 
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    color: $text-primary;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    color: $text-secondary;
+    font-size: 12px;
+  }
+}
+
+// LIVE Status Badge
+.status-live {
+  display: inline-block;
+  background-color: $success-color;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+  }
+}
+
+// Queue Info Grid
+.queue-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  app-card {
+    padding: 12px;
+    background-color: $light-bg;
+    border: 1px solid $border-color;
+
+    h4 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: $text-secondary;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    p {
+      margin: 0 0 4px 0;
+      font-size: 24px;
+      font-weight: 700;
+      color: $primary-color;
+    }
+
+    small {
+      color: $text-secondary;
+      font-size: 11px;
+      display: block;
+    }
+  }
+}
+
+// Error Message
+.error-message {
+  background-color: #fee;
+  color: #c33;
   padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border-left: 4px solid #c33;
+}
 
-  border-bottom: 1px solid #eee;
+// Counter Row (Legacy)
+.counter-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid $border-color;
+  font-size: 16px;
+  transition: background-color 0.2s ease;
 
-  font-size: 20px;
+  &:hover {
+    background-color: $light-bg;
+  }
+
+  span {
+    color: $text-secondary;
+  }
+
+  strong {
+    color: $primary-color;
+    font-size: 18px;
+  }
 }

@@ -1,0 +1,139 @@
+.admin-users-page {
+  display: grid;
+  gap: 24px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+
+  h2 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 850;
+    color: #111827;
+  }
+
+  p {
+    max-width: 720px;
+    margin: 8px 0 0;
+    color: #6b7280;
+  }
+}
+
+.page-kicker {
+  margin: 0 0 6px !important;
+  color: #005baa !important;
+  font-size: 14px !important;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 6px;
+
+  strong {
+    font-size: 34px;
+    line-height: 1;
+    color: #111827;
+  }
+
+  p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 15px;
+  }
+}
+
+.summary-card__label {
+  color: #005baa;
+  font-size: 13px;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.card-heading {
+  margin-bottom: 22px;
+
+  h3 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: #111827;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: #6b7280;
+    font-size: 15px;
+  }
+}
+
+.table-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.badge-info {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.role-note {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+
+  span {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+    color: #1d4ed8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  strong {
+    display: block;
+    margin-top: 4px;
+    font-size: 18px;
+    color: #111827;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #6b7280;
+  }
+}
+
+@media (max-width: 1200px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-heading {
+    flex-direction: column;
+  }
+}

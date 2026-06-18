@@ -1,0 +1,188 @@
+// Professional Color Scheme
+$primary-color: #0066b3;
+$secondary-color: #00a8e8;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+$light-bg: #f9fafb;
+$border-color: #e5e7eb;
+$text-primary: #1f2937;
+$text-secondary: #6b7280;
+
+// Summary Grid
+.service-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+
+  app-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+    border-left: 4px solid $primary-color;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+      transform: translateY(-2px);
+    }
+
+    h3 {
+      color: $text-secondary;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    }
+
+    p {
+      font-size: 32px;
+      font-weight: 700;
+      color: $primary-color;
+      margin: 8px 0;
+    }
+
+    small {
+      color: $text-secondary;
+      font-size: 12px;
+      display: block;
+      margin-top: 4px;
+    }
+  }
+}
+
+// Page Layout Grid
+.service-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr;
+  }
+
+  app-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+  }
+}
+
+// Card Header Styling
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid $light-bg;
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    color: $text-primary;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 4px 0 0 0;
+    color: $text-secondary;
+    font-size: 12px;
+  }
+}
+
+// Service Form Styling
+.service-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  label {
+    font-weight: 600;
+    color: $text-primary;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+  }
+
+  input, select, textarea {
+    padding: 10px 12px;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+    font-size: 14px;
+    color: $text-primary;
+    transition: all 0.3s ease;
+    background-color: #ffffff;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+      box-shadow: 0 0 0 3px rgba(0, 102, 179, 0.1);
+    }
+
+    &::placeholder {
+      color: $text-secondary;
+    }
+  }
+
+  app-button {
+    margin-top: 8px;
+  }
+}
+
+// Table Styling
+.service-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  thead {
+    background-color: $light-bg;
+    border-bottom: 2px solid $border-color;
+
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: $text-primary;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid $border-color;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: $light-bg;
+      }
+
+      td {
+        padding: 14px 12px;
+        color: $text-primary;
+
+        &:first-child {
+          font-weight: 600;
+          color: $primary-color;
+        }
+      }
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: $text-secondary;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+}

@@ -7,7 +7,8 @@ import {
 
 import { CommonModule } from '@angular/common';
 
-import { AppHeader } from '../../shared/components/app-header/app-header';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 import { AppButton } from '../../shared/components/app-button/app-button';
 import { AppCard } from '../../shared/components/app-card/app-card';
 
@@ -17,7 +18,8 @@ import { StaffService } from '../../core/services/staff.service';
   selector: 'app-staff-dashboard',
   imports: [
     CommonModule,
-    AppHeader,
+    DashboardLayout,
+    AppPageHeader,
     AppButton,
     AppCard
   ],

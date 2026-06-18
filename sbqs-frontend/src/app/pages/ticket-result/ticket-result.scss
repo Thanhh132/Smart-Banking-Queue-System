@@ -1,19 +1,144 @@
-.ticket-number {
+// Professional Color Scheme
+$primary-color: #0066b3;
+$success-color: #10b981;
+$warning-color: #f59e0b;
+$danger-color: #ef4444;
+$light-bg: #f9fafb;
+$border-color: #e5e7eb;
+$text-primary: #1f2937;
+$text-secondary: #6b7280;
 
-  font-size: 80px;
+// Container
+.ticket-result-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 
-  font-weight: bold;
-
-  color: #0066b3;
-
-  margin: 20px 0;
+  app-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+  }
 }
 
+// Card Header
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 2px solid $light-bg;
+  margin-bottom: 16px;
+
+  h2 {
+    margin: 0;
+    font-size: 20px;
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+// Ticket Info Grid
+.ticket-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-info-item {
+    padding: 12px;
+    background-color: $light-bg;
+    border-radius: 6px;
+    border-left: 3px solid $primary-color;
+
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: $text-secondary;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    p {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: $primary-color;
+    }
+  }
+}
+
+// Ticket Number Display
+.ticket-number {
+  font-size: 48px;
+  font-weight: 700;
+  color: $primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+// Ticket Status
 .ticket-status {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: inline-block;
 
-  font-size: 24px;
+  &.status-waiting {
+    background-color: #fef3c7;
+    color: #b45309;
+  }
 
-  color: green;
+  &.status-serving {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+  }
 
-  margin-bottom: 20px;
+  &.status-completed {
+    background-color: #dcfce7;
+    color: #15803d;
+  }
+
+  &.status-cancelled {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+}
+
+// Ticket Notice
+.ticket-notice {
+  background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+  border-left: 4px solid $primary-color;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 16px;
+
+  p {
+    margin: 0;
+    color: #0c4a6e;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: $text-secondary;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
 }

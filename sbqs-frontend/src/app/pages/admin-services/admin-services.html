@@ -1,40 +1,87 @@
-<app-header [title]="'Quản lý dịch vụ'">
-</app-header>
+<app-dashboard-layout title="Service Management">
+  <app-page-header
+    title="Quản lý dịch vụ"
+    subtitle="Tạo và quản lý các dịch vụ tại chi nhánh"
+  >
+  </app-page-header>
 
-<app-card>
-  <h2>Thêm dịch vụ</h2>
+  <div class="service-summary-grid">
+    <app-card>
+      <h3>Tổng dịch vụ</h3>
+      <p>{{ services.length }}</p>
+    </app-card>
 
-  <p>Mã dịch vụ</p>
-  <input [(ngModel)]="newService.serviceCode">
+    <app-card>
+      <h3>Đang hoạt động</h3>
+      <p>{{ services.length }}</p>
+    </app-card>
 
-  <p>Tên dịch vụ</p>
-  <input [(ngModel)]="newService.serviceName">
+    <app-card>
+      <h3>Chi nhánh</h3>
+      <p>1</p>
+    </app-card>
 
-  <p>Loại dịch vụ</p>
-  <input [(ngModel)]="newService.serviceType">
+    <app-card>
+      <h3>Module</h3>
+      <p>CRUD</p>
+    </app-card>
+  </div>
 
-  <br />
-  <br />
+  <div class="service-layout-grid">
+    <app-card>
+      <div class="card-header">
+        <div>
+          <h2>Thêm dịch vụ</h2>
+          <p>Tạo dịch vụ mới cho chi nhánh</p>
+        </div>
+      </div>
 
-  <app-button
-    [label]="'Thêm dịch vụ'"
-    (clicked)="createService()">
-  </app-button>
-</app-card>
+      <div class="service-form">
+        <label>Mã dịch vụ</label>
+        <input [(ngModel)]="newService.serviceCode">
 
-@for (service of services; track service.serviceId) {
-  <app-card>
-    <h3>{{ service.serviceName }}</h3>
+        <label>Tên dịch vụ</label>
+        <input [(ngModel)]="newService.serviceName">
 
-    <p>Mã: {{ service.serviceCode }}</p>
+        <label>Loại dịch vụ</label>
+        <input [(ngModel)]="newService.serviceType">
 
-    <p>Loại: {{ service.serviceType }}</p>
+        <label>Thời gian ước tính (phút)</label>
+        <input type="number" [(ngModel)]="newService.estimatedTime">
 
-    <p>Trạng thái: {{ service.status }}</p>
+        <app-button
+          [label]="'Thêm dịch vụ'"
+          (clicked)="createService()">
+        </app-button>
+      </div>
+    </app-card>
 
-    <app-button
-      [label]="'Xóa'"
-      (clicked)="deleteService(service.serviceId)">
-    </app-button>
-  </app-card>
-}
+    <app-card>
+      <div class="card-header">
+        <div>
+          <h2>Danh sách dịch vụ</h2>
+          <p>Theo dõi các dịch vụ hiện có</p>
+        </div>
+      </div>
+
+      <table class="service-table">
+        <thead>
+          <tr>
+            <th>Mã</th>
+            <th>Tên dịch vụ</th>
+            <th>Thời gian</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let service of services">
+            <td>{{ service.serviceCode }}</td>
+            <td>{{ service.serviceName }}</td>
+            <td>{{ service.estimatedTime }} phút</td>
+            <td>{{ service.status }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </app-card>
+  </div>
+</app-dashboard-layout>

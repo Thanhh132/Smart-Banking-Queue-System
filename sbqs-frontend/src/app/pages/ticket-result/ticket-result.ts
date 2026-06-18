@@ -1,12 +1,16 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
-import { AppHeader } from '../../shared/components/app-header/app-header';
 
 @Component({
   selector: 'app-ticket-result',
   imports: [
-    AppCard,
-    AppHeader
+    CommonModule,
+    DashboardLayout,
+    AppPageHeader,
+    AppCard
   ],
   templateUrl: './ticket-result.html',
   styleUrl: './ticket-result.scss',

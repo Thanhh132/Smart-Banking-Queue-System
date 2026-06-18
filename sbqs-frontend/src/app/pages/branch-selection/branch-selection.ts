@@ -3,15 +3,19 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { Branch } from '../../core/models/branch.model';
 import { BranchService } from '../../core/services/branch.service';
-import { AppHeader } from '../../shared/components/app-header/app-header';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 import { AppButton } from '../../shared/components/app-button/app-button';
+import { AppCard } from '../../shared/components/app-card/app-card';
 
 @Component({
   selector: 'app-branch-selection',
   imports: [
     CommonModule,
-    AppHeader,
-    AppButton
+    DashboardLayout,
+    AppPageHeader,
+    AppButton,
+    AppCard
   ],
   templateUrl: './branch-selection.html',
   styleUrl: './branch-selection.scss',

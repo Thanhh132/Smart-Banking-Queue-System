@@ -8,10 +8,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
 import { AppButton } from '../../shared/components/app-button/app-button';
-
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 import { AdminBranchSetupService } from '../../core/services/admin-branch-setup.service';
 
 @Component({
@@ -19,9 +19,10 @@ import { AdminBranchSetupService } from '../../core/services/admin-branch-setup.
   imports: [
     CommonModule,
     FormsModule,
-    AppHeader,
     AppCard,
-    AppButton
+    AppButton,
+    DashboardLayout,
+    AppPageHeader
   ],
   templateUrl: './admin-branch-setup.html',
   styleUrl: './admin-branch-setup.scss',
@@ -269,3 +270,4 @@ export class AdminBranchSetup implements OnInit {
   }
 
 }
+

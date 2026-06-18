@@ -1,0 +1,22 @@
+<aside class="sidebar">
+  <div class="sidebar__brand">
+    <div class="sidebar__logo">SB</div>
+
+    <div>
+      <h2>SBQS</h2>
+      <p>Smart Banking Queue</p>
+    </div>
+  </div>
+
+  <nav class="sidebar__nav">
+    <a
+      *ngFor="let item of menuItems"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      class="sidebar__link"
+    >
+      <span class="sidebar__icon">{{ item.icon }}</span>
+      <span>{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>

@@ -5,6 +5,7 @@ import com.sbqs.entity.User;
 import com.sbqs.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.sbqs.dto.UpdateUserRequest;
 
 import java.util.List;
 
@@ -23,8 +24,7 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<List<User>> getUsers(
-            @RequestParam(required = false)
-            Long branchId) {
+            @RequestParam(required = false) Long branchId) {
 
         if (branchId != null) {
             return ResponseEntity.ok(
@@ -41,5 +41,23 @@ public class UserController {
 
         return ResponseEntity.ok(
                 userService.createStaff(request));
+    }
+
+    @PutMapping("/{userId}")
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long userId,
+            @RequestBody UpdateUserRequest request) {
+
+        return ResponseEntity.ok(
+                userService.updateUser(userId, request));
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(
+            @PathVariable Long userId) {
+
+        userService.deleteUser(userId);
+
+        return ResponseEntity.noContent().build();
     }
 }

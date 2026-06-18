@@ -1,34 +1,77 @@
-<app-header [title]="'Màn hình giao dịch viên'">
-</app-header>
+<app-dashboard-layout>
+  <app-page-header
+    title="Màn hình giao dịch viên"
+    subtitle="Quản lý khách hàng và xử lý phiếu">
+  </app-page-header>
 
-@if (!currentTicket) {
-<app-card>
-  <app-button [label]="'Gọi khách tiếp theo'" (clicked)="callNext()">
-  </app-button>
-</app-card>
-}
-@if (currentTicket) {
+  @if (errorMessage) {
+    <div class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+  }
 
-<app-card>
+  @if (!currentTicket) {
+    <div class="staff-actions">
+      <app-card>
+        <div class="card-header">
+          <h2>Khách hàng tiếp theo</h2>
+          <p>Gọi khách hàng từ hàng chờ</p>
+        </div>
 
-  <h2>
-    Số:
-    {{ currentTicket.ticketNumber }}
-  </h2>
+        <div class="action-buttons">
+          <app-button 
+            [label]="'🎫 Gọi khách tiếp theo'" 
+            (clicked)="callNext()"
+            class="btn-primary">
+          </app-button>
+        </div>
+      </app-card>
+    </div>
+  }
 
-  <p>
-    Dịch vụ:
-    {{ currentTicket.service.serviceName }}
-  </p>
+  @if (currentTicket) {
+    <div class="staff-dashboard-container">
+      <app-card>
+        <div class="card-header">
+          <h2>Khách hàng hiện tại</h2>
+          <p>Thông tin phiếu giao dịch</p>
+        </div>
 
-  <p>
-    Trạng thái:
-    {{ currentTicket.status }}
-  </p>
+        <div class="ticket-info-grid">
+          <div class="info-item">
+            <h3>Số phiếu</h3>
+            <p class="ticket-number">{{ currentTicket.ticketNumber }}</p>
+          </div>
 
-  <app-button [label]="'Hoàn thành'" (clicked)="complete()">
-  </app-button>
+          <div class="info-item">
+            <h3>Dịch vụ</h3>
+            <p>{{ currentTicket.service?.serviceName || 'N/A' }}</p>
+          </div>
 
-</app-card>
+          <div class="info-item">
+            <h3>Trạng thái</h3>
+            <p class="status-badge">{{ currentTicket.status }}</p>
+          </div>
 
-}
+          <div class="info-item">
+            <h3>Quầy số</h3>
+            <p>{{ counterId }}</p>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <app-button 
+            [label]="'✓ Hoàn thành'" 
+            (clicked)="complete()"
+            class="btn-success">
+          </app-button>
+          <app-button 
+            [label]="'📞 Gọi khách tiếp theo'" 
+            (clicked)="callNext()"
+            class="btn-secondary">
+          </app-button>
+        </div>
+      </app-card>
+    </div>
+  }
+</app-dashboard-layout>

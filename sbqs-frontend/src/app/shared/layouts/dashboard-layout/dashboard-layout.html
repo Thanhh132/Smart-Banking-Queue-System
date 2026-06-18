@@ -1,0 +1,11 @@
+<div class="dashboard-layout">
+  <app-sidebar></app-sidebar>
+
+  <main class="dashboard-layout__main">
+    <app-topbar [title]="title"></app-topbar>
+
+    <section class="dashboard-layout__content">
+      <ng-content></ng-content>
+    </section>
+  </main>
+</div>

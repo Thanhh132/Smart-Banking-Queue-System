@@ -1,58 +1,107 @@
-<app-header [title]="'Cấu hình máy bốc số - dịch vụ'">
-</app-header>
+<app-dashboard-layout title="Service Mapping">
+  <app-page-header
+    title="Mapping máy bốc số - dịch vụ"
+    subtitle="Thiết lập dịch vụ cho từng máy bốc số"
+  >
+  </app-page-header>
 
-<app-card>
-  <h2>Thêm cấu hình</h2>
+  <div class="mapping-summary-grid">
+    <app-card>
+      <h3>Máy bốc số</h3>
+      <p>{{ queueMachines.length }}</p>
+      <small>Máy đã khai báo</small>
+    </app-card>
 
-  <p>Máy bốc số</p>
-  <select [(ngModel)]="selectedQueueMachineId">
-    <option [ngValue]="null">
-      -- Chọn máy bốc số --
-    </option>
+    <app-card>
+      <h3>Dịch vụ</h3>
+      <p>{{ services.length }}</p>
+      <small>Dịch vụ khả dụng</small>
+    </app-card>
 
-    @for (machine of queueMachines; track machine.queueMachineId) {
-      <option [ngValue]="machine.queueMachineId">
-        {{ machine.machineName }}
-      </option>
-    }
-  </select>
+    <app-card>
+      <h3>Mapping</h3>
+      <p>{{ mappings.length }}</p>
+      <small>Liên kết hiện có</small>
+    </app-card>
 
-  <p>Dịch vụ</p>
-  <select [(ngModel)]="selectedServiceId">
-    <option [ngValue]="null">
-      -- Chọn dịch vụ --
-    </option>
+    <app-card>
+      <h3>Trạng thái</h3>
+      <p>ON</p>
+      <small>Đang hoạt động</small>
+    </app-card>
+  </div>
 
-    @for (service of services; track service.serviceId) {
-      <option [ngValue]="service.serviceId">
-        {{ service.serviceName }}
-      </option>
-    }
-  </select>
+  <div class="mapping-page-grid">
+    <app-card>
+      <div class="card-header">
+        <div>
+          <h2>Thêm mapping</h2>
+          <p>Chọn máy bốc số và dịch vụ cần liên kết</p>
+        </div>
+      </div>
 
-  <br />
-  <br />
+      <div class="mapping-form">
+        <label>Máy bốc số</label>
+        <select [(ngModel)]="selectedQueueMachineId">
+          <option [ngValue]="null">-- Chọn máy bốc số --</option>
 
-  <app-button
-    [label]="'Thêm mapping'"
-    (clicked)="createMapping()">
-  </app-button>
-</app-card>
+          @for (machine of queueMachines; track machine.queueMachineId) {
+            <option [ngValue]="machine.queueMachineId">
+              {{ machine.machineName }}
+            </option>
+          }
+        </select>
 
-@for (mapping of mappings; track mapping.id.queueMachineId + '-' + mapping.id.serviceId) {
-  <app-card>
-    <h3>
-      {{ mapping.queueMachine.machineName }}
-    </h3>
+        <label>Dịch vụ</label>
+        <select [(ngModel)]="selectedServiceId">
+          <option [ngValue]="null">-- Chọn dịch vụ --</option>
 
-    <p>
-      Dịch vụ:
-      {{ mapping.service.serviceName }}
-    </p>
+          @for (service of services; track service.serviceId) {
+            <option [ngValue]="service.serviceId">
+              {{ service.serviceName }}
+            </option>
+          }
+        </select>
 
-    <app-button
-      [label]="'Xóa mapping'"
-      (clicked)="deleteMapping(mapping)">
-    </app-button>
-  </app-card>
-}
+        <app-button
+          [label]="'Thêm mapping'"
+          (clicked)="createMapping()">
+        </app-button>
+      </div>
+    </app-card>
+
+    <app-card>
+      <div class="card-header">
+        <div>
+          <h2>Danh sách mapping</h2>
+          <p>Các liên kết máy bốc số và dịch vụ</p>
+        </div>
+      </div>
+
+      <table class="mapping-table">
+        <thead>
+          <tr>
+            <th>Máy bốc số</th>
+            <th>Dịch vụ</th>
+            <th>Chi nhánh</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (mapping of mappings; track mapping.id.queueMachineId + '-' + mapping.id.serviceId) {
+            <tr>
+              <td>{{ mapping.machineCode || mapping.queueMachine?.machineCode || '-' }}</td>
+              <td>{{ mapping.serviceName || mapping.service?.serviceName || '-' }}</td>
+              <td>{{ mapping.branchName || mapping.branch?.branchName || '-' }}</td>
+              <td>{{ mapping.status || 'ACTIVE' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (mappings.length === 0) {
+        <p>Chưa có mapping nào.</p>
+      }
+    </app-card>
+  </div>
+</app-dashboard-layout>

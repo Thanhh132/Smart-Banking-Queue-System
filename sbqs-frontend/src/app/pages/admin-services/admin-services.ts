@@ -6,22 +6,22 @@ import {
 } from '@angular/core';
 
 import { CommonModule } from '@angular/common';
-import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
 import { AppButton } from '../../shared/components/app-button/app-button';
 import { FormsModule } from '@angular/forms';
-import { AdminServicesService }
-
-  from '../../core/services/admin-services.service';
+import { AdminServicesService } from '../../core/services/admin-services.service';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 
 @Component({
   selector: 'app-admin-services',
   imports: [
     CommonModule,
     FormsModule,
-    AppHeader,
     AppCard,
-    AppButton
+    AppButton,
+    DashboardLayout,
+    AppPageHeader
   ],
   templateUrl: './admin-services.html',
   styleUrl: './admin-services.scss',

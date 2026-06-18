@@ -8,8 +8,9 @@ import {
 
 import { CommonModule } from '@angular/common';
 
-import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 
 import { QueueMonitor } from '../../core/models/queue-monitor.model';
 import { QueueMonitorService } from '../../core/services/queue-monitor.service';
@@ -18,8 +19,9 @@ import { QueueMonitorService } from '../../core/services/queue-monitor.service';
   selector: 'app-queue-monitor',
   imports: [
     CommonModule,
-    AppHeader,
-    AppCard
+    AppCard,
+    DashboardLayout,
+    AppPageHeader
   ],
   templateUrl: './queue-monitor.html',
   styleUrl: './queue-monitor.scss',

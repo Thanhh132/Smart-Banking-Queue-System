@@ -8,9 +8,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { AppHeader } from '../../shared/components/app-header/app-header';
 import { AppCard } from '../../shared/components/app-card/app-card';
 import { AppButton } from '../../shared/components/app-button/app-button';
+import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
 
 import { AdminMappingsService } from '../../core/services/admin-mappings.service';
 
@@ -19,9 +20,10 @@ import { AdminMappingsService } from '../../core/services/admin-mappings.service
   imports: [
     CommonModule,
     FormsModule,
-    AppHeader,
     AppCard,
-    AppButton
+    AppButton,
+    DashboardLayout,
+    AppPageHeader
   ],
   templateUrl: './admin-mappings.html',
   styleUrl: './admin-mappings.scss',

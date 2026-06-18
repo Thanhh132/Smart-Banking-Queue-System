@@ -23,4 +23,12 @@ export class UserManagementService {
     );
   }
 
+  deleteUser(userId: number) {
+    return this.http.delete(`${this.apiUrl}/${userId}`);
+  }
+
+  updateUser(userId: number, payload: any) {
+    return this.http.put(`${this.apiUrl}/${userId}`, payload);
+  }
+
 }

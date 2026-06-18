@@ -1,0 +1,58 @@
+.topbar {
+  min-height: 88px;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+
+  h1 {
+    margin: 0;
+    font-size: 30px;
+    line-height: 1.2;
+    font-weight: 850;
+    color: #111827;
+  }
+
+  p {
+    margin: 6px 0 0;
+    font-size: 15px;
+    color: #6b7280;
+  }
+}
+
+.topbar__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #f8fafc;
+
+  strong {
+    display: block;
+    font-size: 15px;
+    color: #111827;
+  }
+
+  span {
+    display: block;
+    font-size: 13px;
+    color: #6b7280;
+  }
+}
+
+.topbar__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #005baa;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
