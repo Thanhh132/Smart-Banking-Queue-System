@@ -19,8 +19,9 @@ public class QueueMonitorController {
 
     @GetMapping
     public QueueMonitorResponse getMonitor(
-            @RequestParam Long branchId) {
+            @RequestParam Long branchId,
+            @RequestParam(required = false) Long queueMachineId) {
 
-        return queueMonitorService.getMonitor(branchId);
+        return queueMonitorService.getMonitor(branchId, queueMachineId);
     }
 }

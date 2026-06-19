@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 
 @Component({
   selector: 'app-login',
@@ -17,6 +18,7 @@ export class Login {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private apiError = inject(ApiErrorService);
 
   isSubmitting = false;
   errorMessage = '';
@@ -52,10 +54,10 @@ export class Login {
         this.router.navigateByUrl(this.authService.getHomeRoute(response.role));
       },
       error: (err) => {
-        this.errorMessage =
-          err?.name === 'TimeoutError'
-            ? 'Keycloak phan hoi qua lau. Kiem tra Keycloak va cau hinh client.'
-            : err?.error?.message || err?.error || 'Dang nhap that bai.';
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Dang nhap that bai. Vui long kiem tra email va mat khau.'
+        );
       },
     });
   }

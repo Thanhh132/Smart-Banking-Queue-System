@@ -1,23 +1,62 @@
-<app-header
-  [title]="'Chọn dịch vụ'">
-</app-header>
+<app-dashboard-layout title="Chon dich vu">
+  <div class="customer-page">
+    <section class="customer-heading">
+      <span class="page-kicker">Customer</span>
+      <h1>Chon dich vu</h1>
+      <p>Chi hien thi cac dich vu da duoc chi nhanh gan vao may boc so.</p>
+    </section>
 
-@if (errorMessage) {
-  <p>{{ errorMessage }}</p>
-}
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
 
-@if (services.length === 0 && !errorMessage) {
-  <p>Đang tải danh sách dịch vụ...</p>
-}
+    <section class="queue-overview" *ngIf="monitor">
+      <app-card>
+        <span>Chi nhanh</span>
+        <strong>{{ monitor.branchName }}</strong>
+        <p>{{ monitor.waitingCount }} khach dang cho</p>
+      </app-card>
 
-@for (service of services; track service.serviceId) {
+      <app-card>
+        <span>Quay dang phuc vu</span>
+        <strong>{{ servingCounterCount }}</strong>
+        <p>Theo doi ben duoi de canh luot</p>
+      </app-card>
+    </section>
 
-  <app-button
-    [label]="service.serviceName"
-    (clicked)="selectService(service.serviceId)">
-  </app-button>
+    <section class="service-grid" *ngIf="!isLoading && services.length > 0">
+      <button
+        type="button"
+        class="service-tile"
+        *ngFor="let service of services"
+        (click)="selectService(service)"
+        [disabled]="isCreatingTicket"
+      >
+        <span>{{ service.serviceType || 'SERVICE' }}</span>
+        <strong>{{ service.serviceName }}</strong>
+        <small>{{ service.estimatedTime || 10 }} phut uoc tinh</small>
+      </button>
+    </section>
 
-  <br />
-  <br />
+    <app-card *ngIf="isLoading">
+      <div class="admin-empty">Dang tai dich vu...</div>
+    </app-card>
 
-}
+    <app-card *ngIf="!isLoading && services.length === 0 && !errorMessage">
+      <div class="admin-empty">
+        Chi nhanh nay chua cau hinh dich vu cho may boc so.
+      </div>
+    </app-card>
+
+    <section class="counter-board" *ngIf="monitor?.servingCounters?.length">
+      <h2>Bang goi so hien tai</h2>
+      <div class="counter-grid">
+        <div class="counter-tile" *ngFor="let counter of monitor?.servingCounters">
+          <span>{{ counter.queueMachineName || 'May boc so' }}</span>
+          <strong>{{ counter.ticketNumber || '-' }}</strong>
+          <p>{{ counter.counterName }} - {{ getCounterStatusLabel(counter.status) }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-dashboard-layout>

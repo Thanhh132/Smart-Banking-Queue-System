@@ -16,6 +16,12 @@ export class UserManagementService {
     );
   }
 
+  getUsersByRole(role: string) {
+    return this.http.get<any[]>(
+      `${this.apiUrl}?role=${role}`
+    );
+  }
+
   createStaff(staff: any) {
     return this.http.post(
       `${this.apiUrl}/staff`,

@@ -1,44 +1,40 @@
 <app-dashboard-layout>
   <app-page-header
-    title="Chọn chi nhánh"
-    subtitle="Chọn chi nhánh để bắt đầu sử dụng dịch vụ">
+    title="Chon chi nhanh"
+    subtitle="Chon diem giao dich de lay so thu tu"
+  >
   </app-page-header>
 
-  @if (errorMessage) {
-    <div class="alert alert-danger">
-      {{ errorMessage }}
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <app-card *ngIf="branches.length === 0 && !errorMessage">
+    <div class="loading-state">
+      <p>Dang tai danh sach chi nhanh...</p>
     </div>
-  }
+  </app-card>
 
-  @if (branches.length === 0 && !errorMessage) {
-    <app-card>
-      <div class="loading-state">
-        <p>Đang tải danh sách chi nhánh...</p>
+  <app-card *ngIf="branches.length > 0">
+    <div class="card-header">
+      <div>
+        <h2>Danh sach chi nhanh</h2>
+        <p>Thong tin khu vuc va dia chi giup ban chon dung diem giao dich.</p>
       </div>
-    </app-card>
-  }
+    </div>
 
-  @if (branches.length > 0) {
-    <app-card>
-      <div class="card-header">
-        <h2>Danh sách chi nhánh</h2>
-        <p>Chọn một chi nhánh để tiếp tục</p>
-      </div>
-
-      <div class="branches-grid">
-        @for (branch of branches; track branch.branchId) {
-          <div class="branch-item">
-            <app-button 
-              [label]="branch.branchName"
-              (clicked)="selectBranch(branch.branchId)"
-              class="branch-button">
-            </app-button>
-            <p class="branch-info">
-              <small>{{ branch.address || 'Địa chỉ không xác định' }}</small>
-            </p>
-          </div>
-        }
-      </div>
-    </app-card>
-  }
+    <div class="branches-grid">
+      <button
+        type="button"
+        class="branch-tile"
+        *ngFor="let branch of branches"
+        (click)="selectBranch(branch.branchId)"
+      >
+        <span>{{ branch.bankName }}</span>
+        <strong>{{ branch.branchName }}</strong>
+        <p>{{ branch.district || '-' }}, {{ branch.province || '-' }}</p>
+        <small>{{ branch.address || 'Chua co dia chi chi tiet' }}</small>
+      </button>
+    </div>
+  </app-card>
 </app-dashboard-layout>

@@ -11,9 +11,7 @@ public class QueueMachineService {
 
     private final QueueMachineRepository queueMachineRepository;
 
-    public QueueMachineService(
-            QueueMachineRepository queueMachineRepository) {
-
+    public QueueMachineService(QueueMachineRepository queueMachineRepository) {
         this.queueMachineRepository = queueMachineRepository;
     }
 
@@ -21,8 +19,12 @@ public class QueueMachineService {
         return queueMachineRepository.findAll();
     }
 
-    public QueueMachine createQueueMachine(
-            QueueMachine queueMachine) {
+    public QueueMachine createQueueMachine(QueueMachine queueMachine) {
+        if (queueMachineRepository.existsByBranchAndMachineCode(
+                queueMachine.getBranch(),
+                queueMachine.getMachineCode())) {
+            throw new RuntimeException("Ma may boc so da ton tai trong chi nhanh nay");
+        }
 
         return queueMachineRepository.save(queueMachine);
     }
@@ -32,36 +34,29 @@ public class QueueMachineService {
             QueueMachine updatedQueueMachine) {
 
         QueueMachine existingQueueMachine = queueMachineRepository.findById(queueMachineId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy máy bốc số"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
 
-        existingQueueMachine.setMachineCode(
-                updatedQueueMachine.getMachineCode());
+        if (queueMachineRepository.existsByBranchAndMachineCodeAndQueueMachineIdNot(
+                updatedQueueMachine.getBranch(),
+                updatedQueueMachine.getMachineCode(),
+                queueMachineId)) {
+            throw new RuntimeException("Ma may boc so da ton tai trong chi nhanh nay");
+        }
 
-        existingQueueMachine.setMachineName(
-                updatedQueueMachine.getMachineName());
-
-        existingQueueMachine.setLocationNote(
-                updatedQueueMachine.getLocationNote());
-
-        existingQueueMachine.setInstructionNote(
-                updatedQueueMachine.getInstructionNote());
-
-        existingQueueMachine.setStatus(
-                updatedQueueMachine.getStatus());
-
-        existingQueueMachine.setBranch(
-                updatedQueueMachine.getBranch());
+        existingQueueMachine.setMachineCode(updatedQueueMachine.getMachineCode());
+        existingQueueMachine.setMachineName(updatedQueueMachine.getMachineName());
+        existingQueueMachine.setLocationNote(updatedQueueMachine.getLocationNote());
+        existingQueueMachine.setInstructionNote(updatedQueueMachine.getInstructionNote());
+        existingQueueMachine.setStatus(updatedQueueMachine.getStatus());
+        existingQueueMachine.setBranch(updatedQueueMachine.getBranch());
 
         return queueMachineRepository.save(existingQueueMachine);
     }
 
     public void deleteQueueMachine(Long queueMachineId) {
-
         QueueMachine existingQueueMachine = queueMachineRepository.findById(queueMachineId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy máy bốc số"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
 
-        existingQueueMachine.setStatus("INACTIVE");
-
-        queueMachineRepository.save(existingQueueMachine);
+        queueMachineRepository.delete(existingQueueMachine);
     }
 }

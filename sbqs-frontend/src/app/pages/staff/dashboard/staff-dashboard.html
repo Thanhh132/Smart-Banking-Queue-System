@@ -1,77 +1,105 @@
 <app-dashboard-layout>
   <app-page-header
-    title="Màn hình giao dịch viên"
-    subtitle="Quản lý khách hàng và xử lý phiếu">
+    title="Man hinh giao dich vien"
+    subtitle="Assign vao quay, goi so va ket thuc ca phuc vu"
+  >
   </app-page-header>
 
-  @if (errorMessage) {
-    <div class="alert alert-danger">
-      {{ errorMessage }}
+  <div *ngIf="successMessage" class="alert alert-success">
+    {{ successMessage }}
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
+
+  <app-card *ngIf="!selectedCounter">
+    <div class="card-header">
+      <h2>Bat dau ca phuc vu</h2>
+      <p>Chon quay de assign. Quay chi hoat dong khi co nhan vien assign.</p>
     </div>
-  }
 
-  @if (!currentTicket) {
-    <div class="staff-actions">
-      <app-card>
-        <div class="card-header">
-          <h2>Khách hàng tiếp theo</h2>
-          <p>Gọi khách hàng từ hàng chờ</p>
-        </div>
+    <div class="assign-panel">
+      <label>
+        Chon quay
+        <select [(ngModel)]="selectedCounterId">
+          <option [ngValue]="null">Chon quay</option>
+          <option *ngFor="let counter of counters" [ngValue]="counter.counterId">
+            {{ counter.counterName }} - {{ counter.status }}
+          </option>
+        </select>
+      </label>
 
-        <div class="action-buttons">
-          <app-button 
-            [label]="'🎫 Gọi khách tiếp theo'" 
-            (clicked)="callNext()"
-            class="btn-primary">
-          </app-button>
-        </div>
-      </app-card>
+      <button type="button" class="btn btn-primary" (click)="assignCounter()">
+        Assign quay
+      </button>
     </div>
-  }
+  </app-card>
 
-  @if (currentTicket) {
-    <div class="staff-dashboard-container">
-      <app-card>
-        <div class="card-header">
-          <h2>Khách hàng hiện tại</h2>
-          <p>Thông tin phiếu giao dịch</p>
-        </div>
-
-        <div class="ticket-info-grid">
-          <div class="info-item">
-            <h3>Số phiếu</h3>
-            <p class="ticket-number">{{ currentTicket.ticketNumber }}</p>
-          </div>
-
-          <div class="info-item">
-            <h3>Dịch vụ</h3>
-            <p>{{ currentTicket.service?.serviceName || 'N/A' }}</p>
-          </div>
-
-          <div class="info-item">
-            <h3>Trạng thái</h3>
-            <p class="status-badge">{{ currentTicket.status }}</p>
-          </div>
-
-          <div class="info-item">
-            <h3>Quầy số</h3>
-            <p>{{ counterId }}</p>
-          </div>
-        </div>
-
-        <div class="action-buttons">
-          <app-button 
-            [label]="'✓ Hoàn thành'" 
-            (clicked)="complete()"
-            class="btn-success">
-          </app-button>
-          <app-button 
-            [label]="'📞 Gọi khách tiếp theo'" 
-            (clicked)="callNext()"
-            class="btn-secondary">
-          </app-button>
-        </div>
-      </app-card>
+  <app-card *ngIf="selectedCounter">
+    <div class="card-header">
+      <h2>{{ selectedCounter.counterName }}</h2>
+      <p>Quay dang hoat dong. Ket thuc ca se luu gio ket thuc vao lich su.</p>
     </div>
-  }
+
+    <div class="action-buttons">
+      <button type="button" class="btn btn-secondary" (click)="unassignCounter()">
+        Unassign / ket thuc ca
+      </button>
+    </div>
+  </app-card>
+
+  <div class="staff-actions" *ngIf="selectedCounter && !currentTicket">
+    <app-card>
+      <div class="card-header">
+        <h2>Khach hang tiep theo</h2>
+        <p>Goi khach hang tu hang cho cua may boc so gan voi quay.</p>
+      </div>
+
+      <div class="action-buttons">
+        <app-button
+          [label]="'Goi khach tiep theo'"
+          (clicked)="callNext()"
+          class="btn-primary"
+        >
+        </app-button>
+      </div>
+    </app-card>
+  </div>
+
+  <div class="staff-dashboard-container" *ngIf="currentTicket">
+    <app-card>
+      <div class="card-header">
+        <h2>Khach hang hien tai</h2>
+        <p>Thong tin phieu giao dich</p>
+      </div>
+
+      <div class="ticket-info-grid">
+        <div class="info-item">
+          <h3>So phieu</h3>
+          <p class="ticket-number">{{ currentTicket.ticketNumber }}</p>
+        </div>
+
+        <div class="info-item">
+          <h3>Dich vu</h3>
+          <p>{{ currentTicket.service?.serviceName || 'N/A' }}</p>
+        </div>
+
+        <div class="info-item">
+          <h3>Trang thai</h3>
+          <p class="status-badge">{{ currentTicket.status }}</p>
+        </div>
+
+        <div class="info-item">
+          <h3>Quay</h3>
+          <p>{{ selectedCounter?.counterName }}</p>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <app-button [label]="'Hoan thanh'" (clicked)="complete()" class="btn-success">
+        </app-button>
+      </div>
+    </app-card>
+  </div>
 </app-dashboard-layout>

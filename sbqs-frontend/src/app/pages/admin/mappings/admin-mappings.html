@@ -1,32 +1,27 @@
 <app-dashboard-layout title="Service Mapping">
-  <app-page-header title="Mapping máy bốc số - dịch vụ" subtitle="Thiết lập dịch vụ cho từng máy bốc số">
+  <app-page-header title="Gan dich vu cho may boc so" subtitle="Chon mot may va tick nhieu dich vu de gan hang loat">
   </app-page-header>
 
   <div class="mapping-summary-grid">
     <app-card>
-      <h3>Máy bốc số</h3>
+      <h3>May boc so</h3>
       <p>{{ queueMachines.length }}</p>
-      <small>Máy đã khai báo</small>
+      <small>May da khai bao</small>
     </app-card>
 
     <app-card>
-      <h3>Dịch vụ</h3>
+      <h3>Dich vu</h3>
       <p>{{ services.length }}</p>
-      <small>Dịch vụ khả dụng</small>
+      <small>Dich vu kha dung</small>
     </app-card>
 
     <app-card>
       <h3>Mapping</h3>
       <p>{{ mappings.length }}</p>
-      <small>Liên kết hiện có</small>
-    </app-card>
-
-    <app-card>
-      <h3>Trạng thái</h3>
-      <p>ON</p>
-      <small>Đang hoạt động</small>
+      <small>Lien ket hien co</small>
     </app-card>
   </div>
+
   <div *ngIf="successMessage" class="alert alert-success">
     {{ successMessage }}
   </div>
@@ -34,81 +29,73 @@
   <div *ngIf="errorMessage" class="alert alert-danger">
     {{ errorMessage }}
   </div>
+
   <div class="mapping-page-grid">
     <app-card>
       <div class="card-header">
         <div>
-          <h2>Thêm mapping</h2>
-          <p>Chọn máy bốc số và dịch vụ cần liên kết</p>
+          <h2>Them mapping hang loat</h2>
+          <p>Chon may boc so, sau do tick cac dich vu can gan.</p>
         </div>
       </div>
 
       <div class="mapping-form">
-        <label>Máy bốc số</label>
+        <label>May boc so</label>
         <select [(ngModel)]="selectedQueueMachineId">
-          <option [ngValue]="null">-- Chọn máy bốc số --</option>
-
-          @for (machine of queueMachines; track machine.queueMachineId) {
-          <option [ngValue]="machine.queueMachineId">
-            {{ machine.machineName }}
+          <option [ngValue]="null">Chon may boc so</option>
+          <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
+            {{ machine.machineName }} - {{ machine.machineCode }}
           </option>
-          }
         </select>
 
-        <label>Dịch vụ</label>
-        <select [(ngModel)]="selectedServiceId">
-          <option [ngValue]="null">-- Chọn dịch vụ --</option>
+        <label>Dich vu</label>
+        <div class="checkbox-list">
+          <label class="checkbox-row" *ngFor="let service of services">
+            <input
+              type="checkbox"
+              [checked]="selectedServiceIds.includes(service.serviceId)"
+              (change)="toggleService(service.serviceId, $any($event.target).checked)"
+            />
+            <span>{{ service.serviceName }} - {{ service.serviceCode }}</span>
+          </label>
+        </div>
 
-          @for (service of services; track service.serviceId) {
-          <option [ngValue]="service.serviceId">
-            {{ service.serviceName }}
-          </option>
-          }
-        </select>
-
-        <app-button [label]="'Thêm mapping'" (clicked)="createMapping()">
-        </app-button>
+        <button class="btn btn-primary" type="button" (click)="createMappings()">
+          Tao mapping
+        </button>
       </div>
     </app-card>
 
     <app-card>
       <div class="card-header">
         <div>
-          <h2>Danh sách mapping</h2>
-          <p>Các liên kết máy bốc số và dịch vụ</p>
+          <h2>Danh sach mapping</h2>
+          <p>Cac lien ket may boc so va dich vu trong chi nhanh.</p>
         </div>
       </div>
 
       <table class="mapping-table">
         <thead>
           <tr>
-            <th>Máy bốc số</th>
-            <th>Dịch vụ</th>
-            <th>Chi nhánh</th>
-            <th>Trạng thái</th>
-            <th>Actions</th>
+            <th>May boc so</th>
+            <th>Dich vu</th>
+            <th>Thao tac</th>
           </tr>
         </thead>
         <tbody>
-          @for (mapping of mappings; track mapping.id.queueMachineId + '-' + mapping.id.serviceId) {
-          <tr>
-            <td>{{ mapping.machineCode || mapping.queueMachine?.machineCode || '-' }}</td>
-            <td>{{ mapping.serviceName || mapping.service?.serviceName || '-' }}</td>
-            <td>{{ mapping.branchName || mapping.branch?.branchName || '-' }}</td>
-            <td>{{ mapping.status || 'ACTIVE' }}</td>
+          <tr *ngFor="let mapping of mappings">
+            <td>{{ mapping.queueMachine?.machineName || mapping.queueMachine?.machineCode || '-' }}</td>
+            <td>{{ mapping.service?.serviceName || '-' }}</td>
             <td>
-              <button class="btn-danger btn-sm" type="button" (click)="deleteMapping(mapping)">
-                Delete
+              <button class="btn btn-danger btn-sm" type="button" (click)="deleteMapping(mapping)">
+                Go
               </button>
             </td>
           </tr>
-          }
         </tbody>
       </table>
 
-      @if (mappings.length === 0) {
-      <p>Chưa có mapping nào.</p>
-      }
+      <p *ngIf="mappings.length === 0">Chua co mapping nao.</p>
     </app-card>
   </div>
 </app-dashboard-layout>

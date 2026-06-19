@@ -14,6 +14,8 @@ public interface UserRepository
 
     List<User> findByBranch(Branch branch);
 
+    List<User> findByRole(String role);
+
     boolean existsByPhone(String phone);
 
     boolean existsByEmail(String email);

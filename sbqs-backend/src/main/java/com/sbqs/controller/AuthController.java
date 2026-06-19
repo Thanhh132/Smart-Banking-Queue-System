@@ -1,6 +1,7 @@
 package com.sbqs.controller;
 
 import com.sbqs.dto.LoginRequest;
+import com.sbqs.dto.RefreshTokenRequest;
 import com.sbqs.dto.RegisterRequest;
 import com.sbqs.entity.User;
 import com.sbqs.service.AuthService;
@@ -35,6 +36,14 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 authService.login(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponse> refresh(
+            @RequestBody RefreshTokenRequest request) {
+
+        return ResponseEntity.ok(
+                authService.refresh(request.getRefreshToken()));
     }
 
     @PostMapping("/repair-login")

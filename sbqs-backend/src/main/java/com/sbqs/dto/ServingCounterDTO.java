@@ -10,4 +10,8 @@ public class ServingCounterDTO {
     private String counterName;
 
     private Integer ticketNumber;
+
+    private String status;
+
+    private String queueMachineName;
 }

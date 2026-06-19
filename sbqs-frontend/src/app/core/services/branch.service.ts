@@ -17,4 +17,16 @@ export class BranchService {
   getBranches(): Observable<Branch[]> {
     return this.http.get<Branch[]>(this.apiUrl);
   }
+
+  createBranch(payload: any): Observable<Branch> {
+    return this.http.post<Branch>(this.apiUrl, payload);
+  }
+
+  updateBranch(branchId: number, payload: any): Observable<Branch> {
+    return this.http.put<Branch>(`${this.apiUrl}/${branchId}`, payload);
+  }
+
+  deleteBranch(branchId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${branchId}`);
+  }
 }

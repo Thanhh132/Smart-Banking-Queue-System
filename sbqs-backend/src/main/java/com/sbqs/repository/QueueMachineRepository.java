@@ -16,4 +16,11 @@ public interface QueueMachineRepository
     List<QueueMachine> findByStatus(String status);
 
     QueueMachine findByMachineCode(String machineCode);
+
+    boolean existsByBranchAndMachineCode(Branch branch, String machineCode);
+
+    boolean existsByBranchAndMachineCodeAndQueueMachineIdNot(
+            Branch branch,
+            String machineCode,
+            Long queueMachineId);
 }

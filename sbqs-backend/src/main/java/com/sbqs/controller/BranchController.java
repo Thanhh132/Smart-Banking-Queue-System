@@ -42,4 +42,18 @@ public class BranchController {
         Branch saved = branchService.createBranch(branch);
         return ResponseEntity.ok(saved);
     }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Branch> updateBranch(
+            @PathVariable Long id,
+            @RequestBody Branch branch) {
+
+        return ResponseEntity.ok(branchService.updateBranch(id, branch));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBranch(@PathVariable Long id) {
+        branchService.deleteBranch(id);
+        return ResponseEntity.noContent().build();
+    }
 }

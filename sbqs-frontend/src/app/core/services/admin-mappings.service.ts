@@ -21,8 +21,9 @@ export class AdminMappingsService {
     return this.http.get<any[]>(this.queueMachineApi);
   }
 
-  getServices() {
-    return this.http.get<any[]>(this.servicesApi);
+  getServices(branchId?: number) {
+    const url = branchId ? `${this.servicesApi}?branchId=${branchId}` : this.servicesApi;
+    return this.http.get<any[]>(url);
   }
 
   getMappings() {

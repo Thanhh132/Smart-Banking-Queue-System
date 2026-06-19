@@ -24,7 +24,13 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<List<User>> getUsers(
-            @RequestParam(required = false) Long branchId) {
+            @RequestParam(required = false) Long branchId,
+            @RequestParam(required = false) String role) {
+
+        if (role != null && !role.isBlank()) {
+            return ResponseEntity.ok(
+                    userService.getUsersByRole(role));
+        }
 
         if (branchId != null) {
             return ResponseEntity.ok(

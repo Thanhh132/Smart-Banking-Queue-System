@@ -35,10 +35,39 @@ public class CounterController {
         return ResponseEntity.ok(counters);
     }
 
+    @GetMapping("/assigned")
+    public ResponseEntity<Counter> getAssignedCounter() {
+        return ResponseEntity.ok(counterService.getAssignedCounterForCurrentStaff());
+    }
+
    @PostMapping
     public ResponseEntity<Counter> createCounter(
         @Valid @RequestBody Counter counter) {
         Counter saved = counterService.createCounter(counter);
         return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Counter> updateCounter(
+            @PathVariable Long id,
+            @Valid @RequestBody Counter counter) {
+
+        return ResponseEntity.ok(counterService.updateCounter(id, counter));
+    }
+
+    @PostMapping("/{id}/assign")
+    public ResponseEntity<Counter> assignCounter(@PathVariable Long id) {
+        return ResponseEntity.ok(counterService.assignCounter(id));
+    }
+
+    @PostMapping("/{id}/unassign")
+    public ResponseEntity<Counter> unassignCounter(@PathVariable Long id) {
+        return ResponseEntity.ok(counterService.unassignCounter(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCounter(@PathVariable Long id) {
+        counterService.deleteCounter(id);
+        return ResponseEntity.noContent().build();
     }
 }

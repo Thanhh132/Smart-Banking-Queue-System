@@ -13,8 +13,11 @@ import { AdminDashboard } from './pages/admin/dashboard/admin-dashboard';
 import { AdminServices } from './pages/admin/services/admin-services';
 import { AdminMappings } from './pages/admin/mappings/admin-mappings';
 import { AdminUsers } from './pages/admin/users/admin-users';
+import { AdminOperations } from './pages/admin/operations/admin-operations';
 import { SuperAdmin } from './pages/super-admin/dashboard/super-admin';
+import { SuperAdminBranches } from './pages/super-admin/branches/super-admin-branches';
 import { roleGuard } from './core/guards/role.guard';
+import { homeRedirectGuard } from './core/guards/home-redirect.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -28,8 +31,11 @@ export const routes: Routes = [
   { path: 'monitor', component: QueueMonitorComponent, canActivate: [roleGuard(['BRANCH_ADMIN', 'STAFF'])] },
   { path: 'staff', component: StaffDashboard, canActivate: [roleGuard(['STAFF'])] },
   { path: 'admin', component: AdminDashboard, canActivate: [roleGuard(['BRANCH_ADMIN'])] },
+  { path: 'admin/operations', component: AdminOperations, canActivate: [roleGuard(['BRANCH_ADMIN'])] },
   { path: 'admin/services', component: AdminServices, canActivate: [roleGuard(['BRANCH_ADMIN'])] },
   { path: 'admin/mappings', component: AdminMappings, canActivate: [roleGuard(['BRANCH_ADMIN'])] },
   { path: 'admin/users', component: AdminUsers, canActivate: [roleGuard(['BRANCH_ADMIN'])] },
   { path: 'super-admin', component: SuperAdmin, canActivate: [roleGuard(['SUPER_ADMIN'])] },
+  { path: 'super-admin/branches', component: SuperAdminBranches, canActivate: [roleGuard(['SUPER_ADMIN'])] },
+  { path: '**', canActivate: [homeRedirectGuard], component: Home },
 ];

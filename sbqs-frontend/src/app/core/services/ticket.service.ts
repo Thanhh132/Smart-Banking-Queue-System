@@ -30,4 +30,12 @@ export class TicketService {
       payload
     );
   }
+
+  cancelTicket(ticketId: number) {
+    return this.http.post(`${this.apiUrl}/${ticketId}/cancel`, {});
+  }
+
+  getCurrentTicket() {
+    return this.http.get<any>(`${this.apiUrl}/current`);
+  }
 }

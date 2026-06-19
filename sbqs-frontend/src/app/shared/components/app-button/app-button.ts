@@ -9,10 +9,16 @@ import { Component, input, output } from '@angular/core';
 export class AppButton {
 
   label = input('');
+  variant = input<'primary' | 'secondary' | 'success' | 'danger'>('primary');
+  disabled = input(false);
 
   clicked = output<void>();
 
   onClick() {
+    if (this.disabled()) {
+      return;
+    }
+
     this.clicked.emit();
   }
 }

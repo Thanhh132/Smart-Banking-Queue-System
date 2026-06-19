@@ -1,52 +1,87 @@
 <app-dashboard-layout>
   <app-page-header
-    title="Phiếu giao dịch"
-    subtitle="Xem thông tin phiếu của bạn">
+    title="Phieu giao dich"
+    subtitle="Theo doi so cua ban va bang goi so tai chi nhanh"
+  >
   </app-page-header>
 
-  @if (ticket) {
-    <div class="ticket-result-container">
-      <app-card>
-        <div class="card-header">
-          <h2>Phiếu giao dịch của bạn</h2>
-        </div>
+  <div *ngIf="errorMessage" class="alert alert-danger">
+    {{ errorMessage }}
+  </div>
 
-        <div class="ticket-info-grid">
-          <div class="ticket-info-item">
-            <h3>Số phiếu</h3>
-            <p class="ticket-number">{{ ticket.ticketNumber }}</p>
-          </div>
-
-          <div class="ticket-info-item">
-            <h3>Trạng thái</h3>
-            <p class="ticket-status" [ngClass]="'status-' + ticket.status?.toLowerCase()">
-              {{ ticket.status || 'Chờ xử lý' }}
-            </p>
-          </div>
-
-          <div class="ticket-info-item">
-            <h3>Dịch vụ</h3>
-            <p>{{ ticket.serviceName || 'Chưa xác định' }}</p>
-          </div>
-
-          <div class="ticket-info-item">
-            <h3>Chi nhánh</h3>
-            <p>{{ ticket.branchName || 'Chưa xác định' }}</p>
-          </div>
-        </div>
-
-        <div class="ticket-notice">
-          <p>Vui lòng chờ đến lượt giao dịch. Hệ thống sẽ gọi bạn khi đến lượt.</p>
-        </div>
-      </app-card>
-    </div>
-  }
-
-  @if (!ticket) {
+  <div class="ticket-result-container" *ngIf="ticket">
     <app-card>
-      <div class="empty-state">
-        <p>Chưa có phiếu giao dịch nào</p>
+      <div class="ticket-hero">
+        <div>
+          <span>So cua ban</span>
+          <strong>{{ ticket.ticketNumber }}</strong>
+          <p>{{ ticket.status || 'WAITING' }}</p>
+          <button
+            *ngIf="ticket.status === 'WAITING'"
+            type="button"
+            class="btn btn-danger btn-sm"
+            (click)="cancelTicket()"
+          >
+            Huy ticket
+          </button>
+        </div>
+
+        <div class="ticket-meta">
+          <div>
+            <span>Dich vu</span>
+            <strong>{{ serviceName }}</strong>
+          </div>
+
+          <div>
+            <span>Chi nhanh</span>
+            <strong>{{ branchName }}</strong>
+          </div>
+
+          <div>
+            <span>May boc so</span>
+            <strong>{{ queueMachineName }}</strong>
+          </div>
+        </div>
       </div>
     </app-card>
-  }
+
+    <section class="queue-summary" *ngIf="monitor">
+      <app-card>
+        <span>Dang cho</span>
+        <strong>{{ monitor.waitingCount }}</strong>
+        <p>Khach trong hang doi</p>
+      </app-card>
+
+      <app-card>
+        <span>So quay</span>
+        <strong>{{ servingCounterCount }}</strong>
+        <p>Quay dang phuc vu tren may nay</p>
+      </app-card>
+    </section>
+
+    <section class="bank-board" *ngIf="monitor?.servingCounters?.length">
+      <h2>Bang goi so hien tai</h2>
+
+      <div class="counter-grid">
+        <div class="counter-tile" *ngFor="let counter of monitor?.servingCounters">
+          <span>{{ counter.counterName }}</span>
+          <strong>{{ counter.ticketNumber || '-' }}</strong>
+          <p>{{ getCounterStatusLabel(counter.status) }}</p>
+          <small>{{ counter.queueMachineName || 'May boc so' }}</small>
+        </div>
+      </div>
+    </section>
+
+    <app-card>
+      <div class="ticket-notice">
+        <p>Hay theo doi bang goi so. Khi so cua ban hien tren quay, vui long den dung quay de giao dich.</p>
+      </div>
+    </app-card>
+  </div>
+
+  <app-card *ngIf="!ticket">
+    <div class="empty-state">
+      <p>Chua co phieu giao dich nao.</p>
+    </div>
+  </app-card>
 </app-dashboard-layout>

@@ -28,6 +28,12 @@ public class Branch {
     @Column(name = "branch_name", nullable = false)
     private String branchName; // Tên chi nhánh
 
+    @Column(name = "province")
+    private String province;
+
+    @Column(name = "district")
+    private String district;
+
     @Column(name = "address")
     private String address;
 

@@ -7,7 +7,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "counters")
+@Table(
+        name = "counters",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_counters_branch_code",
+                columnNames = {"branch_id", "counter_code"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,7 +30,7 @@ public class Counter {
     private Long counterId;
 
     @NotBlank(message = "Mã quầy không được để trống")
-    @Column(name = "counter_code", nullable = false, unique = true)
+    @Column(name = "counter_code", nullable = false)
     private String counterCode;
 
     @NotBlank(message = "Tên quầy không được để trống")
@@ -38,5 +42,5 @@ public class Counter {
     private Branch branch; // liên kết Counter với Branch
 
     @Column(name = "status", nullable = false)
-    private String status = "ACTIVE";
+    private String status = "INACTIVE";
 }

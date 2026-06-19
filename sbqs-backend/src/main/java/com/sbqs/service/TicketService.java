@@ -4,13 +4,22 @@ import com.sbqs.entity.Counter;
 import com.sbqs.entity.History;
 import com.sbqs.entity.QueueMachine;
 import com.sbqs.entity.QueueMachineServiceMapping;
+import com.sbqs.entity.Branch;
+import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
+import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
+import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,45 +30,91 @@ public class TicketService {
     private final QueueMachineServiceMappingRepository mappingRepository;
     private final CounterRepository counterRepository;
     private final HistoryRepository historyRepository;
+    private final BranchRepository branchRepository;
+    private final ServiceRepository serviceRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
             QueueMachineServiceMappingRepository mappingRepository,
             CounterRepository counterRepository,
-            HistoryRepository historyRepository) {
+            HistoryRepository historyRepository,
+            BranchRepository branchRepository,
+            ServiceRepository serviceRepository) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
         this.counterRepository = counterRepository;
         this.historyRepository = historyRepository;
+        this.branchRepository = branchRepository;
+        this.serviceRepository = serviceRepository;
     }
 
     public List<Ticket> getAllTickets() {
         return ticketRepository.findAll();
     }
 
+    @Transactional
     public Ticket createTicket(Ticket ticket) {
-
-        QueueMachineServiceMapping mapping = mappingRepository
-                .findFirstByService(ticket.getService())
-                .orElseThrow(() -> new RuntimeException("Dịch vụ này chưa được cấu hình máy bốc số"));
-
-        QueueMachine queueMachine = mapping.getQueueMachine();
-
-        ticket.setQueueMachine(queueMachine);
-
-        Ticket lastTicket = ticketRepository
-                .findTopByQueueMachineOrderByTicketNumberDesc(queueMachine);
-
-        int nextTicketNumber;
-
-        if (lastTicket == null) {
-            nextTicketNumber = 1;
-        } else {
-            nextTicketNumber = lastTicket.getTicketNumber() + 1;
+        String customerEmail = getCurrentEmail();
+        if (customerEmail == null || customerEmail.isBlank()) {
+            throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
         }
 
+        List<Ticket> activeTickets = ticketRepository.findByCustomerEmailAndStatusIn(
+                customerEmail,
+                List.of("WAITING", "SERVING"));
+
+        if (!activeTickets.isEmpty()) {
+            throw new RuntimeException("Ban dang co ticket chua hoan thanh. Hay cho hoan thanh hoac huy ticket truoc.");
+        }
+
+        if (ticket.getBranch() == null || ticket.getBranch().getBranchId() == null) {
+            throw new RuntimeException("Chua chon chi nhanh");
+        }
+
+        if (ticket.getService() == null || ticket.getService().getServiceId() == null) {
+            throw new RuntimeException("Chua chon dich vu");
+        }
+
+        Branch branch = branchRepository.findById(ticket.getBranch().getBranchId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
+        Services service = serviceRepository.findById(ticket.getService().getServiceId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+
+        if (service.getBranch() == null
+                || !service.getBranch().getBranchId().equals(branch.getBranchId())) {
+            throw new RuntimeException("Dich vu khong thuoc chi nhanh da chon");
+        }
+
+        ticket.setBranch(branch);
+        ticket.setService(service);
+
+        QueueMachineServiceMapping mapping = mappingRepository
+                .findFirstByQueueMachineBranchAndService(
+                        branch,
+                        service)
+                .orElseThrow(() -> new RuntimeException(
+                        "Dich vu nay chua duoc cau hinh cho may boc so cua chi nhanh"));
+
+        QueueMachine queueMachine = mapping.getQueueMachine();
+        ticket.setQueueMachine(queueMachine);
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
+
+        ticketRepository.lockQueueMachineTicketSequence(queueMachine.getQueueMachineId());
+        Integer lastTicketNumber = ticketRepository
+                .findMaxTicketNumberByQueueMachineAndCreatedAtBetween(
+                        queueMachine.getQueueMachineId(),
+                        startOfDay,
+                        startOfNextDay);
+
+        int nextTicketNumber = lastTicketNumber + 1;
+
         ticket.setTicketNumber(nextTicketNumber);
+        ticket.setStatus("WAITING");
+        ticket.setCustomerEmail(customerEmail);
 
         return ticketRepository.save(ticket);
     }
@@ -68,20 +123,34 @@ public class TicketService {
         return ticketRepository.findByStatus(status);
     }
 
-    public Ticket callNextTicket(Long counterId) {
+    public Ticket getCurrentCustomerTicket() {
+        String customerEmail = getCurrentEmail();
+        if (customerEmail == null || customerEmail.isBlank()) {
+            throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
+        }
 
+        return ticketRepository
+                .findFirstByCustomerEmailAndStatusInOrderByCreatedAtDesc(
+                        customerEmail,
+                        List.of("WAITING", "SERVING"))
+                .orElse(null);
+    }
+
+    public Ticket callNextTicket(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy quầy"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
 
         if (counter.getCurrentTicket() != null
                 && "SERVING".equals(counter.getCurrentTicket().getStatus())) {
-
-            throw new RuntimeException(
-                    "Quầy đang phục vụ khách, vui lòng hoàn thành trước khi gọi số mới");
+            throw new RuntimeException("Quay dang phuc vu khach, hay hoan thanh truoc khi goi so moi");
         }
 
         if (counter.getQueueMachine() == null) {
-            throw new RuntimeException("Quầy chưa được gán máy bốc số");
+            throw new RuntimeException("Quay chua duoc gan may boc so");
+        }
+
+        if (!"ACTIVE".equalsIgnoreCase(counter.getStatus())) {
+            throw new RuntimeException("Quay chua duoc nhan vien assign nen chua the goi so");
         }
 
         Ticket nextTicket = ticketRepository
@@ -90,7 +159,7 @@ public class TicketService {
                         "WAITING");
 
         if (nextTicket == null) {
-            throw new RuntimeException("Không còn khách đang chờ");
+            throw new RuntimeException("Khong con khach dang cho");
         }
 
         nextTicket.setStatus("SERVING");
@@ -104,13 +173,11 @@ public class TicketService {
     }
 
     public Ticket completeTicket(Long ticketId) {
-
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy ticket"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
 
         if (!"SERVING".equals(ticket.getStatus())) {
-            throw new RuntimeException(
-                    "Chỉ ticket đang phục vụ mới được hoàn thành");
+            throw new RuntimeException("Chi ticket dang phuc vu moi duoc hoan thanh");
         }
 
         ticket.setStatus("COMPLETED");
@@ -118,25 +185,20 @@ public class TicketService {
         Counter counter = counterRepository.findAll()
                 .stream()
                 .filter(c -> c.getCurrentTicket() != null
-                        && c.getCurrentTicket()
-                                .getTicketId()
-                                .equals(ticketId))
+                        && c.getCurrentTicket().getTicketId().equals(ticketId))
                 .findFirst()
                 .orElse(null);
 
         History history = new History();
-
         history.setTicket(ticket);
         history.setBranch(ticket.getBranch());
         history.setQueueMachine(ticket.getQueueMachine());
         history.setCounter(counter);
         history.setService(ticket.getService());
         history.setTicketNumber(ticket.getTicketNumber());
-        history.setStartedAt(
-                ticket.getServingStartedAt());
+        history.setStartedAt(ticket.getServingStartedAt());
         history.setCompletedAt(LocalDateTime.now());
-
-        history.setStaffNote("Hoàn thành phục vụ khách hàng");
+        history.setStaffNote("Hoan thanh phuc vu khach hang");
 
         historyRepository.save(history);
 
@@ -146,5 +208,39 @@ public class TicketService {
         }
 
         return ticketRepository.save(ticket);
+    }
+
+    public Ticket cancelTicket(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
+
+        String customerEmail = getCurrentEmail();
+        if (ticket.getCustomerEmail() != null
+                && customerEmail != null
+                && !ticket.getCustomerEmail().equalsIgnoreCase(customerEmail)) {
+            throw new RuntimeException("Ban khong co quyen huy ticket nay");
+        }
+
+        if (!"WAITING".equals(ticket.getStatus())) {
+            throw new RuntimeException("Chi ticket dang cho moi duoc huy");
+        }
+
+        ticket.setStatus("CANCELLED");
+        return ticketRepository.save(ticket);
+    }
+
+    private String getCurrentEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            return null;
+        }
+
+        String email = jwt.getClaimAsString("email");
+        if (email == null || email.isBlank()) {
+            email = jwt.getClaimAsString("preferred_username");
+        }
+
+        return email;
     }
 }

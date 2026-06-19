@@ -1,6 +1,8 @@
 export interface ServingCounter {
   counterName: string;
-  ticketNumber: number;
+  ticketNumber: number | null;
+  status: string;
+  queueMachineName?: string | null;
 }
 
 export interface QueueMonitor {

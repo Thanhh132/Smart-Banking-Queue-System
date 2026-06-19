@@ -41,6 +41,9 @@ public class Ticket {
     @JoinColumn(name = "service_id", nullable = false)
     private Services service;
 
+    @Column(name = "customer_email")
+    private String customerEmail;
+
     @Column(name = "status", nullable = false)
     private String status = "WAITING";
 

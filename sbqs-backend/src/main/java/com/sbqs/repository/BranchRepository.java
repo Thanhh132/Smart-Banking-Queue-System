@@ -10,6 +10,10 @@ import java.util.List;
 @Repository
 public interface BranchRepository extends JpaRepository<Branch, Long> {
 
+    boolean existsByBranchCode(String branchCode);
+
+    boolean existsByBranchCodeAndBranchIdNot(String branchCode, Long branchId);
+
     // Lấy tất cả chi nhánh theo tên ngân hàng
     List<Branch> findByBankName(String bankName);
 

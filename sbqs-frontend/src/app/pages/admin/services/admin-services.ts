@@ -3,36 +3,133 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { AppCard } from '../../../shared/components/app-card/app-card';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AdminServicesService } from '../../../core/services/admin-services.service';
+
+interface ServiceTemplate {
+  key: string;
+  name: string;
+  type: string;
+  estimatedTime: number;
+  description: string;
+}
 
 @Component({
   selector: 'app-admin-services',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AppCard, DashboardLayout],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, AppCard, DashboardLayout],
   templateUrl: './admin-services.html',
   styleUrl: './admin-services.scss',
 })
 export class AdminServices implements OnInit {
   private fb = inject(FormBuilder);
   private adminService = inject(AdminServicesService);
+  private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
   services: any[] = [];
-
   serviceForm!: FormGroup;
 
+  serviceCatalog: ServiceTemplate[] = [
+    {
+      key: 'CASH_WITHDRAW',
+      name: 'Rut tien',
+      type: 'BASIC',
+      estimatedTime: 7,
+      description: 'Rut tien mat tai quay',
+    },
+    {
+      key: 'CASH_DEPOSIT',
+      name: 'Nop tien',
+      type: 'BASIC',
+      estimatedTime: 8,
+      description: 'Nop tien vao tai khoan',
+    },
+    {
+      key: 'TRANSFER',
+      name: 'Chuyen khoan',
+      type: 'BASIC',
+      estimatedTime: 10,
+      description: 'Ho tro chuyen khoan tai quay',
+    },
+    {
+      key: 'ACCOUNT_OPEN',
+      name: 'Mo tai khoan',
+      type: 'BASIC',
+      estimatedTime: 15,
+      description: 'Dang ky tai khoan moi',
+    },
+    {
+      key: 'CARD_REGISTER',
+      name: 'Dang ky the',
+      type: 'CARD',
+      estimatedTime: 15,
+      description: 'Dang ky the ATM/ghi no/tin dung',
+    },
+    {
+      key: 'CARD_REISSUE',
+      name: 'Cap lai the',
+      type: 'CARD',
+      estimatedTime: 12,
+      description: 'Cap lai the mat/hong',
+    },
+    {
+      key: 'CARD_PIN',
+      name: 'Doi PIN hoac mo khoa the',
+      type: 'CARD',
+      estimatedTime: 8,
+      description: 'Ho tro PIN va trang thai the',
+    },
+    {
+      key: 'LOAN_CONSULT',
+      name: 'Tu van vay',
+      type: 'LOAN',
+      estimatedTime: 20,
+      description: 'Tu van san pham tin dung',
+    },
+    {
+      key: 'LOAN_PAYMENT',
+      name: 'Thanh toan khoan vay',
+      type: 'LOAN',
+      estimatedTime: 12,
+      description: 'Ho tro nop tien thanh toan khoan vay',
+    },
+    {
+      key: 'CUSTOMER_SUPPORT',
+      name: 'Ho tro khach hang',
+      type: 'SUPPORT',
+      estimatedTime: 10,
+      description: 'Giai dap va xu ly yeu cau chung',
+    },
+    {
+      key: 'INFORMATION_UPDATE',
+      name: 'Cap nhat thong tin',
+      type: 'SUPPORT',
+      estimatedTime: 12,
+      description: 'Cap nhat thong tin ca nhan/KYC',
+    },
+    {
+      key: 'COMPLAINT',
+      name: 'Khieu nai tra soat',
+      type: 'SUPPORT',
+      estimatedTime: 18,
+      description: 'Tiep nhan khieu nai va tra soat giao dich',
+    },
+  ];
+
+  selectedTemplateKeys: string[] = [];
   isListLoading = false;
   isSubmitting = false;
   isEditMode = false;
-
   editingServiceId: number | null = null;
-
   successMessage = '';
   errorMessage = '';
 
@@ -53,7 +150,11 @@ export class AdminServices implements OnInit {
   }
 
   loadServices(): void {
-    const branchId = Number(localStorage.getItem('selectedBranchId')) || 1;
+    const branchId = this.getBranchId();
+
+    if (!branchId) {
+      return;
+    }
 
     this.isListLoading = true;
     this.errorMessage = '';
@@ -66,61 +167,82 @@ export class AdminServices implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Load services error:', err);
-        this.errorMessage = 'Không thể tải danh sách dịch vụ.';
+        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc danh sach dich vu.');
         this.isListLoading = false;
         this.cdr.detectChanges();
       },
     });
   }
 
-  submitService(): void {
-    if (this.isEditMode) {
-      this.updateService();
+  toggleTemplate(key: string, checked: boolean): void {
+    if (checked) {
+      this.selectedTemplateKeys = Array.from(new Set([...this.selectedTemplateKeys, key]));
       return;
     }
 
-    this.createService();
+    this.selectedTemplateKeys = this.selectedTemplateKeys.filter((item) => item !== key);
   }
 
-  createService(): void {
+  createSelectedServices(): void {
+    const branchId = this.getBranchId();
+
+    if (!branchId) {
+      return;
+    }
+
     this.successMessage = '';
     this.errorMessage = '';
 
-    if (this.serviceForm.invalid) {
-      this.serviceForm.markAllAsTouched();
+    const templates = this.serviceCatalog.filter((item) =>
+      this.selectedTemplateKeys.includes(item.key)
+    );
+
+    if (templates.length === 0) {
+      this.errorMessage = 'Hay chon it nhat mot dich vu mau.';
+      this.cdr.detectChanges();
       return;
     }
 
-    const branchId = Number(localStorage.getItem('selectedBranchId')) || 1;
+    const existingNames = new Set(
+      this.services.map((service) => String(service.serviceName).toLowerCase())
+    );
 
-    const payload = {
-      ...this.serviceForm.value,
-      branch: {
-        branchId,
-      },
-    };
+    const filteredTemplates = templates.filter(
+      (template) => !existingNames.has(template.name.toLowerCase())
+    );
+
+    if (filteredTemplates.length === 0) {
+      this.errorMessage = 'Cac dich vu da chon da ton tai trong chi nhanh.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    const startNumber = this.services.length + 1;
+    const requests = filteredTemplates.map((template, index) => {
+      const payload = {
+        serviceCode: this.generateServiceCode(branchId, template.type, startNumber + index),
+        serviceName: template.name,
+        serviceType: template.type,
+        description: template.description,
+        estimatedTime: template.estimatedTime,
+        status: 'ACTIVE',
+        branch: { branchId },
+      };
+
+      return this.adminService.createService(payload);
+    });
 
     this.isSubmitting = true;
 
-    this.adminService.createService(payload).subscribe({
+    forkJoin(requests).subscribe({
       next: () => {
-        this.successMessage = 'Tạo dịch vụ thành công.';
-        this.serviceForm.reset({
-          serviceCode: '',
-          serviceName: '',
-          serviceType: 'BASIC',
-          description: '',
-          estimatedTime: 10,
-          status: 'ACTIVE',
-        });
+        this.successMessage = `Da tao ${filteredTemplates.length} dich vu.`;
+        this.selectedTemplateKeys = [];
         this.isSubmitting = false;
         this.loadServices();
       },
       error: (err) => {
-        console.error('Create service error:', err);
-        this.errorMessage =
-          err?.error?.message || err?.error || 'Tạo dịch vụ thất bại.';
+        this.errorMessage = this.apiError.getMessage(err, 'Tao dich vu hang loat that bai.');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -153,32 +275,32 @@ export class AdminServices implements OnInit {
     }
 
     if (!this.editingServiceId) {
-      this.errorMessage = 'Không tìm thấy dịch vụ cần cập nhật.';
+      this.errorMessage = 'Khong tim thay dich vu can cap nhat.';
       return;
     }
 
-    const branchId = Number(localStorage.getItem('selectedBranchId')) || 1;
+    const branchId = this.getBranchId();
+
+    if (!branchId) {
+      return;
+    }
 
     const payload = {
       ...this.serviceForm.value,
-      branch: {
-        branchId,
-      },
+      branch: { branchId },
     };
 
     this.isSubmitting = true;
 
     this.adminService.updateService(this.editingServiceId, payload).subscribe({
       next: () => {
-        this.successMessage = 'Cập nhật dịch vụ thành công.';
+        this.successMessage = 'Da cap nhat dich vu.';
         this.cancelEdit();
         this.isSubmitting = false;
         this.loadServices();
       },
       error: (err) => {
-        console.error('Update service error:', err);
-        this.errorMessage =
-          err?.error?.message || err?.error || 'Cập nhật dịch vụ thất bại.';
+        this.errorMessage = this.apiError.getMessage(err, 'Cap nhat dich vu that bai.');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -186,26 +308,20 @@ export class AdminServices implements OnInit {
   }
 
   deleteService(service: any): void {
-    const confirmed = confirm(
-      `Bạn có chắc muốn xóa dịch vụ "${service.serviceName}" không?`
-    );
-
-    if (!confirmed) {
+    if (!confirm(`Xoa dich vu "${service.serviceName}"?`)) {
       return;
-    }``
+    }
 
     this.successMessage = '';
     this.errorMessage = '';
 
     this.adminService.deleteService(service.serviceId).subscribe({
       next: () => {
-        this.successMessage = 'Xóa dịch vụ thành công.';
+        this.successMessage = 'Da xoa dich vu.';
         this.loadServices();
       },
       error: (err) => {
-        console.error('Delete service error:', err);
-        this.errorMessage =
-          err?.error?.message || err?.error || 'Xóa dịch vụ thất bại.';
+        this.errorMessage = this.apiError.getMessage(err, 'Xoa dich vu that bai.');
         this.cdr.detectChanges();
       },
     });
@@ -240,13 +356,32 @@ export class AdminServices implements OnInit {
     }
 
     if (control.errors['required']) {
-      return `${label} không được để trống.`;
+      return `${label} khong duoc de trong.`;
     }
 
     if (control.errors['min']) {
-      return `${label} phải lớn hơn 0.`;
+      return `${label} phai lon hon 0.`;
     }
 
-    return `${label} không hợp lệ.`;
+    return `${label} khong hop le.`;
+  }
+
+  private generateServiceCode(branchId: number, type: string, number: number): string {
+    return `S-${branchId}-${type}-${number}`;
+  }
+
+  private getBranchId(): number | null {
+    const branchId = Number(localStorage.getItem('selectedBranchId'));
+
+    if (!branchId) {
+      this.errorMessage =
+        'Tai khoan Branch Admin nay chua duoc gan chi nhanh. Hay dung tai khoan do Super Admin cap cho chi nhanh.';
+      this.isListLoading = false;
+      this.isSubmitting = false;
+      this.cdr.detectChanges();
+      return null;
+    }
+
+    return branchId;
   }
 }

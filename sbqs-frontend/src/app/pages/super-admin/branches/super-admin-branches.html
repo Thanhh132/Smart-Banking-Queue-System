@@ -1,0 +1,154 @@
+<app-dashboard-layout title="Branch Management">
+  <div class="page-section">
+    <section class="page-heading">
+      <span class="page-kicker">Super Admin</span>
+      <h1>Manage branches</h1>
+      <p>Create and maintain branch records before assigning Branch Admin accounts.</p>
+    </section>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <section class="admin-panel-grid">
+      <div class="ui-card">
+        <div class="card-heading">
+          <h3>{{ isEditMode ? 'Edit branch' : 'Create branch' }}</h3>
+          <p>Branch data is stored in the application database; Keycloak keeps only login security data.</p>
+        </div>
+
+        <form class="ui-form" [formGroup]="branchForm" (ngSubmit)="submitBranch()">
+          <label>
+            Bank name
+            <select formControlName="bankName">
+              <option *ngFor="let bank of bankOptions" [value]="bank.value">
+                {{ bank.label }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Province
+            <select formControlName="province">
+              <option *ngFor="let province of provinceOptions" [value]="province">
+                {{ province }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            District
+            <select formControlName="district">
+              <option *ngFor="let district of districtOptions" [value]="district.value">
+                {{ district.label }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Branch code
+            <input type="text" formControlName="branchCode" placeholder="Auto generated" readonly />
+          </label>
+
+          <label>
+            Branch name
+            <input type="text" formControlName="branchName" placeholder="Auto generated" />
+          </label>
+
+          <label>
+            Address
+            <input type="text" formControlName="address" placeholder="123 Main Street" />
+          </label>
+
+          <label>
+            Phone
+            <input type="tel" formControlName="phone" placeholder="0900000000" />
+          </label>
+
+          <div class="ui-form-grid compact-grid">
+            <label>
+              Latitude
+              <input type="number" formControlName="latitude" step="0.0001" />
+            </label>
+
+            <label>
+              Longitude
+              <input type="number" formControlName="longitude" step="0.0001" />
+            </label>
+          </div>
+
+          <label>
+            Status
+            <select formControlName="status">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </label>
+
+          <div class="ui-form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Saving...' : isEditMode ? 'Update branch' : 'Create branch' }}
+            </button>
+
+            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="ui-card">
+        <div class="table-heading">
+          <div>
+            <h3>Branch list</h3>
+          <p>Only branches without linked operational data can be deleted permanently.</p>
+          </div>
+
+          <button type="button" class="btn btn-secondary" (click)="loadBranches()" [disabled]="isLoading">
+            {{ isLoading ? 'Loading...' : 'Refresh' }}
+          </button>
+        </div>
+
+        <div *ngIf="isLoading" class="admin-empty">Loading branches...</div>
+        <div *ngIf="!isLoading && branches.length === 0" class="admin-empty">No branches yet.</div>
+
+        <div *ngIf="!isLoading && branches.length > 0" class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>District</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let branch of branches">
+                <td><strong>{{ branch.branchCode }}</strong></td>
+                <td>{{ branch.branchName }}</td>
+                <td>{{ branch.district || '-' }}</td>
+                <td>{{ branch.phone || '-' }}</td>
+                <td>
+                  <span class="admin-badge" [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                    {{ branch.status || 'ACTIVE' }}
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">Edit</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">Xoa han</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-dashboard-layout>

@@ -1,3 +1,12 @@
-<button (click)="onClick()">
+<button
+  type="button"
+  class="btn"
+  [class.btn-primary]="variant() === 'primary'"
+  [class.btn-secondary]="variant() === 'secondary'"
+  [class.btn-success]="variant() === 'success'"
+  [class.btn-danger]="variant() === 'danger'"
+  [disabled]="disabled()"
+  (click)="onClick()"
+>
   {{ label() }}
 </button>

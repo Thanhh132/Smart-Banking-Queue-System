@@ -30,6 +30,11 @@ public class TicketController {
                 ticketService.getTicketsByStatus(status));
     }
 
+    @GetMapping("/current")
+    public ResponseEntity<Ticket> getCurrentCustomerTicket() {
+        return ResponseEntity.ok(ticketService.getCurrentCustomerTicket());
+    }
+
     @PostMapping
     public ResponseEntity<Ticket> createTicket(
             @RequestBody Ticket ticket) {
@@ -48,5 +53,10 @@ public class TicketController {
     @PostMapping("/{ticketId}/complete")
     public ResponseEntity<Ticket> completeTicket(@PathVariable Long ticketId) {
         return ResponseEntity.ok(ticketService.completeTicket(ticketId));
+    }
+
+    @PostMapping("/{ticketId}/cancel")
+    public ResponseEntity<Ticket> cancelTicket(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.cancelTicket(ticketId));
     }
 }

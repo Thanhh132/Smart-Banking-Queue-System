@@ -19,6 +19,12 @@ export class ServicesService {
     );
   }
 
+  getMappedServicesByBranch(branchId: number): Observable<Service[]> {
+    return this.http.get<Service[]>(
+      `${this.apiUrl}?branchId=${branchId}&mappedOnly=true`
+    );
+  }
+
   getAllServices(): Observable<Service[]> {
     return this.http.get<Service[]>(this.apiUrl);
   }

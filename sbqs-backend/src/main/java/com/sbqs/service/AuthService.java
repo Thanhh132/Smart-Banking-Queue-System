@@ -47,6 +47,10 @@ public class AuthService {
                         throw new RuntimeException("Email da ton tai");
                 }
 
+                if (userRepository.existsByPhone(request.getPhone())) {
+                        throw new RuntimeException("So dien thoai da ton tai");
+                }
+
                 String keycloakUserId = keycloakService.createUser(
                                 request.getFullName(),
                                 request.getEmail(),
@@ -99,12 +103,23 @@ public class AuthService {
                         }
                 }
 
-                log.info("Keycloak token received for email={}", request.getEmail());
+                return buildLoginResponse(token, request.getEmail());
+        }
+
+        public LoginResponse refresh(String refreshToken) {
+                Map<String, Object> token = keycloakService.refreshToken(refreshToken);
+                return buildLoginResponse(token, null);
+        }
+
+        private LoginResponse buildLoginResponse(
+                        Map<String, Object> token,
+                        String fallbackEmail) {
+
                 String accessToken = valueAsString(token.get("access_token"));
                 Map<String, Object> tokenPayload = decodeTokenPayload(accessToken);
                 String tokenEmail = firstNotBlank(
                                 valueAsString(tokenPayload.get("email")),
-                                request.getEmail());
+                                fallbackEmail);
                 String keycloakUserId = valueAsString(tokenPayload.get("sub"));
                 String resolvedRole = resolveRoleFromPayload(tokenPayload, null);
 

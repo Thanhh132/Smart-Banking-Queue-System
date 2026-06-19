@@ -6,6 +6,9 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.UserRepository;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -39,7 +42,12 @@ public class UserService {
                 return userRepository.findAll();
         }
 
+        public List<User> getUsersByRole(String role) {
+                return userRepository.findByRole(role);
+        }
+
         public User createStaff(CreateStaffRequest request) {
+                request.setBranchId(resolveCurrentBranchAdminBranchId());
                 return createBranchUser(request, "STAFF");
         }
 
@@ -79,6 +87,28 @@ public class UserService {
                 return userRepository.save(user);
         }
 
+        private Long resolveCurrentBranchAdminBranchId() {
+                Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+                if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+                        throw new RuntimeException("Khong xac dinh duoc tai khoan dang dang nhap");
+                }
+
+                String email = jwt.getClaimAsString("email");
+                if (email == null || email.isBlank()) {
+                        email = jwt.getClaimAsString("preferred_username");
+                }
+
+                User currentUser = userRepository.findByEmail(email)
+                                .orElseThrow(() -> new RuntimeException("Khong tim thay tai khoan admin chi nhanh"));
+
+                if (currentUser.getBranch() == null) {
+                        throw new RuntimeException("Admin chi nhanh chua duoc gan chi nhanh");
+                }
+
+                return currentUser.getBranch().getBranchId();
+        }
+
         public User updateUser(Long userId, UpdateUserRequest request) {
 
                 User user = userRepository.findById(userId)
@@ -108,6 +138,7 @@ public class UserService {
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
+                keycloakService.deleteUser(user.getKeycloakUserId());
                 userRepository.delete(user);
         }
 }

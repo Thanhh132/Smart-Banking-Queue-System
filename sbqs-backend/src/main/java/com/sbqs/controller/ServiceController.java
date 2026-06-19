@@ -27,9 +27,14 @@ public class ServiceController {
     @GetMapping
     public ResponseEntity<List<Services>> getServices(
             @RequestParam(required = false) Long branchId,
-            @RequestParam(required = false) String serviceType) {
+            @RequestParam(required = false) String serviceType,
+            @RequestParam(defaultValue = "false") boolean mappedOnly) {
         if (branchId == null) {
             return ResponseEntity.ok(serviceService.getAllServices());
+        }
+
+        if (mappedOnly) {
+            return ResponseEntity.ok(serviceService.getMappedServicesByBranch(branchId));
         }
 
         Branch branch = branchRepository.findById(branchId).orElse(null);

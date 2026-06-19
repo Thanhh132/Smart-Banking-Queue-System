@@ -1,18 +1,12 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  inject,
-  OnInit
-} from '@angular/core';
-
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { forkJoin } from 'rxjs';
 
 import { AppCard } from '../../../shared/components/app-card/app-card';
-import { AppButton } from '../../../shared/components/app-button/app-button';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-
+import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AdminMappingsService } from '../../../core/services/admin-mappings.service';
 
 @Component({
@@ -21,18 +15,18 @@ import { AdminMappingsService } from '../../../core/services/admin-mappings.serv
     CommonModule,
     FormsModule,
     AppCard,
-    AppButton,
     DashboardLayout,
-    AppPageHeader
+    AppPageHeader,
   ],
   templateUrl: './admin-mappings.html',
   styleUrl: './admin-mappings.scss',
 })
 export class AdminMappings implements OnInit {
-
   private mappingService = inject(AdminMappingsService);
+  private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
+  branchId = Number(localStorage.getItem('selectedBranchId')) || null;
   queueMachines: any[] = [];
   services: any[] = [];
   mappings: any[] = [];
@@ -40,25 +34,48 @@ export class AdminMappings implements OnInit {
   errorMessage = '';
 
   selectedQueueMachineId: number | null = null;
-  selectedServiceId: number | null = null;
+  selectedServiceIds: number[] = [];
 
   ngOnInit(): void {
+    if (!this.ensureBranch()) {
+      return;
+    }
+
     this.loadData();
   }
 
   loadData(): void {
+    if (!this.ensureBranch()) {
+      return;
+    }
+
     this.mappingService.getQueueMachines().subscribe({
       next: (data) => {
-        this.queueMachines = data;
+        this.queueMachines = (data || []).filter(
+          (machine) => machine.branch?.branchId === this.branchId
+        );
+
+        if (!this.selectedQueueMachineId && this.queueMachines.length > 0) {
+          this.selectedQueueMachineId = this.queueMachines[0].queueMachineId;
+        }
+
         this.cdr.detectChanges();
-      }
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc may boc so.');
+        this.cdr.detectChanges();
+      },
     });
 
-    this.mappingService.getServices().subscribe({
+    this.mappingService.getServices(this.branchId).subscribe({
       next: (data) => {
-        this.services = data;
+        this.services = data || [];
         this.cdr.detectChanges();
-      }
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc dich vu.');
+        this.cdr.detectChanges();
+      },
     });
 
     this.loadMappings();
@@ -67,97 +84,93 @@ export class AdminMappings implements OnInit {
   loadMappings(): void {
     this.mappingService.getMappings().subscribe({
       next: (data) => {
-        this.mappings = data;
+        this.mappings = (data || []).filter(
+          (mapping) => mapping.queueMachine?.branch?.branchId === this.branchId
+        );
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error(err);
-      }
+        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc mapping.');
+        this.cdr.detectChanges();
+      },
     });
   }
 
-  createMapping(): void {
+  toggleService(serviceId: number, checked: boolean): void {
+    if (checked) {
+      this.selectedServiceIds = Array.from(new Set([...this.selectedServiceIds, serviceId]));
+      return;
+    }
+
+    this.selectedServiceIds = this.selectedServiceIds.filter((id) => id !== serviceId);
+  }
+
+  createMappings(): void {
     this.successMessage = '';
     this.errorMessage = '';
 
-    if (!this.selectedQueueMachineId || !this.selectedServiceId) {
-      this.errorMessage = 'Vui lòng chọn máy bốc số và dịch vụ.';
+    if (!this.selectedQueueMachineId || this.selectedServiceIds.length === 0) {
+      this.errorMessage = 'Hay chon may boc so va it nhat mot dich vu.';
       this.cdr.detectChanges();
       return;
     }
 
-    this.mappingService
-      .createMapping(
-        this.selectedQueueMachineId,
-        this.selectedServiceId
+    forkJoin(
+      this.selectedServiceIds.map((serviceId) =>
+        this.mappingService.createMapping(Number(this.selectedQueueMachineId), serviceId)
       )
-      .subscribe({
-        next: () => {
-          this.successMessage = 'Tạo mapping thành công.';
-
-          this.selectedQueueMachineId = null;
-          this.selectedServiceId = null;
-
-          this.loadMappings();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Create mapping error:', err);
-
-          this.errorMessage =
-            err?.error?.message ||
-            err?.error ||
-            'Tạo mapping thất bại.';
-
-          this.cdr.detectChanges();
-        }
-      });
+    ).subscribe({
+      next: () => {
+        this.successMessage = `Da tao ${this.selectedServiceIds.length} mapping.`;
+        this.selectedServiceIds = [];
+        this.loadMappings();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Khong tao duoc mapping. Co the mot mapping da ton tai.'
+        );
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   deleteMapping(mapping: any): void {
-    const confirmed = confirm(
-      'Bạn có chắc muốn gỡ mapping này không?'
-    );
-
-    if (!confirmed) {
+    if (!confirm('Go mapping nay?')) {
       return;
     }
 
-    const queueMachineId =
-      mapping.queueMachine?.queueMachineId ||
-      mapping.id?.queueMachineId;
-
-    const serviceId =
-      mapping.service?.serviceId ||
-      mapping.id?.serviceId;
+    const queueMachineId = mapping.queueMachine?.queueMachineId || mapping.id?.queueMachineId;
+    const serviceId = mapping.service?.serviceId || mapping.id?.serviceId;
 
     if (!queueMachineId || !serviceId) {
-      this.errorMessage = 'Không xác định được mapping cần xóa.';
+      this.errorMessage = 'Khong xac dinh duoc mapping can xoa.';
       this.cdr.detectChanges();
       return;
     }
 
-    this.successMessage = '';
-    this.errorMessage = '';
+    this.mappingService.deleteMapping(queueMachineId, serviceId).subscribe({
+      next: () => {
+        this.successMessage = 'Da go mapping.';
+        this.loadMappings();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Go mapping that bai.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
-    this.mappingService
-      .deleteMapping(queueMachineId, serviceId)
-      .subscribe({
-        next: () => {
-          this.successMessage = 'Gỡ mapping thành công.';
-          this.loadMappings();
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-          console.error('Delete mapping error:', err);
+  private ensureBranch(): this is this & { branchId: number } {
+    if (!this.branchId) {
+      this.errorMessage =
+        'Tai khoan Branch Admin nay chua duoc gan chi nhanh. Hay dung tai khoan do Super Admin cap cho chi nhanh.';
+      this.cdr.detectChanges();
+      return false;
+    }
 
-          this.errorMessage =
-            typeof err?.error === 'string'
-              ? err.error
-              : err?.error?.message || 'Gỡ mapping thất bại.';
-
-          this.cdr.detectChanges();
-        }
-      });
+    return true;
   }
 }

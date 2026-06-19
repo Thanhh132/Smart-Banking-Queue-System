@@ -8,7 +8,11 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "queue_machines")
+@Table(
+        name = "queue_machines",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_queue_machines_branch_code",
+                columnNames = {"branch_id", "machine_code"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -23,7 +27,7 @@ public class QueueMachine {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
-    @Column(name = "machine_code", nullable = false, unique = true)
+    @Column(name = "machine_code", nullable = false)
     private String machineCode;
 
     @Column(name = "machine_name", nullable = false)

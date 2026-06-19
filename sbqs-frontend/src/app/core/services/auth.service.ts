@@ -23,16 +23,19 @@ export class AuthService {
   login(payload: { email: string; password: string }) {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, payload).pipe(
       tap((response) => {
-        this.clearSession();
-        localStorage.setItem('accessToken', response.accessToken);
-        localStorage.setItem('refreshToken', response.refreshToken);
-        localStorage.setItem('userRole', response.role);
-        localStorage.setItem('fullName', response.fullName);
-        localStorage.setItem('email', response.email);
+        this.saveSession(response, true);
+      })
+    );
+  }
 
-        if (response.branchId) {
-          localStorage.setItem('selectedBranchId', String(response.branchId));
-        }
+  refresh() {
+    const refreshToken = localStorage.getItem('refreshToken');
+
+    return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, {
+      refreshToken,
+    }).pipe(
+      tap((response) => {
+        this.saveSession(response, false);
       })
     );
   }
@@ -50,6 +53,30 @@ export class AuthService {
     this.clearSession();
   }
 
+  getAccessToken(): string {
+    return localStorage.getItem('accessToken') || '';
+  }
+
+  private saveSession(response: LoginResponse, clearFirst: boolean): void {
+    const selectedBranchId = localStorage.getItem('selectedBranchId');
+
+    if (clearFirst) {
+      this.clearSession();
+    }
+
+    localStorage.setItem('accessToken', response.accessToken);
+    localStorage.setItem('refreshToken', response.refreshToken);
+    localStorage.setItem('userRole', response.role);
+    localStorage.setItem('fullName', response.fullName);
+    localStorage.setItem('email', response.email);
+
+    if (response.branchId) {
+      localStorage.setItem('selectedBranchId', String(response.branchId));
+    } else if (!clearFirst && selectedBranchId) {
+      localStorage.setItem('selectedBranchId', selectedBranchId);
+    }
+  }
+
   private clearSession(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
@@ -57,6 +84,7 @@ export class AuthService {
     localStorage.removeItem('fullName');
     localStorage.removeItem('email');
     localStorage.removeItem('selectedBranchId');
+    localStorage.removeItem('currentTicket');
   }
 
   isLoggedIn(): boolean {

@@ -9,7 +9,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 @Entity
-@Table(name = "services")
+@Table(
+        name = "services",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_services_branch_code",
+                columnNames = {"branch_id", "service_code"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,7 +25,7 @@ public class Services {
     private Long serviceId;
 
     @NotBlank(message = "Mã dịch vụ không được để trống")
-    @Column(name = "service_code", nullable = false, unique = true)
+    @Column(name = "service_code", nullable = false)
     private String serviceCode;
 
     @NotBlank(message = "Tên dịch vụ không được để trống")

@@ -11,6 +11,7 @@ import { finalize, timeout, catchError, of } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppCard } from '../../../shared/components/app-card/app-card';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 
 
@@ -38,6 +39,7 @@ export class AdminUsers implements OnInit {
   constructor(
     private fb: FormBuilder,
     private userManagementService: UserManagementService,
+    private apiError: ApiErrorService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -130,10 +132,10 @@ export class AdminUsers implements OnInit {
       error: (err) => {
         console.error('Create staff error:', err);
 
-        this.errorMessage =
-          err?.error?.message ||
-          err?.error ||
-          'Tạo tài khoản thất bại. Vui lòng kiểm tra lại dữ liệu.';
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Tạo tài khoản thất bại. Vui lòng kiểm tra lại dữ liệu.'
+        );
 
         this.isSubmitting = false;
         this.cdr.detectChanges();
@@ -162,10 +164,10 @@ export class AdminUsers implements OnInit {
       error: (err) => {
         console.error('Delete user error:', err);
 
-        this.errorMessage =
-          err?.error?.message ||
-          err?.error ||
-          'Xóa nhân viên thất bại.';
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Xóa nhân viên thất bại.'
+        );
 
         this.cdr.detectChanges();
       },
@@ -243,10 +245,10 @@ export class AdminUsers implements OnInit {
             err
           );
 
-          this.errorMessage =
-            err?.error?.message ||
-            err?.error ||
-            'Cập nhật thất bại.';
+          this.errorMessage = this.apiError.getMessage(
+            err,
+            'Cập nhật thất bại.'
+          );
 
           this.isSubmitting = false;
 

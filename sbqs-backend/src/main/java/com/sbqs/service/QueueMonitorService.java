@@ -30,43 +30,52 @@ public class QueueMonitorService {
     }
 
     public QueueMonitorResponse getMonitor(Long branchId) {
+        return getMonitor(branchId, null);
+    }
 
+    public QueueMonitorResponse getMonitor(Long branchId, Long queueMachineId) {
         Branch branch = branchRepository.findById(branchId)
-                .orElseThrow(() ->
-                        new RuntimeException("Không tìm thấy chi nhánh"));
+                .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
-        List<Counter> counters =
-                counterRepository.findByBranchBranchId(branchId);
-
-        List<ServingCounterDTO> servingCounters =
-                new ArrayList<>();
+        List<Counter> counters = queueMachineId == null
+                ? counterRepository.findByBranchBranchId(branchId)
+                : counterRepository.findByBranchBranchIdAndQueueMachineQueueMachineId(
+                        branchId,
+                        queueMachineId);
+        List<ServingCounterDTO> servingCounters = new ArrayList<>();
 
         for (Counter counter : counters) {
+            String status = getMonitorStatus(counter);
 
-            if (counter.getCurrentTicket() != null) {
-
-                servingCounters.add(
-                        new ServingCounterDTO(
-                                counter.getCounterName(),
-                                counter.getCurrentTicket().getTicketNumber()
-                        )
-                );
-            }
+            servingCounters.add(
+                    new ServingCounterDTO(
+                            counter.getCounterName(),
+                            counter.getCurrentTicket() == null
+                                    ? null
+                                    : counter.getCurrentTicket().getTicketNumber(),
+                            status,
+                            counter.getQueueMachine() == null
+                                    ? null
+                                    : counter.getQueueMachine().getMachineName()));
         }
 
-        long waitingCount =
-                ticketRepository.countByBranchBranchIdAndStatus(
-                        branchId,
-                        "WAITING"
-                );
+        long waitingCount = queueMachineId == null
+                ? ticketRepository.countByBranchBranchIdAndStatus(branchId, "WAITING")
+                : ticketRepository.countByQueueMachineQueueMachineIdAndStatus(queueMachineId, "WAITING");
 
-        QueueMonitorResponse response =
-                new QueueMonitorResponse();
-
+        QueueMonitorResponse response = new QueueMonitorResponse();
         response.setBranchName(branch.getBranchName());
         response.setServingCounters(servingCounters);
         response.setWaitingCount(waitingCount);
 
         return response;
+    }
+
+    private String getMonitorStatus(Counter counter) {
+        if (!"ACTIVE".equalsIgnoreCase(counter.getStatus())) {
+            return "INACTIVE";
+        }
+
+        return counter.getCurrentTicket() == null ? "IDLE" : "SERVING";
     }
 }

@@ -1,0 +1,159 @@
+<app-dashboard-layout title="Branch Operations">
+  <div class="page-section">
+    <section class="page-heading">
+      <span class="page-kicker">Branch Admin</span>
+      <h1>Van hanh chi nhanh</h1>
+      <p>Tao nhanh may boc so va quay giao dich. Ma va ten se duoc he thong tu sinh theo chi nhanh.</p>
+    </section>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <section class="ui-card-grid">
+      <div class="ui-card metric-card">
+        <span>May boc so</span>
+        <strong>{{ queueMachines.length }}</strong>
+        <p>Thiet bi lay so cua chi nhanh.</p>
+      </div>
+
+      <div class="ui-card metric-card">
+        <span>Quay</span>
+        <strong>{{ counters.length }}</strong>
+        <p>Quay giao dich gan voi may boc so.</p>
+      </div>
+    </section>
+
+    <section class="admin-panel-grid">
+      <div class="ui-card">
+        <div class="card-heading">
+          <h3>Them may boc so</h3>
+          <p>Bam nut la he thong tu tao may tiep theo. Ghi chu vi tri co the bo trong.</p>
+        </div>
+
+        <div class="ui-form">
+          <label>
+            Ghi chu vi tri
+            <input type="text" [(ngModel)]="machineNote" placeholder="Vi du: sanh chinh, tang 2" />
+          </label>
+
+          <button type="button" class="btn btn-primary" (click)="quickCreateMachine()" [disabled]="isSubmittingMachine">
+            {{ isSubmittingMachine ? 'Dang tao...' : 'Them may' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="table-heading">
+          <div>
+            <h3>Danh sach may</h3>
+            <p>May thuoc chi nhanh hien tai.</p>
+          </div>
+
+          <button type="button" class="btn btn-secondary" (click)="loadQueueMachines()" [disabled]="isLoadingMachines">
+            {{ isLoadingMachines ? 'Dang tai...' : 'Tai lai' }}
+          </button>
+        </div>
+
+        <div *ngIf="isLoadingMachines" class="admin-empty">Dang tai may...</div>
+        <div *ngIf="!isLoadingMachines && queueMachines.length === 0" class="admin-empty">Chua co may nao.</div>
+
+        <div *ngIf="!isLoadingMachines && queueMachines.length > 0" class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Ma</th>
+                <th>Ten</th>
+                <th>Ghi chu</th>
+                <th>Thao tac</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let machine of queueMachines">
+                <td><strong>{{ machine.machineCode }}</strong></td>
+                <td>{{ machine.machineName }}</td>
+                <td>{{ machine.locationNote || '-' }}</td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteMachine(machine)">Xoa han</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-panel-grid">
+      <div class="ui-card">
+        <div class="card-heading">
+          <h3>Them quay hang loat</h3>
+          <p>Nhap so luong, he thong tu sinh Quay 1, Quay 2... va gan vao may da chon.</p>
+        </div>
+
+        <div class="ui-form">
+          <label>
+            So luong quay
+            <input type="number" min="1" max="20" [(ngModel)]="counterCount" />
+          </label>
+
+          <label>
+            Gan vao may
+            <select [(ngModel)]="selectedMachineForCounters">
+              <option [ngValue]="null">Chon may boc so</option>
+              <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
+                {{ machine.machineName }} - {{ machine.machineCode }}
+              </option>
+            </select>
+          </label>
+
+          <button type="button" class="btn btn-primary" (click)="quickCreateCounters()" [disabled]="isSubmittingCounter">
+            {{ isSubmittingCounter ? 'Dang tao...' : 'Tao quay' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="table-heading">
+          <div>
+            <h3>Danh sach quay</h3>
+            <p>Quay se duoc staff dung de goi khach.</p>
+          </div>
+
+          <button type="button" class="btn btn-secondary" (click)="loadCounters()" [disabled]="isLoadingCounters">
+            {{ isLoadingCounters ? 'Dang tai...' : 'Tai lai' }}
+          </button>
+        </div>
+
+        <div *ngIf="isLoadingCounters" class="admin-empty">Dang tai quay...</div>
+        <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">Chua co quay nao.</div>
+
+        <div *ngIf="!isLoadingCounters && counters.length > 0" class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Ma</th>
+                <th>Ten</th>
+                <th>May</th>
+                <th>Thao tac</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let counter of counters">
+                <td><strong>{{ counter.counterCode }}</strong></td>
+                <td>{{ counter.counterName }}</td>
+                <td>{{ counter.queueMachine?.machineName || '-' }}</td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteCounter(counter)">Xoa han</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</app-dashboard-layout>

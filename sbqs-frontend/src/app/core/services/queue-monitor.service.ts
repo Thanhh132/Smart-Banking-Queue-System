@@ -15,11 +15,15 @@ export class QueueMonitorService {
     'http://localhost:8081/api/queue-monitor';
 
   getMonitor(
-    branchId: number
+    branchId: number,
+    queueMachineId?: number | null
   ): Observable<QueueMonitor> {
+    const queueMachineParam = queueMachineId
+      ? `&queueMachineId=${queueMachineId}`
+      : '';
 
     return this.http.get<QueueMonitor>(
-      `${this.apiUrl}?branchId=${branchId}`
+      `${this.apiUrl}?branchId=${branchId}${queueMachineParam}`
     );
   }
 }

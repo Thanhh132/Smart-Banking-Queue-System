@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiErrorService } from '../../../core/services/api-error.service';
 
 @Component({
   selector: 'app-register',
@@ -17,6 +18,7 @@ export class Register {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
+  private apiError = inject(ApiErrorService);
 
   isSubmitting = false;
   errorMessage = '';
@@ -55,10 +57,10 @@ export class Register {
         this.router.navigateByUrl('/login');
       },
       error: (err) => {
-        this.errorMessage =
-          err?.name === 'TimeoutError'
-            ? 'Keycloak phan hoi qua lau. Kiem tra Keycloak dang chay.'
-            : err?.error?.message || err?.error || 'Dang ky that bai.';
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Dang ky that bai. Vui long kiem tra lai thong tin.'
+        );
       },
     });
   }

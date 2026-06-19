@@ -55,6 +55,24 @@ public class KeycloakService {
         return postFormForMap(tokenUrl(), body);
     }
 
+    public Map<String, Object> refreshToken(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new RuntimeException("Refresh token khong hop le");
+        }
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "refresh_token");
+        body.add("client_id", keycloakProperties.getClientId());
+        body.add("refresh_token", refreshToken);
+
+        if (keycloakProperties.getClientSecret() != null
+                && !keycloakProperties.getClientSecret().isBlank()) {
+            body.add("client_secret", keycloakProperties.getClientSecret());
+        }
+
+        return postFormForMap(tokenUrl(), body);
+    }
+
     public String createUser(
             String fullName,
             String email,
@@ -157,6 +175,29 @@ public class KeycloakService {
     public void clearRequiredActions(String userId) {
         String adminToken = getAdminAccessToken();
         updateUserSetup(userId, null, null, null, adminToken);
+    }
+
+    public void deleteUser(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(getAdminAccessToken());
+
+        try {
+            restTemplate.exchange(
+                    userUrl(userId),
+                    HttpMethod.DELETE,
+                    new HttpEntity<>(headers),
+                    Void.class);
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.warn("Keycloak user already missing id={}", userId);
+        } catch (HttpClientErrorException ex) {
+            throw new RuntimeException(
+                    "Khong xoa duoc user tren Keycloak: "
+                            + ex.getResponseBodyAsString());
+        }
     }
 
     public void repairUserPasswordLogin(

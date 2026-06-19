@@ -1,0 +1,33 @@
+.metric-card {
+  display: grid;
+  gap: 8px;
+}
+
+.metric-card span {
+  color: #14a38b;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.metric-card strong {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.table-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+td:last-child {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

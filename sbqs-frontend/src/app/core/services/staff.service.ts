@@ -26,8 +26,33 @@ export class StaffService {
   }
 
   getCounters() {
+    const branchId = Number(localStorage.getItem('selectedBranchId'));
+    const url = branchId
+      ? `http://localhost:8081/api/counters?branchId=${branchId}`
+      : 'http://localhost:8081/api/counters';
+
     return this.http.get<any[]>(
-      'http://localhost:8081/api/counters'
+      url
+    );
+  }
+
+  getAssignedCounter() {
+    return this.http.get<any>(
+      'http://localhost:8081/api/counters/assigned'
+    );
+  }
+
+  assignCounter(counterId: number) {
+    return this.http.post(
+      `http://localhost:8081/api/counters/${counterId}/assign`,
+      {}
+    );
+  }
+
+  unassignCounter(counterId: number) {
+    return this.http.post(
+      `http://localhost:8081/api/counters/${counterId}/unassign`,
+      {}
     );
   }
 }

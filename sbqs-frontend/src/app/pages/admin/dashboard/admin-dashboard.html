@@ -1,7 +1,7 @@
 <app-dashboard-layout title="Admin Branch">
-  <div class="admin-dashboard">
-    <section class="dashboard-heading">
-      <span>Xin chao, {{ fullName }}</span>
+  <div class="page-section">
+    <section class="page-heading">
+      <span class="page-kicker">Xin chao, {{ fullName }}</span>
       <h1>Quan ly van hanh chi nhanh</h1>
       <p>
         Cau hinh dich vu, gan dich vu cho may boc so va cap tai khoan nhan vien
@@ -9,20 +9,26 @@
       </p>
     </section>
 
-    <section class="dashboard-actions">
-      <a routerLink="/admin/services" class="dashboard-card">
+    <section class="ui-card-grid">
+      <a routerLink="/admin/services" class="ui-card ui-action-card">
         <span>Dich vu</span>
         <strong>Quan ly dich vu</strong>
         <p>Tao, cap nhat va theo doi danh sach dich vu cua chi nhanh.</p>
       </a>
 
-      <a routerLink="/admin/mappings" class="dashboard-card">
+      <a routerLink="/admin/operations" class="ui-card ui-action-card">
+        <span>Van hanh</span>
+        <strong>May boc so va quay</strong>
+        <p>Quan ly kiosk, quay giao dich va lien ket tai nguyen van hanh.</p>
+      </a>
+
+      <a routerLink="/admin/mappings" class="ui-card ui-action-card">
         <span>May boc so</span>
         <strong>Gan dich vu</strong>
         <p>Thiet lap dich vu nao duoc phuc vu tai tung may boc so.</p>
       </a>
 
-      <a routerLink="/admin/users" class="dashboard-card">
+      <a routerLink="/admin/users" class="ui-card ui-action-card">
         <span>Nhan vien</span>
         <strong>Cap tai khoan staff</strong>
         <p>Tao va quan ly tai khoan nhan vien giao dich.</p>

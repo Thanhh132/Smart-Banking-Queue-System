@@ -5,7 +5,6 @@ import { Branch } from '../../../core/models/branch.model';
 import { BranchService } from '../../../core/services/branch.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-import { AppButton } from '../../../shared/components/app-button/app-button';
 import { AppCard } from '../../../shared/components/app-card/app-card';
 
 @Component({
@@ -14,7 +13,6 @@ import { AppCard } from '../../../shared/components/app-card/app-card';
     CommonModule,
     DashboardLayout,
     AppPageHeader,
-    AppButton,
     AppCard
   ],
   templateUrl: './branch-selection.html',

@@ -13,4 +13,11 @@ public interface ServiceRepository extends JpaRepository<Services, Long> {
     List<Services> findByBranch(Branch branch);
 
     List<Services> findByBranchAndServiceType(Branch branch, String serviceType);
+
+    boolean existsByBranchAndServiceCode(Branch branch, String serviceCode);
+
+    boolean existsByBranchAndServiceCodeAndServiceIdNot(
+            Branch branch,
+            String serviceCode,
+            Long serviceId);
 }

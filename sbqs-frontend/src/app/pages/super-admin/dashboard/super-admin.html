@@ -1,10 +1,19 @@
 <app-dashboard-layout title="Super Admin">
-  <div class="super-admin-page">
-    <section class="admin-section">
+  <div class="page-section">
+    <section class="page-heading">
       <div>
+        <span class="page-kicker">Super Admin</span>
         <h1>Quan ly tai khoan admin chi nhanh</h1>
         <p>Tao tai khoan de admin branch dang nhap va cau hinh chi nhanh duoc gan.</p>
       </div>
+    </section>
+
+    <section class="ui-card-grid">
+      <a routerLink="/super-admin/branches" class="ui-card ui-action-card">
+        <span>Chi nhanh</span>
+        <strong>Quan ly chi nhanh</strong>
+        <p>Tao va cap nhat chi nhanh truoc khi gan tai khoan Branch Admin.</p>
+      </a>
     </section>
 
     <div *ngIf="successMessage" class="alert alert-success">
@@ -15,8 +24,8 @@
       {{ errorMessage }}
     </div>
 
-    <section class="admin-card">
-      <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="admin-form">
+    <section class="ui-card form-card">
+      <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="ui-form ui-form-grid">
         <label>
           Ho ten
           <input type="text" formControlName="fullName" placeholder="Admin chi nhanh" />
@@ -47,10 +56,62 @@
           </select>
         </label>
 
-        <button type="submit" [disabled]="isSubmitting">
-          {{ isSubmitting ? 'Dang tao...' : 'Tao admin branch' }}
-        </button>
+        <div class="ui-form-actions form-actions-full">
+          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+            {{ isSubmitting ? 'Dang tao...' : 'Tao admin branch' }}
+          </button>
+        </div>
       </form>
+    </section>
+
+    <section class="ui-card">
+      <div class="table-heading">
+        <div>
+          <h3>Danh sach admin branch</h3>
+          <p>Theo doi tai khoan quan tri chi nhanh da cap.</p>
+        </div>
+
+        <button type="button" class="btn btn-secondary" (click)="loadAdminBranches()" [disabled]="isListLoading">
+          {{ isListLoading ? 'Dang tai...' : 'Tai lai' }}
+        </button>
+      </div>
+
+      <div *ngIf="isListLoading" class="admin-empty">Dang tai danh sach admin branch...</div>
+      <div *ngIf="!isListLoading && adminBranches.length === 0" class="admin-empty">Chua co admin branch nao.</div>
+
+      <div *ngIf="!isListLoading && adminBranches.length > 0" class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Ho ten</th>
+              <th>Email</th>
+              <th>So dien thoai</th>
+              <th>Chi nhanh</th>
+              <th>Trang thai</th>
+              <th>Thao tac</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let admin of adminBranches">
+              <td><strong>{{ admin.fullName }}</strong></td>
+              <td>{{ admin.email }}</td>
+              <td>{{ admin.phone || '-' }}</td>
+              <td>{{ admin.branch?.branchName || '-' }}</td>
+              <td>
+                <span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                  {{ admin.status || 'ACTIVE' }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
+                  Xoa han
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </div>
 </app-dashboard-layout>
