@@ -1,0 +1,44 @@
+<main class="auth-shell">
+  <section class="auth-panel">
+    <div class="auth-heading">
+      <span>Customer</span>
+      <h1>Dang ky tai khoan</h1>
+      <p>Tai khoan nay dung de dat lich va lay so tai chi nhanh ngan hang.</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="submit()" class="auth-form">
+      <label>
+        Ho ten
+        <input type="text" formControlName="fullName" placeholder="Nguyen Van A" />
+      </label>
+
+      <label>
+        Email
+        <input type="email" formControlName="email" placeholder="customer@email.com" />
+      </label>
+
+      <label>
+        So dien thoai
+        <input type="tel" formControlName="phone" placeholder="0900000000" />
+      </label>
+
+      <label>
+        Mat khau
+        <input type="password" formControlName="password" placeholder="Toi thieu 6 ky tu" />
+      </label>
+
+      <div *ngIf="errorMessage" class="auth-error">
+        {{ errorMessage }}
+      </div>
+
+      <button type="submit" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Dang xu ly...' : 'Dang ky' }}
+      </button>
+    </form>
+
+    <p class="auth-switch">
+      Da co tai khoan?
+      <a routerLink="/login">Dang nhap</a>
+    </p>
+  </section>
+</main>

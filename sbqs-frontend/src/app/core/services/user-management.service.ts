@@ -23,6 +23,13 @@ export class UserManagementService {
     );
   }
 
+  createAdminBranch(adminBranch: any) {
+    return this.http.post(
+      `${this.apiUrl}/admin-branch`,
+      adminBranch
+    );
+  }
+
   deleteUser(userId: number) {
     return this.http.delete(`${this.apiUrl}/${userId}`);
   }

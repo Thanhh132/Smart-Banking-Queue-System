@@ -14,11 +14,22 @@ export class AdminServicesService {
     return this.http.get<any[]>(this.apiUrl);
   }
 
-  createService(service: any) {
-    return this.http.post(this.apiUrl, service);
+  getServicesByBranch(branchId: number) {
+    return this.http.get<any[]>(`${this.apiUrl}?branchId=${branchId}`);
   }
 
-  deleteService(id: number) {
-    return this.http.delete(`${this.apiUrl}/${id}`);
+  createService(payload: any) {
+    return this.http.post(this.apiUrl, payload);
   }
+
+  updateService(serviceId: number, payload: any) {
+    return this.http.put(`${this.apiUrl}/${serviceId}`, payload);
+  }
+
+  deleteService(serviceId: number) {
+    return this.http.delete(
+      `${this.apiUrl}/${serviceId}`
+    );
+  }
+
 }

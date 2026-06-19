@@ -1,13 +1,12 @@
 package com.sbqs.service;
 
 import com.sbqs.dto.CreateStaffRequest;
+import com.sbqs.dto.UpdateUserRequest;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.UserRepository;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.sbqs.dto.UpdateUserRequest;
 
 import java.util.List;
 
@@ -16,23 +15,24 @@ public class UserService {
 
         private final UserRepository userRepository;
         private final BranchRepository branchRepository;
+        private final KeycloakService keycloakService;
 
-        private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        public UserService(
+                        UserRepository userRepository,
+                        BranchRepository branchRepository,
+                        KeycloakService keycloakService) {
+
+                this.userRepository = userRepository;
+                this.branchRepository = branchRepository;
+                this.keycloakService = keycloakService;
+        }
 
         public List<User> getUsersByBranch(Long branchId) {
 
                 Branch branch = branchRepository.findById(branchId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
+                                .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
                 return userRepository.findByBranch(branch);
-        }
-
-        public UserService(
-                        UserRepository userRepository,
-                        BranchRepository branchRepository) {
-
-                this.userRepository = userRepository;
-                this.branchRepository = branchRepository;
         }
 
         public List<User> getAllUsers() {
@@ -40,26 +40,41 @@ public class UserService {
         }
 
         public User createStaff(CreateStaffRequest request) {
+                return createBranchUser(request, "STAFF");
+        }
+
+        public User createAdminBranch(CreateStaffRequest request) {
+                return createBranchUser(request, "BRANCH_ADMIN");
+        }
+
+        private User createBranchUser(CreateStaffRequest request, String role) {
                 if (userRepository.existsByEmail(request.getEmail())) {
-                        throw new RuntimeException("Email đã tồn tại");
+                        throw new RuntimeException("Email da ton tai");
                 }
 
                 if (userRepository.existsByPhone(request.getPhone())) {
-                        throw new RuntimeException("Số điện thoại đã tồn tại");
+                        throw new RuntimeException("So dien thoai da ton tai");
                 }
 
                 Branch branch = branchRepository.findById(request.getBranchId())
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
+                                .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
+
+                String keycloakUserId = keycloakService.createUser(
+                                request.getFullName(),
+                                request.getEmail(),
+                                request.getPassword(),
+                                role);
 
                 User user = new User();
 
                 user.setFullName(request.getFullName());
                 user.setEmail(request.getEmail());
                 user.setPhone(request.getPhone());
-                user.setRole("STAFF");
+                user.setRole(role);
                 user.setStatus("ACTIVE");
                 user.setBranch(branch);
-                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+                user.setPasswordHash("KEYCLOAK_MANAGED");
+                user.setKeycloakUserId(keycloakUserId);
 
                 return userRepository.save(user);
         }
@@ -67,14 +82,14 @@ public class UserService {
         public User updateUser(Long userId, UpdateUserRequest request) {
 
                 User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                                .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
                 if (userRepository.existsByEmailAndUserIdNot(request.getEmail(), userId)) {
-                        throw new RuntimeException("Email đã tồn tại");
+                        throw new RuntimeException("Email da ton tai");
                 }
 
                 if (userRepository.existsByPhoneAndUserIdNot(request.getPhone(), userId)) {
-                        throw new RuntimeException("Số điện thoại đã tồn tại");
+                        throw new RuntimeException("So dien thoai da ton tai");
                 }
 
                 user.setFullName(request.getFullName());
@@ -91,9 +106,8 @@ public class UserService {
         public void deleteUser(Long userId) {
 
                 User user = userRepository.findById(userId)
-                                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+                                .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
                 userRepository.delete(user);
         }
-
 }

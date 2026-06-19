@@ -37,14 +37,14 @@ export class AdminMappingsService {
   }
 
   deleteMapping(queueMachineId: number, serviceId: number) {
-    return this.http.request(
-      'delete',
+    return this.http.delete(
       this.mappingsApi,
       {
         body: {
           queueMachineId,
           serviceId
-        }
+        },
+        responseType: 'text'
       }
     );
   }

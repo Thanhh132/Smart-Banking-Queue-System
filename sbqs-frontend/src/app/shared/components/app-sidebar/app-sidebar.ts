@@ -23,11 +23,6 @@ export class AppSidebar {
       route: '/admin'
     },
     {
-      label: 'Branch Setup',
-      icon: '🏦',
-      route: '/admin/branch-setup'
-    },
-    {
       label: 'Users',
       icon: '👥',
       route: '/admin/users'

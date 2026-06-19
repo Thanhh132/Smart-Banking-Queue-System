@@ -1,0 +1,243 @@
+<app-dashboard-layout title="Service Management">
+  <div class="admin-users-page">
+    <div class="page-heading">
+      <div>
+        <p class="page-kicker">Branch Admin</p>
+        <h2>Quản lý dịch vụ</h2>
+        <p>Tạo, chỉnh sửa và quản lý các dịch vụ tại chi nhánh hiện tại.</p>
+      </div>
+
+      <button
+        class="btn-secondary"
+        type="button"
+        (click)="loadServices()"
+        [disabled]="isListLoading"
+      >
+        {{ isListLoading ? 'Loading...' : 'Refresh' }}
+      </button>
+    </div>
+
+    <div class="summary-grid">
+      <app-card>
+        <div class="summary-card">
+          <span class="summary-card__label">Total Services</span>
+          <strong>{{ services.length }}</strong>
+          <p>Dịch vụ hiện có</p>
+        </div>
+      </app-card>
+
+      <app-card>
+        <div class="summary-card">
+          <span class="summary-card__label">Active</span>
+          <strong>
+            {{ services.length }}
+          </strong>
+          <p>Dịch vụ đang hoạt động</p>
+        </div>
+      </app-card>
+
+      <app-card>
+        <div class="summary-card">
+          <span class="summary-card__label">Module</span>
+          <strong>CRUD</strong>
+          <p>Quản trị dịch vụ</p>
+        </div>
+      </app-card>
+    </div>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <div class="admin-panel-grid">
+      <app-card>
+        <div class="card-heading">
+          <h3>{{ isEditMode ? 'Edit Service' : 'Create Service' }}</h3>
+          <p>
+            {{
+              isEditMode
+                ? 'Cập nhật thông tin dịch vụ.'
+                : 'Nhập thông tin để tạo dịch vụ mới cho chi nhánh.'
+            }}
+          </p>
+        </div>
+
+        <form
+          class="admin-form"
+          [formGroup]="serviceForm"
+          (ngSubmit)="submitService()"
+        >
+          <div class="admin-field">
+            <label>Mã dịch vụ</label>
+            <input
+              type="text"
+              formControlName="serviceCode"
+              placeholder="Ví dụ: S001"
+            />
+
+            <div class="validation-error" *ngIf="isInvalid('serviceCode')">
+              {{ getErrorMessage('serviceCode', 'Mã dịch vụ') }}
+            </div>
+          </div>
+
+          <div class="admin-field">
+            <label>Tên dịch vụ</label>
+            <input
+              type="text"
+              formControlName="serviceName"
+              placeholder="Ví dụ: Rút tiền"
+            />
+
+            <div class="validation-error" *ngIf="isInvalid('serviceName')">
+              {{ getErrorMessage('serviceName', 'Tên dịch vụ') }}
+            </div>
+          </div>
+
+          <div class="admin-field">
+            <label>Loại dịch vụ</label>
+            <select formControlName="serviceType">
+              <option value="BASIC">BASIC</option>
+              <option value="CARD">CARD</option>
+              <option value="LOAN">LOAN</option>
+              <option value="SUPPORT">SUPPORT</option>
+            </select>
+          </div>
+
+          <div class="admin-field">
+            <label>Thời gian ước tính</label>
+            <input
+              type="number"
+              formControlName="estimatedTime"
+              placeholder="Ví dụ: 10"
+            />
+
+            <div class="validation-error" *ngIf="isInvalid('estimatedTime')">
+              {{ getErrorMessage('estimatedTime', 'Thời gian ước tính') }}
+            </div>
+          </div>
+
+          <div class="admin-field">
+            <label>Mô tả</label>
+            <textarea
+              formControlName="description"
+              rows="3"
+              placeholder="Ghi chú ngắn về dịch vụ"
+            ></textarea>
+          </div>
+
+          <div class="admin-field">
+            <label>Trạng thái</label>
+            <select formControlName="status">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="INACTIVE">INACTIVE</option>
+            </select>
+          </div>
+
+          <div class="admin-actions">
+            <button
+              class="btn-primary"
+              type="submit"
+              [disabled]="isSubmitting"
+            >
+              {{
+                isSubmitting
+                  ? 'Saving...'
+                  : isEditMode
+                    ? 'Update Service'
+                    : 'Create Service'
+              }}
+            </button>
+
+            <button
+              *ngIf="isEditMode"
+              class="btn-secondary"
+              type="button"
+              (click)="cancelEdit()"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </app-card>
+
+      <app-card>
+        <div class="card-heading table-heading">
+          <div>
+            <h3>Service List</h3>
+            <p>Danh sách dịch vụ hiện có trong chi nhánh.</p>
+          </div>
+        </div>
+
+        <div *ngIf="isListLoading" class="admin-empty">
+          Đang tải danh sách dịch vụ...
+        </div>
+
+        <div *ngIf="!isListLoading && services.length === 0" class="admin-empty">
+          Chưa có dịch vụ nào.
+        </div>
+
+        <div *ngIf="!isListLoading && services.length > 0" class="table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Mã</th>
+                <th>Tên dịch vụ</th>
+                <th>Loại</th>
+                <th>Thời gian</th>
+                <th>Trạng thái</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let service of services">
+                <td>
+                  <strong>{{ service.serviceCode }}</strong>
+                </td>
+
+                <td>{{ service.serviceName }}</td>
+                <td>{{ service.serviceType || '-' }}</td>
+                <td>{{ service.estimatedTime }} phút</td>
+
+                <td>
+                  <span
+                    class="admin-badge"
+                    [ngClass]="
+                      service.status === 'ACTIVE'
+                        ? 'badge-success'
+                        : 'badge-danger'
+                    "
+                  >
+                    {{ service.status || 'ACTIVE' }}
+                  </span>
+                </td>
+
+                <td>
+                  <button
+                    class="btn-secondary btn-sm"
+                    type="button"
+                    (click)="startEdit(service)"
+                  >
+                    Edit
+                  </button>
+
+                  <button
+                    class="btn-danger btn-sm"
+                    type="button"
+                    (click)="deleteService(service)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </app-card>
+    </div>
+  </div>
+</app-dashboard-layout>

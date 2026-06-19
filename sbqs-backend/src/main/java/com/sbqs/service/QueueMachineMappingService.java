@@ -15,65 +15,61 @@ import java.util.List;
 @Service
 public class QueueMachineMappingService {
 
-    private final QueueMachineServiceMappingRepository mappingRepository;
-    private final QueueMachineRepository queueMachineRepository;
-    private final ServiceRepository serviceRepository;
+        private final QueueMachineServiceMappingRepository mappingRepository;
+        private final QueueMachineRepository queueMachineRepository;
+        private final ServiceRepository serviceRepository;
 
-    public QueueMachineMappingService(
-            QueueMachineServiceMappingRepository mappingRepository,
-            QueueMachineRepository queueMachineRepository,
-            ServiceRepository serviceRepository) {
+        public QueueMachineMappingService(
+                        QueueMachineServiceMappingRepository mappingRepository,
+                        QueueMachineRepository queueMachineRepository,
+                        ServiceRepository serviceRepository) {
 
-        this.mappingRepository = mappingRepository;
-        this.queueMachineRepository = queueMachineRepository;
-        this.serviceRepository = serviceRepository;
-    }
+                this.mappingRepository = mappingRepository;
+                this.queueMachineRepository = queueMachineRepository;
+                this.serviceRepository = serviceRepository;
+        }
 
-    public List<QueueMachineServiceMapping> getAllMappings() {
-        return mappingRepository.findAll();
-    }
+        public List<QueueMachineServiceMapping> getAllMappings() {
+                return mappingRepository.findAll();
+        }
 
-    public QueueMachineServiceMapping createMapping(
-            MappingRequest request) {
+        public QueueMachineServiceMapping createMapping(
+                        MappingRequest request) {
 
-        QueueMachine queueMachine =
-                queueMachineRepository.findById(
+                QueueMachine queueMachine = queueMachineRepository.findById(
                                 request.getQueueMachineId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Không tìm thấy máy bốc số"));
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Không tìm thấy máy bốc số"));
 
-        Services service =
-                serviceRepository.findById(
+                Services service = serviceRepository.findById(
                                 request.getServiceId())
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Không tìm thấy dịch vụ"));
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Không tìm thấy dịch vụ"));
 
-        QueueMachineServiceMapping mapping =
-                new QueueMachineServiceMapping();
+                QueueMachineServiceMapping mapping = new QueueMachineServiceMapping();
 
-        mapping.setId(
-                new QueueMachineServiceMappingId(
-                        queueMachine.getQueueMachineId(),
-                        service.getServiceId()
-                ));
+                mapping.setId(
+                                new QueueMachineServiceMappingId(
+                                                queueMachine.getQueueMachineId(),
+                                                service.getServiceId()));
 
-        mapping.setQueueMachine(queueMachine);
-        mapping.setService(service);
+                mapping.setQueueMachine(queueMachine);
+                mapping.setService(service);
+                if (mappingRepository.existsById(mapping.getId())) {
 
-        return mappingRepository.save(mapping);
-    }
+                        throw new RuntimeException(
+                                        "Mapping đã tồn tại");
+                }
+                return mappingRepository.save(mapping);
+        }
 
-    public void deleteMapping(
-            MappingRequest request) {
+        public void deleteMapping(
+                        MappingRequest request) {
 
-        QueueMachineServiceMappingId id =
-                new QueueMachineServiceMappingId(
-                        request.getQueueMachineId(),
-                        request.getServiceId()
-                );
+                QueueMachineServiceMappingId id = new QueueMachineServiceMappingId(
+                                request.getQueueMachineId(),
+                                request.getServiceId());
 
-        mappingRepository.deleteById(id);
-    }
+                mappingRepository.deleteById(id);
+        }
 }

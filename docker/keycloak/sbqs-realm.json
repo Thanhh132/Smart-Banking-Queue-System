@@ -1,0 +1,41 @@
+{
+  "realm": "SBQS",
+  "enabled": true,
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "CUSTOMER",
+        "description": "SBQS customer"
+      },
+      {
+        "name": "STAFF",
+        "description": "SBQS staff"
+      },
+      {
+        "name": "BRANCH_ADMIN",
+        "description": "SBQS branch administrator"
+      },
+      {
+        "name": "SUPER_ADMIN",
+        "description": "SBQS system administrator"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "sbqs-frontend",
+      "name": "SBQS Frontend",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200"
+      ]
+    }
+  ]
+}

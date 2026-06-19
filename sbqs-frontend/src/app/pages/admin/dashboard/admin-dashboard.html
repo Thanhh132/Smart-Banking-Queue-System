@@ -1,0 +1,32 @@
+<app-dashboard-layout title="Admin Branch">
+  <div class="admin-dashboard">
+    <section class="dashboard-heading">
+      <span>Xin chao, {{ fullName }}</span>
+      <h1>Quan ly van hanh chi nhanh</h1>
+      <p>
+        Cau hinh dich vu, gan dich vu cho may boc so va cap tai khoan nhan vien
+        cho chi nhanh cua ban.
+      </p>
+    </section>
+
+    <section class="dashboard-actions">
+      <a routerLink="/admin/services" class="dashboard-card">
+        <span>Dich vu</span>
+        <strong>Quan ly dich vu</strong>
+        <p>Tao, cap nhat va theo doi danh sach dich vu cua chi nhanh.</p>
+      </a>
+
+      <a routerLink="/admin/mappings" class="dashboard-card">
+        <span>May boc so</span>
+        <strong>Gan dich vu</strong>
+        <p>Thiet lap dich vu nao duoc phuc vu tai tung may boc so.</p>
+      </a>
+
+      <a routerLink="/admin/users" class="dashboard-card">
+        <span>Nhan vien</span>
+        <strong>Cap tai khoan staff</strong>
+        <p>Tao va quan ly tai khoan nhan vien giao dich.</p>
+      </a>
+    </section>
+  </div>
+</app-dashboard-layout>

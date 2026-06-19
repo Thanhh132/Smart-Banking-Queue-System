@@ -61,12 +61,11 @@ public class ServiceController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteService(
+    public ResponseEntity<Void> deleteService(
             @PathVariable Long id) {
 
         serviceService.deleteService(id);
 
-        return ResponseEntity.ok(
-                "Xóa dịch vụ thành công");
+        return ResponseEntity.noContent().build();
     }
 }

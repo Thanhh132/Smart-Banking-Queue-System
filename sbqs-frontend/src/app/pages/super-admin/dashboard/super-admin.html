@@ -1,0 +1,56 @@
+<app-dashboard-layout title="Super Admin">
+  <div class="super-admin-page">
+    <section class="admin-section">
+      <div>
+        <h1>Quan ly tai khoan admin chi nhanh</h1>
+        <p>Tao tai khoan de admin branch dang nhap va cau hinh chi nhanh duoc gan.</p>
+      </div>
+    </section>
+
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger">
+      {{ errorMessage }}
+    </div>
+
+    <section class="admin-card">
+      <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="admin-form">
+        <label>
+          Ho ten
+          <input type="text" formControlName="fullName" placeholder="Admin chi nhanh" />
+        </label>
+
+        <label>
+          Email
+          <input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" />
+        </label>
+
+        <label>
+          So dien thoai
+          <input type="tel" formControlName="phone" placeholder="0900000000" />
+        </label>
+
+        <label>
+          Mat khau
+          <input type="password" formControlName="password" placeholder="Toi thieu 6 ky tu" />
+        </label>
+
+        <label>
+          Chi nhanh
+          <select formControlName="branchId">
+            <option [ngValue]="null">Chon chi nhanh</option>
+            <option *ngFor="let branch of branches" [ngValue]="branch.branchId">
+              {{ branch.branchName }} - {{ branch.branchCode }}
+            </option>
+          </select>
+        </label>
+
+        <button type="submit" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Dang tao...' : 'Tao admin branch' }}
+        </button>
+      </form>
+    </section>
+  </div>
+</app-dashboard-layout>

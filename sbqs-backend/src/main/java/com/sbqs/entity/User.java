@@ -25,6 +25,9 @@ public class User {
 
     private String passwordHash;
 
+    @Column(name = "keycloak_user_id")
+    private String keycloakUserId;
+
     private String phone;
 
     private String role;

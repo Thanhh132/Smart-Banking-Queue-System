@@ -43,6 +43,14 @@ public class UserController {
                 userService.createStaff(request));
     }
 
+    @PostMapping("/admin-branch")
+    public ResponseEntity<User> createAdminBranch(
+            @RequestBody CreateStaffRequest request) {
+
+        return ResponseEntity.ok(
+                userService.createAdminBranch(request));
+    }
+
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(
             @PathVariable Long userId,

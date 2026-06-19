@@ -67,8 +67,14 @@ public class ServicesService {
                 Services existingService = serviceRepository.findById(serviceId)
                                 .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
 
-                existingService.setStatus("INACTIVE");
+                try {
 
-                serviceRepository.save(existingService);
+                        serviceRepository.delete(existingService);
+
+                } catch (Exception e) {
+
+                        throw new RuntimeException(
+                                        "Dịch vụ đang được gán với máy bốc số. Vui lòng gỡ mapping trước khi xóa.");
+                }
         }
 }
