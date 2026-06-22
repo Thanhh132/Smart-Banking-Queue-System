@@ -19,18 +19,23 @@ public class UserService {
         private final UserRepository userRepository;
         private final BranchRepository branchRepository;
         private final KeycloakService keycloakService;
+        private final CurrentUserService currentUserService;
 
         public UserService(
                         UserRepository userRepository,
                         BranchRepository branchRepository,
-                        KeycloakService keycloakService) {
+                        KeycloakService keycloakService,
+                        CurrentUserService currentUserService) {
 
                 this.userRepository = userRepository;
                 this.branchRepository = branchRepository;
                 this.keycloakService = keycloakService;
+                this.currentUserService = currentUserService;
         }
 
         public List<User> getUsersByBranch(Long branchId) {
+
+                requireBranchAccess(branchId);
 
                 Branch branch = branchRepository.findById(branchId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
@@ -39,11 +44,21 @@ public class UserService {
         }
 
         public List<User> getAllUsers() {
-                return userRepository.findAll();
+                User currentUser = currentUserService.requireUser();
+                if ("SUPER_ADMIN".equals(currentUser.getRole())) {
+                        return userRepository.findAll();
+                }
+
+                return userRepository.findByBranch(currentUser.getBranch());
         }
 
         public List<User> getUsersByRole(String role) {
-                return userRepository.findByRole(role);
+                User currentUser = currentUserService.requireUser();
+                if ("SUPER_ADMIN".equals(currentUser.getRole())) {
+                        return userRepository.findByRole(role);
+                }
+
+                return userRepository.findByBranchAndRole(currentUser.getBranch(), role);
         }
 
         public User createStaff(CreateStaffRequest request) {
@@ -114,6 +129,8 @@ public class UserService {
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
+                requireUserManagementAccess(user);
+
                 if (userRepository.existsByEmailAndUserIdNot(request.getEmail(), userId)) {
                         throw new RuntimeException("Email da ton tai");
                 }
@@ -138,7 +155,36 @@ public class UserService {
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
+                requireUserManagementAccess(user);
+
                 keycloakService.deleteUser(user.getKeycloakUserId());
                 userRepository.delete(user);
+        }
+
+        private void requireBranchAccess(Long branchId) {
+                User currentUser = currentUserService.requireUser();
+                if (!"SUPER_ADMIN".equals(currentUser.getRole())) {
+                        currentUserService.requireBranch(branchId);
+                }
+        }
+
+        private void requireUserManagementAccess(User targetUser) {
+                User currentUser = currentUserService.requireUser();
+
+                if ("SUPER_ADMIN".equals(currentUser.getRole())) {
+                        if ("SUPER_ADMIN".equals(targetUser.getRole())) {
+                                throw new RuntimeException("Khong duoc sua hoac xoa tai khoan super admin qua API nay");
+                        }
+                        return;
+                }
+
+                if (!"BRANCH_ADMIN".equals(currentUser.getRole())
+                                || !"STAFF".equals(targetUser.getRole())
+                                || currentUser.getBranch() == null
+                                || targetUser.getBranch() == null
+                                || !currentUser.getBranch().getBranchId()
+                                                .equals(targetUser.getBranch().getBranchId())) {
+                        throw new RuntimeException("Ban khong co quyen quan ly tai khoan nay");
+                }
         }
 }

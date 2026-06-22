@@ -1,60 +1,57 @@
-<app-dashboard-layout title="Chon dich vu">
+<app-dashboard-layout title="Chọn dịch vụ">
   <div class="customer-page">
-    <section class="customer-heading">
-      <span class="page-kicker">Customer</span>
-      <h1>Chon dich vu</h1>
-      <p>Chi hien thi cac dich vu da duoc chi nhanh gan vao may boc so.</p>
-    </section>
+    <header class="customer-page__intro">
+      <span class="customer-kicker">Bước 2/3</span>
+      <h1>Chọn dịch vụ giao dịch</h1>
+      <p>Danh sách chỉ gồm các dịch vụ đã được cấu hình cho máy bốc số tại chi nhánh.</p>
+    </header>
 
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-    <section class="queue-overview" *ngIf="monitor">
-      <app-card>
-        <span>Chi nhanh</span>
+    <section class="customer-summary-grid" *ngIf="monitor">
+      <div class="customer-summary-item">
+        <span>Chi nhánh đã chọn</span>
         <strong>{{ monitor.branchName }}</strong>
-        <p>{{ monitor.waitingCount }} khach dang cho</p>
-      </app-card>
-
-      <app-card>
-        <span>Quay dang phuc vu</span>
-        <strong>{{ servingCounterCount }}</strong>
-        <p>Theo doi ben duoi de canh luot</p>
-      </app-card>
-    </section>
-
-    <section class="service-grid" *ngIf="!isLoading && services.length > 0">
-      <button
-        type="button"
-        class="service-tile"
-        *ngFor="let service of services"
-        (click)="selectService(service)"
-        [disabled]="isCreatingTicket"
-      >
-        <span>{{ service.serviceType || 'SERVICE' }}</span>
-        <strong>{{ service.serviceName }}</strong>
-        <small>{{ service.estimatedTime || 10 }} phut uoc tinh</small>
-      </button>
-    </section>
-
-    <app-card *ngIf="isLoading">
-      <div class="admin-empty">Dang tai dich vu...</div>
-    </app-card>
-
-    <app-card *ngIf="!isLoading && services.length === 0 && !errorMessage">
-      <div class="admin-empty">
-        Chi nhanh nay chua cau hinh dich vu cho may boc so.
+        <p>{{ monitor.waitingCount }} khách đang chờ</p>
       </div>
-    </app-card>
+      <div class="customer-summary-item">
+        <span>Quầy đang phục vụ</span>
+        <strong>{{ servingCounterCount }}</strong>
+        <p>Cập nhật theo thời gian thực</p>
+      </div>
+    </section>
 
-    <section class="counter-board" *ngIf="monitor?.servingCounters?.length">
-      <h2>Bang goi so hien tai</h2>
-      <div class="counter-grid">
-        <div class="counter-tile" *ngFor="let counter of monitor?.servingCounters">
-          <span>{{ counter.queueMachineName || 'May boc so' }}</span>
-          <strong>{{ counter.ticketNumber || '-' }}</strong>
-          <p>{{ counter.counterName }} - {{ getCounterStatusLabel(counter.status) }}</p>
+    <section class="customer-section">
+      <div class="customer-section__header">
+        <div><h2>Dịch vụ khả dụng</h2><p>Chọn một dịch vụ để nhận số thứ tự.</p></div>
+      </div>
+
+      <div class="customer-state" *ngIf="isLoading">Đang tải danh sách dịch vụ...</div>
+      <div class="customer-state" *ngIf="!isLoading && services.length === 0 && !errorMessage">
+        Chi nhánh chưa cấu hình dịch vụ cho máy bốc số.
+      </div>
+
+      <div class="customer-option-grid" *ngIf="!isLoading && services.length > 0">
+        <button type="button" class="customer-option service-option" *ngFor="let service of services" (click)="selectService(service)" [disabled]="isCreatingTicket">
+          <span class="customer-option__eyebrow">{{ service.serviceType || 'Dịch vụ' }}</span>
+          <strong>{{ service.serviceName }}</strong>
+          <p>{{ service.description || 'Dịch vụ giao dịch tại quầy' }}</p>
+          <small>Thời gian dự kiến: {{ service.estimatedTime || 10 }} phút</small>
+          <span class="customer-option__action">Lấy số dịch vụ này</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="customer-section" *ngIf="monitor?.servingCounters?.length">
+      <div class="customer-section__header">
+        <div><h2>Bảng gọi số tại chi nhánh</h2><p>Tham khảo trạng thái các khu vực đang hoạt động.</p></div>
+      </div>
+      <div class="customer-queue-grid">
+        <div class="customer-counter" *ngFor="let counter of monitor?.servingCounters" [ngClass]="getCounterStatusClass(counter.status)">
+          <span>{{ counter.counterName }}</span>
+          <strong>{{ counter.ticketNumber || '–' }}</strong>
+          <p>{{ getCounterStatusLabel(counter.status) }}</p>
+          <small>{{ counter.queueMachineName || 'Máy bốc số' }}</small>
         </div>
       </div>
     </section>

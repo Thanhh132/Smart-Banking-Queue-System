@@ -13,28 +13,34 @@ public class ServicesService {
 
     private final ServiceRepository serviceRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
+    private final CurrentUserService currentUserService;
 
     public ServicesService(
             ServiceRepository serviceRepository,
-            QueueMachineServiceMappingRepository mappingRepository) {
+            QueueMachineServiceMappingRepository mappingRepository,
+            CurrentUserService currentUserService) {
 
         this.serviceRepository = serviceRepository;
         this.mappingRepository = mappingRepository;
+        this.currentUserService = currentUserService;
     }
 
     public List<Services> getAllServices() {
-        return serviceRepository.findAll();
+        return serviceRepository.findByBranch(currentUserService.requireUser().getBranch());
     }
 
     public List<Services> getServicesByBranch(Branch branch) {
+        requireOperationalBranchAccess(branch.getBranchId());
         return serviceRepository.findByBranch(branch);
     }
 
     public List<Services> getServicesByBranchAndType(Branch branch, String serviceType) {
+        requireOperationalBranchAccess(branch.getBranchId());
         return serviceRepository.findByBranchAndServiceType(branch, serviceType);
     }
 
     public List<Services> getMappedServicesByBranch(Long branchId) {
+        requireOperationalBranchAccess(branchId);
         return mappingRepository.findByQueueMachineBranchBranchId(branchId)
                 .stream()
                 .map(mapping -> mapping.getService())
@@ -44,6 +50,8 @@ public class ServicesService {
     }
 
     public Services createService(Services service) {
+        currentUserService.requireBranch(service.getBranch().getBranchId());
+        service.setBranch(currentUserService.requireUser().getBranch());
         if (serviceRepository.existsByBranchAndServiceCode(
                 service.getBranch(),
                 service.getServiceCode())) {
@@ -56,6 +64,9 @@ public class ServicesService {
     public Services updateService(Long serviceId, Services updatedService) {
         Services existingService = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+
+        currentUserService.requireBranch(existingService.getBranch().getBranchId());
+        currentUserService.requireBranch(updatedService.getBranch().getBranchId());
 
         if (serviceRepository.existsByBranchAndServiceCodeAndServiceIdNot(
                 updatedService.getBranch(),
@@ -79,11 +90,19 @@ public class ServicesService {
         Services existingService = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
 
+        currentUserService.requireBranch(existingService.getBranch().getBranchId());
+
         try {
             serviceRepository.delete(existingService);
         } catch (Exception e) {
             throw new RuntimeException(
                     "Dich vu dang duoc gan voi may boc so. Vui long go mapping truoc khi xoa.");
+        }
+    }
+
+    private void requireOperationalBranchAccess(Long branchId) {
+        if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
+            currentUserService.requireBranch(branchId);
         }
     }
 }

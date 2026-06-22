@@ -12,9 +12,13 @@ public interface UserRepository
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByEmailIgnoreCase(String email);
+
     List<User> findByBranch(Branch branch);
 
     List<User> findByRole(String role);
+
+    List<User> findByBranchAndRole(Branch branch, String role);
 
     boolean existsByPhone(String phone);
 

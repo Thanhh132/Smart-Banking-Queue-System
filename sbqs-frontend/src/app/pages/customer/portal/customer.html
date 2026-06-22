@@ -1,41 +1,43 @@
-<main class="customer-shell">
-  <nav class="customer-nav">
-    <div>
-      <strong>SBQS</strong>
-      <span>Customer Portal</span>
-    </div>
+<app-dashboard-layout title="Dịch vụ khách hàng">
+  <div class="customer-page customer-home">
+    <header class="customer-page__intro">
+      <span class="customer-kicker">Xin chào, {{ fullName }}</span>
+      <h1>Giao dịch thuận tiện, chủ động thời gian</h1>
+      <p>Chọn chi nhánh và dịch vụ cần thực hiện để nhận số thứ tự trực tuyến.</p>
+    </header>
 
-    <button type="button" (click)="logout()">Dang xuat</button>
-  </nav>
+    <section class="customer-primary-action">
+      <div>
+        <span class="customer-kicker">Lấy số trực tuyến</span>
+        <h2>Bắt đầu giao dịch mới</h2>
+        <p>Hệ thống sẽ hiển thị đúng hàng đợi và các quầy thuộc máy bốc số của dịch vụ bạn chọn.</p>
+      </div>
+      <a routerLink="/branches" class="btn btn-primary">Chọn chi nhánh</a>
+    </section>
 
-  <section class="customer-hero">
-    <div class="customer-copy">
-      <span>Xin chao, {{ fullName }}</span>
-      <h1>Lay so giao dich ngan hang nhanh hon</h1>
-      <p>
-        Chon chi nhanh, chon dich vu can thuc hien va nhan so thu tu cua ban.
-        Tai khoan khach hang chi dung cho dat lich, lay so va theo doi ket qua.
-      </p>
+    <section class="customer-section">
+      <div class="customer-section__header">
+        <div>
+          <h2>Tiến trình lấy số</h2>
+          <p>Ba bước để nhận và theo dõi số thứ tự.</p>
+        </div>
+        <a routerLink="/ticket" class="customer-text-link">Xem phiếu hiện tại</a>
+      </div>
 
-      <div class="customer-actions">
-        <a routerLink="/branches" class="btn btn-primary">Bat dau lay so</a>
-        <a routerLink="/ticket" class="btn btn-secondary">Xem phieu hien tai</a>
+      <div class="customer-steps">
+        <div class="customer-step">
+          <span>01</span>
+          <div><strong>Chọn chi nhánh</strong><p>Chọn đúng ngân hàng và khu vực thuận tiện.</p></div>
+        </div>
+        <div class="customer-step">
+          <span>02</span>
+          <div><strong>Chọn dịch vụ</strong><p>Chỉ các dịch vụ đã được cấu hình mới xuất hiện.</p></div>
+        </div>
+        <div class="customer-step">
+          <span>03</span>
+          <div><strong>Theo dõi lượt</strong><p>Xem số đang phục vụ tại đúng khu vực của bạn.</p></div>
+        </div>
       </div>
-    </div>
-
-    <div class="status-panel" aria-label="Customer queue status">
-      <div class="ui-card status-card">
-        <span>Buoc 1</span>
-        <strong>Chon chi nhanh</strong>
-      </div>
-      <div class="ui-card status-card">
-        <span>Buoc 2</span>
-        <strong>Chon dich vu</strong>
-      </div>
-      <div class="ui-card status-card">
-        <span>Buoc 3</span>
-        <strong>Nhan so thu tu</strong>
-      </div>
-    </div>
-  </section>
-</main>
+    </section>
+  </div>
+</app-dashboard-layout>

@@ -1,40 +1,42 @@
-<app-dashboard-layout>
-  <app-page-header
-    title="Chon chi nhanh"
-    subtitle="Chon diem giao dich de lay so thu tu"
-  >
-  </app-page-header>
+<app-dashboard-layout title="Chọn chi nhánh">
+  <div class="customer-page">
+    <header class="customer-page__intro">
+      <span class="customer-kicker">Bước 1/3</span>
+      <h1>Chọn điểm giao dịch</h1>
+      <p>Tìm chi nhánh theo ngân hàng, khu vực hoặc địa chỉ.</p>
+    </header>
 
-  <div *ngIf="errorMessage" class="alert alert-danger">
-    {{ errorMessage }}
-  </div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-  <app-card *ngIf="branches.length === 0 && !errorMessage">
-    <div class="loading-state">
-      <p>Dang tai danh sach chi nhanh...</p>
-    </div>
-  </app-card>
-
-  <app-card *ngIf="branches.length > 0">
-    <div class="card-header">
-      <div>
-        <h2>Danh sach chi nhanh</h2>
-        <p>Thong tin khu vuc va dia chi giup ban chon dung diem giao dich.</p>
+    <section class="customer-section">
+      <div class="customer-section__header customer-section__header--search">
+        <div>
+          <h2>Danh sách chi nhánh</h2>
+          <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
+        </div>
+        <label class="customer-search">
+          <span>Tìm kiếm</span>
+          <input type="search" [(ngModel)]="searchTerm" placeholder="Ngân hàng, tỉnh thành, quận huyện..." />
+        </label>
       </div>
-    </div>
 
-    <div class="branches-grid">
-      <button
-        type="button"
-        class="branch-tile"
-        *ngFor="let branch of branches"
-        (click)="selectBranch(branch.branchId)"
-      >
-        <span>{{ branch.bankName }}</span>
-        <strong>{{ branch.branchName }}</strong>
-        <p>{{ branch.district || '-' }}, {{ branch.province || '-' }}</p>
-        <small>{{ branch.address || 'Chua co dia chi chi tiet' }}</small>
-      </button>
-    </div>
-  </app-card>
+      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">
+        Đang tải danh sách chi nhánh...
+      </div>
+
+      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">
+        Không tìm thấy chi nhánh phù hợp.
+      </div>
+
+      <div class="customer-option-grid" *ngIf="filteredBranches.length > 0">
+        <button type="button" class="customer-option" *ngFor="let branch of filteredBranches" (click)="selectBranch(branch.branchId)">
+          <span class="customer-option__eyebrow">{{ branch.bankName }}</span>
+          <strong>{{ branch.branchName }}</strong>
+          <p>{{ branch.district || 'Chưa xác định' }}, {{ branch.province || 'Chưa xác định' }}</p>
+          <small>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</small>
+          <span class="customer-option__action">Chọn chi nhánh</span>
+        </button>
+      </div>
+    </section>
+  </div>
 </app-dashboard-layout>

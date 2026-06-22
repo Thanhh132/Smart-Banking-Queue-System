@@ -14,62 +14,62 @@ import java.util.List;
 
 @Service
 public class QueueMachineMappingService {
+    private final QueueMachineServiceMappingRepository mappingRepository;
+    private final QueueMachineRepository queueMachineRepository;
+    private final ServiceRepository serviceRepository;
+    private final CurrentUserService currentUserService;
 
-        private final QueueMachineServiceMappingRepository mappingRepository;
-        private final QueueMachineRepository queueMachineRepository;
-        private final ServiceRepository serviceRepository;
+    public QueueMachineMappingService(
+            QueueMachineServiceMappingRepository mappingRepository,
+            QueueMachineRepository queueMachineRepository,
+            ServiceRepository serviceRepository,
+            CurrentUserService currentUserService) {
 
-        public QueueMachineMappingService(
-                        QueueMachineServiceMappingRepository mappingRepository,
-                        QueueMachineRepository queueMachineRepository,
-                        ServiceRepository serviceRepository) {
+        this.mappingRepository = mappingRepository;
+        this.queueMachineRepository = queueMachineRepository;
+        this.serviceRepository = serviceRepository;
+        this.currentUserService = currentUserService;
+    }
 
-                this.mappingRepository = mappingRepository;
-                this.queueMachineRepository = queueMachineRepository;
-                this.serviceRepository = serviceRepository;
+    public List<QueueMachineServiceMapping> getAllMappings() {
+        return mappingRepository.findByQueueMachineBranchBranchId(
+                currentUserService.requireBranchId());
+    }
+
+    public QueueMachineServiceMapping createMapping(MappingRequest request) {
+        QueueMachine queueMachine = queueMachineRepository.findById(request.getQueueMachineId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
+        Services service = serviceRepository.findById(request.getServiceId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+
+        currentUserService.requireBranch(queueMachine.getBranch().getBranchId());
+        currentUserService.requireBranch(service.getBranch().getBranchId());
+
+        if (!queueMachine.getBranch().getBranchId().equals(service.getBranch().getBranchId())) {
+            throw new RuntimeException("May boc so va dich vu phai thuoc cung chi nhanh");
         }
 
-        public List<QueueMachineServiceMapping> getAllMappings() {
-                return mappingRepository.findAll();
+        QueueMachineServiceMappingId id = new QueueMachineServiceMappingId(
+                queueMachine.getQueueMachineId(),
+                service.getServiceId());
+        if (mappingRepository.existsById(id)) {
+            throw new RuntimeException("Mapping da ton tai");
         }
 
-        public QueueMachineServiceMapping createMapping(
-                        MappingRequest request) {
+        QueueMachineServiceMapping mapping = new QueueMachineServiceMapping();
+        mapping.setId(id);
+        mapping.setQueueMachine(queueMachine);
+        mapping.setService(service);
+        return mappingRepository.save(mapping);
+    }
 
-                QueueMachine queueMachine = queueMachineRepository.findById(
-                                request.getQueueMachineId())
-                                .orElseThrow(() -> new RuntimeException(
-                                                "Không tìm thấy máy bốc số"));
+    public void deleteMapping(MappingRequest request) {
+        QueueMachine queueMachine = queueMachineRepository.findById(request.getQueueMachineId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
+        currentUserService.requireBranch(queueMachine.getBranch().getBranchId());
 
-                Services service = serviceRepository.findById(
-                                request.getServiceId())
-                                .orElseThrow(() -> new RuntimeException(
-                                                "Không tìm thấy dịch vụ"));
-
-                QueueMachineServiceMapping mapping = new QueueMachineServiceMapping();
-
-                mapping.setId(
-                                new QueueMachineServiceMappingId(
-                                                queueMachine.getQueueMachineId(),
-                                                service.getServiceId()));
-
-                mapping.setQueueMachine(queueMachine);
-                mapping.setService(service);
-                if (mappingRepository.existsById(mapping.getId())) {
-
-                        throw new RuntimeException(
-                                        "Mapping đã tồn tại");
-                }
-                return mappingRepository.save(mapping);
-        }
-
-        public void deleteMapping(
-                        MappingRequest request) {
-
-                QueueMachineServiceMappingId id = new QueueMachineServiceMappingId(
-                                request.getQueueMachineId(),
-                                request.getServiceId());
-
-                mappingRepository.deleteById(id);
-        }
+        mappingRepository.deleteById(new QueueMachineServiceMappingId(
+                request.getQueueMachineId(),
+                request.getServiceId()));
+    }
 }

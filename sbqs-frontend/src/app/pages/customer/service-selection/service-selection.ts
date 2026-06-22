@@ -9,11 +9,10 @@ import { QueueMonitorService } from '../../../core/services/queue-monitor.servic
 import { ServicesService } from '../../../core/services/services.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
-import { AppCard } from '../../../shared/components/app-card/app-card';
 
 @Component({
   selector: 'app-service-selection',
-  imports: [CommonModule, DashboardLayout, AppCard],
+  imports: [CommonModule, DashboardLayout],
   templateUrl: './service-selection.html',
   styleUrl: './service-selection.scss',
 })
@@ -37,14 +36,18 @@ export class ServiceSelection implements OnInit {
 
   getCounterStatusLabel(status: string): string {
     if (status === 'SERVING') {
-      return 'Dang phuc vu';
+      return 'Đang phục vụ';
     }
 
     if (status === 'IDLE') {
-      return 'Dang ranh';
+      return 'Đang rảnh';
     }
 
-    return 'Khong hoat dong';
+    return 'Không hoạt động';
+  }
+
+  getCounterStatusClass(status: string): string {
+    return `customer-counter--${status.toLowerCase()}`;
   }
 
   ngOnInit(): void {
@@ -71,7 +74,7 @@ export class ServiceSelection implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tai duoc danh sach dich vu.'
+          'Không tải được danh sách dịch vụ.'
         );
         this.isLoading = false;
         this.cdr.detectChanges();
@@ -100,7 +103,7 @@ export class ServiceSelection implements OnInit {
     const currentTicket = this.getCurrentActiveTicket();
     if (currentTicket) {
       this.errorMessage =
-        'Ban dang co mot ticket chua hoan thanh. Hay theo doi hoac huy ticket hien tai truoc.';
+        'Bạn đang có một phiếu chưa hoàn thành. Hãy theo dõi hoặc hủy phiếu hiện tại trước.';
       this.router.navigate(['/ticket']);
       return;
     }
@@ -117,7 +120,7 @@ export class ServiceSelection implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tao duoc ticket. Vui long thu lai.'
+          'Không tạo được phiếu. Vui lòng thử lại.'
         );
         this.isCreatingTicket = false;
         this.cdr.detectChanges();
@@ -129,7 +132,7 @@ export class ServiceSelection implements OnInit {
     const branchId = Number(localStorage.getItem('selectedBranchId'));
 
     if (!branchId) {
-      this.errorMessage = 'Chua chon chi nhanh.';
+      this.errorMessage = 'Bạn chưa chọn chi nhánh.';
       this.cdr.detectChanges();
       return null;
     }

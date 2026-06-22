@@ -29,15 +29,18 @@ public class AuthService {
         private final UserRepository userRepository;
         private final KeycloakService keycloakService;
         private final ObjectMapper objectMapper;
+        private final PasswordResetService passwordResetService;
 
         public AuthService(
                         UserRepository userRepository,
                         KeycloakService keycloakService,
-                        ObjectMapper objectMapper) {
+                        ObjectMapper objectMapper,
+                        PasswordResetService passwordResetService) {
 
                 this.userRepository = userRepository;
                 this.keycloakService = keycloakService;
                 this.objectMapper = objectMapper;
+                this.passwordResetService = passwordResetService;
         }
 
         public User register(
@@ -177,16 +180,12 @@ public class AuthService {
                                 user.getBranch() == null ? null : user.getBranch().getBranchId());
         }
 
-        public void repairLoginAccount(LoginRequest request) {
-                User user = userRepository.findByEmail(request.getEmail())
-                                .orElseThrow(() -> new RuntimeException("Email khong ton tai"));
+        public void requestPasswordReset(String email) {
+                passwordResetService.requestReset(email);
+        }
 
-                keycloakService.repairUserPasswordLogin(
-                                user.getKeycloakUserId(),
-                                user.getFullName(),
-                                user.getEmail(),
-                                request.getPassword(),
-                                user.getRole());
+        public void resetPassword(String token, String newPassword) {
+                passwordResetService.resetPassword(token, newPassword);
         }
 
         private String valueAsString(Object value) {

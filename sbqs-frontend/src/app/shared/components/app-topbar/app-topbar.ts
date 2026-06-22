@@ -8,23 +8,29 @@ import { Component, Input } from '@angular/core';
   styleUrl: './app-topbar.scss'
 })
 export class AppTopbar {
-  @Input() title = 'Dashboard';
-  @Input() username = localStorage.getItem('fullName') || 'SBQS User';
+  @Input() title = 'Tổng quan';
+  @Input() username = localStorage.getItem('fullName') || 'Người dùng SBQS';
+
+  get subtitle(): string {
+    return localStorage.getItem('userRole') === 'CUSTOMER'
+      ? 'Lấy số và theo dõi lượt giao dịch của bạn'
+      : 'Quản lý hệ thống SBQS';
+  }
 
   get roleLabel(): string {
     const role = localStorage.getItem('userRole');
 
     switch (role) {
       case 'SUPER_ADMIN':
-        return 'Super Admin';
+        return 'Quản trị hệ thống';
       case 'BRANCH_ADMIN':
-        return 'Branch Admin';
+        return 'Quản trị chi nhánh';
       case 'STAFF':
-        return 'Staff';
+        return 'Nhân viên';
       case 'CUSTOMER':
-        return 'Customer';
+        return 'Khách hàng';
       default:
-        return 'User';
+        return 'Người dùng';
     }
   }
 }

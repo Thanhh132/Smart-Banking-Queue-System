@@ -11,4 +11,9 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
     List<History> findByCompletedAtBetween(
         LocalDateTime from,
         LocalDateTime to);
+
+    List<History> findByBranchBranchIdAndCompletedAtBetween(
+        Long branchId,
+        LocalDateTime from,
+        LocalDateTime to);
 }

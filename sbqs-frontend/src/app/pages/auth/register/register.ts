@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
@@ -19,6 +19,7 @@ export class Register {
   private router = inject(Router);
   private authService = inject(AuthService);
   private apiError = inject(ApiErrorService);
+  private cdr = inject(ChangeDetectorRef);
 
   isSubmitting = false;
   errorMessage = '';
@@ -27,7 +28,7 @@ export class Register {
     fullName: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
+    password: ['', [Validators.required, Validators.minLength(8)]],
   });
 
   submit(): void {
@@ -35,6 +36,7 @@ export class Register {
 
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
+      this.cdr.detectChanges();
       return;
     }
 
@@ -51,6 +53,7 @@ export class Register {
       timeout(15000),
       finalize(() => {
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       })
     ).subscribe({
       next: () => {
@@ -59,8 +62,9 @@ export class Register {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Dang ky that bai. Vui long kiem tra lai thong tin.'
+          'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.'
         );
+        this.cdr.detectChanges();
       },
     });
   }

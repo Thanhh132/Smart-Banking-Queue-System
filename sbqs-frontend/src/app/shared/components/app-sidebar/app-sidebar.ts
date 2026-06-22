@@ -39,9 +39,9 @@ export class AppSidebar {
       { label: 'Queue Monitor', icon: 'QM', route: '/monitor' },
     ],
     CUSTOMER: [
-      { label: 'Customer', icon: 'CU', route: '/customer' },
-      { label: 'Branches', icon: 'BR', route: '/branches' },
-      { label: 'Ticket', icon: 'TK', route: '/ticket' },
+      { label: 'Tổng quan', icon: 'CU', route: '/customer' },
+      { label: 'Lấy số', icon: 'BR', route: '/branches' },
+      { label: 'Phiếu của tôi', icon: 'TK', route: '/ticket' },
     ],
   };
 

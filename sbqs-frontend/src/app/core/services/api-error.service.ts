@@ -6,7 +6,7 @@ import { Injectable } from '@angular/core';
 export class ApiErrorService {
   getMessage(error: any, fallback: string): string {
     if (error?.name === 'TimeoutError') {
-      return 'May chu phan hoi qua lau. Vui long kiem tra backend va Keycloak.';
+      return 'Máy chủ phản hồi quá lâu. Vui lòng kiểm tra backend và Keycloak.';
     }
 
     const raw = error?.error?.message || error?.error || error?.message;
@@ -35,19 +35,19 @@ export class ApiErrorService {
     const lower = message.toLowerCase();
 
     if (lower.includes('email da ton tai') || lower.includes('email')) {
-      return 'Email da ton tai. Vui long dung email khac.';
+      return 'Email đã tồn tại. Vui lòng dùng email khác.';
     }
 
     if (lower.includes('so dien thoai da ton tai') || lower.includes('phone')) {
-      return 'So dien thoai da ton tai. Vui long dung so khac.';
+      return 'Số điện thoại đã tồn tại. Vui lòng dùng số khác.';
     }
 
     if (lower.includes('invalid_grant')) {
-      return 'Email hoac mat khau khong dung, hoac tai khoan Keycloak chua san sang.';
+      return 'Email hoặc mật khẩu không chính xác.';
     }
 
     if (lower.includes('constraint') || lower.includes('foreign key')) {
-      return 'Du lieu nay dang duoc su dung nen chua the xoa han.';
+      return 'Dữ liệu này đang được sử dụng nên chưa thể xóa.';
     }
 
     return message;

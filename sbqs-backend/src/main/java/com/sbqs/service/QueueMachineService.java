@@ -10,16 +10,22 @@ import java.util.List;
 public class QueueMachineService {
 
     private final QueueMachineRepository queueMachineRepository;
+    private final CurrentUserService currentUserService;
 
-    public QueueMachineService(QueueMachineRepository queueMachineRepository) {
+    public QueueMachineService(
+            QueueMachineRepository queueMachineRepository,
+            CurrentUserService currentUserService) {
         this.queueMachineRepository = queueMachineRepository;
+        this.currentUserService = currentUserService;
     }
 
     public List<QueueMachine> getAllQueueMachines() {
-        return queueMachineRepository.findAll();
+        return queueMachineRepository.findByBranch(currentUserService.requireUser().getBranch());
     }
 
     public QueueMachine createQueueMachine(QueueMachine queueMachine) {
+        currentUserService.requireBranch(queueMachine.getBranch().getBranchId());
+        queueMachine.setBranch(currentUserService.requireUser().getBranch());
         if (queueMachineRepository.existsByBranchAndMachineCode(
                 queueMachine.getBranch(),
                 queueMachine.getMachineCode())) {
@@ -35,6 +41,9 @@ public class QueueMachineService {
 
         QueueMachine existingQueueMachine = queueMachineRepository.findById(queueMachineId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
+
+        currentUserService.requireBranch(existingQueueMachine.getBranch().getBranchId());
+        currentUserService.requireBranch(updatedQueueMachine.getBranch().getBranchId());
 
         if (queueMachineRepository.existsByBranchAndMachineCodeAndQueueMachineIdNot(
                 updatedQueueMachine.getBranch(),
@@ -56,6 +65,8 @@ public class QueueMachineService {
     public void deleteQueueMachine(Long queueMachineId) {
         QueueMachine existingQueueMachine = queueMachineRepository.findById(queueMachineId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
+
+        currentUserService.requireBranch(existingQueueMachine.getBranch().getBranchId());
 
         queueMachineRepository.delete(existingQueueMachine);
     }

@@ -3,6 +3,7 @@ export interface Service {
   serviceCode: string;
   serviceName: string;
   serviceType: string;
+  description?: string | null;
   estimatedTime: number;
   status: string;
 }

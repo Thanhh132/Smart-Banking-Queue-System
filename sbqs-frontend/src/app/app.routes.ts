@@ -3,6 +3,8 @@ import { Routes } from '@angular/router';
 import { Home } from './pages/public/home/home';
 import { Login } from './pages/auth/login/login';
 import { Register } from './pages/auth/register/register';
+import { ForgotPassword } from './pages/auth/forgot-password/forgot-password';
+import { ResetPassword } from './pages/auth/reset-password/reset-password';
 import { Customer } from './pages/customer/portal/customer';
 import { BranchSelection } from './pages/customer/branch-selection/branch-selection';
 import { ServiceSelection } from './pages/customer/service-selection/service-selection';
@@ -24,6 +26,8 @@ export const routes: Routes = [
   { path: 'home', component: Home },
   { path: 'login', component: Login },
   { path: 'register', component: Register },
+  { path: 'forgot-password', component: ForgotPassword },
+  { path: 'reset-password', component: ResetPassword },
   { path: 'customer', component: Customer, canActivate: [roleGuard(['CUSTOMER'])] },
   { path: 'branches', component: BranchSelection, canActivate: [roleGuard(['CUSTOMER'])] },
   { path: 'services', component: ServiceSelection, canActivate: [roleGuard(['CUSTOMER'])] },

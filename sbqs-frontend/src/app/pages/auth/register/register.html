@@ -1,30 +1,30 @@
 <main class="auth-shell">
   <section class="auth-panel">
     <div class="auth-heading">
-      <span>Customer</span>
-      <h1>Dang ky tai khoan</h1>
-      <p>Tai khoan nay dung de dat lich va lay so tai chi nhanh ngan hang.</p>
+      <span>SBQS Customer</span>
+      <h1>Đăng ký tài khoản</h1>
+      <p>Tạo tài khoản để đặt lịch và lấy số tại chi nhánh ngân hàng.</p>
     </div>
 
     <form [formGroup]="registerForm" (ngSubmit)="submit()" class="auth-form">
       <label>
-        Ho ten
-        <input type="text" formControlName="fullName" placeholder="Nguyen Van A" />
+        Họ và tên
+        <input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" />
       </label>
 
       <label>
         Email
-        <input type="email" formControlName="email" placeholder="customer@email.com" />
+        <input type="email" formControlName="email" placeholder="customer@email.com" autocomplete="email" />
       </label>
 
       <label>
-        So dien thoai
-        <input type="tel" formControlName="phone" placeholder="0900000000" />
+        Số điện thoại
+        <input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" />
       </label>
 
       <label>
-        Mat khau
-        <input type="password" formControlName="password" placeholder="Toi thieu 6 ky tu" />
+        Mật khẩu
+        <input type="password" formControlName="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" />
       </label>
 
       <div *ngIf="errorMessage" class="auth-error">
@@ -32,13 +32,13 @@
       </div>
 
       <button type="submit" [disabled]="isSubmitting">
-        {{ isSubmitting ? 'Dang xu ly...' : 'Dang ky' }}
+        {{ isSubmitting ? 'Đang tạo tài khoản...' : 'Đăng ký' }}
       </button>
     </form>
 
     <p class="auth-switch">
-      Da co tai khoan?
-      <a routerLink="/login">Dang nhap</a>
+      Đã có tài khoản?
+      <a routerLink="/login">Đăng nhập</a>
     </p>
   </section>
 </main>

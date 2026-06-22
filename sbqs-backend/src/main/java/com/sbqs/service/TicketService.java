@@ -7,8 +7,10 @@ import com.sbqs.entity.QueueMachineServiceMapping;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
+import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
+import com.sbqs.repository.CounterSessionRepository;
 import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
@@ -32,6 +34,8 @@ public class TicketService {
     private final HistoryRepository historyRepository;
     private final BranchRepository branchRepository;
     private final ServiceRepository serviceRepository;
+    private final CurrentUserService currentUserService;
+    private final CounterSessionRepository counterSessionRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -39,7 +43,9 @@ public class TicketService {
             CounterRepository counterRepository,
             HistoryRepository historyRepository,
             BranchRepository branchRepository,
-            ServiceRepository serviceRepository) {
+            ServiceRepository serviceRepository,
+            CurrentUserService currentUserService,
+            CounterSessionRepository counterSessionRepository) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -47,10 +53,12 @@ public class TicketService {
         this.historyRepository = historyRepository;
         this.branchRepository = branchRepository;
         this.serviceRepository = serviceRepository;
+        this.currentUserService = currentUserService;
+        this.counterSessionRepository = counterSessionRepository;
     }
 
     public List<Ticket> getAllTickets() {
-        return ticketRepository.findAll();
+        return ticketRepository.findByBranch(currentUserService.requireUser().getBranch());
     }
 
     @Transactional
@@ -140,6 +148,8 @@ public class TicketService {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
 
+        requireCurrentStaffOwnsCounter(counter);
+
         if (counter.getCurrentTicket() != null
                 && "SERVING".equals(counter.getCurrentTicket().getStatus())) {
             throw new RuntimeException("Quay dang phuc vu khach, hay hoan thanh truoc khi goi so moi");
@@ -188,6 +198,12 @@ public class TicketService {
                         && c.getCurrentTicket().getTicketId().equals(ticketId))
                 .findFirst()
                 .orElse(null);
+
+        if (counter == null) {
+            throw new RuntimeException("Ticket khong duoc phuc vu tai quay nao");
+        }
+
+        requireCurrentStaffOwnsCounter(counter);
 
         History history = new History();
         history.setTicket(ticket);
@@ -242,5 +258,14 @@ public class TicketService {
         }
 
         return email;
+    }
+
+    private void requireCurrentStaffOwnsCounter(Counter counter) {
+        User currentStaff = currentUserService.requireUser();
+        counterSessionRepository
+                .findFirstByCounterAndStatusOrderByStartedAtDesc(counter, "ACTIVE")
+                .filter(session -> session.getStaff().getUserId().equals(currentStaff.getUserId()))
+                .orElseThrow(() -> new RuntimeException(
+                        "Ban phai assign vao quay nay truoc khi thao tac ticket"));
     }
 }

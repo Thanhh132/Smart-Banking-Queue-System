@@ -20,6 +20,17 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
 
         jdbcTemplate.execute("""
+                create table if not exists password_reset_tokens (
+                    password_reset_token_id bigserial primary key,
+                    user_id bigint not null references users(user_id) on delete cascade,
+                    token_hash varchar(64) not null unique,
+                    expires_at timestamp not null,
+                    used_at timestamp,
+                    created_at timestamp not null
+                )
+                """);
+
+        jdbcTemplate.execute("""
                 create table if not exists counter_sessions (
                     counter_session_id bigserial primary key,
                     counter_id bigint not null references counters(counter_id),

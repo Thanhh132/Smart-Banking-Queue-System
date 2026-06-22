@@ -215,6 +215,14 @@ public class KeycloakService {
         prepareExistingUser(resolvedUserId, fullName, email, password, role, adminToken);
     }
 
+    public void resetUserPassword(String userId, String password) {
+        if (userId == null || userId.isBlank()) {
+            throw new RuntimeException("Tai khoan chua duoc dong bo voi Keycloak");
+        }
+
+        resetPassword(userId, password, getAdminAccessToken());
+    }
+
     private void prepareExistingUser(
             String userId,
             String fullName,

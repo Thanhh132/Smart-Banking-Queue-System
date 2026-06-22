@@ -21,22 +21,26 @@ public class CounterService {
     private final CounterRepository counterRepository;
     private final CounterSessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final CurrentUserService currentUserService;
 
     public CounterService(
             CounterRepository counterRepository,
             CounterSessionRepository sessionRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CurrentUserService currentUserService) {
 
         this.counterRepository = counterRepository;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
+        this.currentUserService = currentUserService;
     }
 
     public List<Counter> getAllCounters() {
-        return counterRepository.findAll();
+        return counterRepository.findByBranch(currentUserService.requireUser().getBranch());
     }
 
     public List<Counter> getCountersByBranch(Branch branch) {
+        currentUserService.requireBranch(branch.getBranchId());
         return counterRepository.findByBranch(branch);
     }
 
@@ -50,6 +54,8 @@ public class CounterService {
     }
 
     public Counter createCounter(Counter counter) {
+        currentUserService.requireBranch(counter.getBranch().getBranchId());
+        counter.setBranch(currentUserService.requireUser().getBranch());
         if (counterRepository.existsByBranchAndCounterCode(
                 counter.getBranch(),
                 counter.getCounterCode())) {
@@ -63,6 +69,9 @@ public class CounterService {
     public Counter updateCounter(Long counterId, Counter request) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
+
+        currentUserService.requireBranch(counter.getBranch().getBranchId());
+        currentUserService.requireBranch(request.getBranch().getBranchId());
 
         if (counterRepository.existsByBranchAndCounterCodeAndCounterIdNot(
                 request.getBranch(),
@@ -143,6 +152,8 @@ public class CounterService {
     public void deleteCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
+
+        currentUserService.requireBranch(counter.getBranch().getBranchId());
 
         counterRepository.delete(counter);
     }

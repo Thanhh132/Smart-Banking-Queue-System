@@ -31,7 +31,12 @@ public class SecurityConfig {
                 })
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/register",
+                                "/api/auth/login",
+                                "/api/auth/refresh",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/branches", "/api/branches/**")
                         .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN", "CUSTOMER")
@@ -67,11 +72,14 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tickets/{ticketId}/complete").hasRole("STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/tickets/{ticketId}/cancel").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.POST, "/api/tickets").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.GET, "/api/tickets", "/api/tickets/**")
-                        .hasAnyRole("BRANCH_ADMIN", "STAFF", "CUSTOMER")
-                        .requestMatchers("/api/appointments", "/api/appointments/**")
-                        .hasAnyRole("BRANCH_ADMIN", "CUSTOMER")
-                        .requestMatchers("/api/history", "/api/history/**")
+                        .requestMatchers(HttpMethod.GET, "/api/tickets/current").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/tickets/status/**")
+                        .hasAnyRole("BRANCH_ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.GET, "/api/tickets").hasRole("BRANCH_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/appointments", "/api/appointments/**")
+                        .hasRole("BRANCH_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/appointments").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/history", "/api/history/**")
                         .hasAnyRole("BRANCH_ADMIN", "STAFF")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2

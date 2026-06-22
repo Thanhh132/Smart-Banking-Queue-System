@@ -18,15 +18,18 @@ public class QueueMonitorService {
     private final BranchRepository branchRepository;
     private final CounterRepository counterRepository;
     private final TicketRepository ticketRepository;
+    private final CurrentUserService currentUserService;
 
     public QueueMonitorService(
             BranchRepository branchRepository,
             CounterRepository counterRepository,
-            TicketRepository ticketRepository) {
+            TicketRepository ticketRepository,
+            CurrentUserService currentUserService) {
 
         this.branchRepository = branchRepository;
         this.counterRepository = counterRepository;
         this.ticketRepository = ticketRepository;
+        this.currentUserService = currentUserService;
     }
 
     public QueueMonitorResponse getMonitor(Long branchId) {
@@ -34,6 +37,10 @@ public class QueueMonitorService {
     }
 
     public QueueMonitorResponse getMonitor(Long branchId, Long queueMachineId) {
+        if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
+            currentUserService.requireBranch(branchId);
+        }
+
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 

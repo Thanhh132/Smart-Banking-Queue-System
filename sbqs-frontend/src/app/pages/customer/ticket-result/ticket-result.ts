@@ -1,20 +1,18 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
-import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-import { AppCard } from '../../../shared/components/app-card/app-card';
 
 @Component({
   selector: 'app-ticket-result',
   imports: [
     CommonModule,
     DashboardLayout,
-    AppPageHeader,
-    AppCard,
+    RouterLink,
   ],
   templateUrl: './ticket-result.html',
   styleUrl: './ticket-result.scss',
@@ -27,6 +25,7 @@ export class TicketResult implements OnInit, OnDestroy {
   ticket: any = null;
   monitor: QueueMonitor | null = null;
   errorMessage = '';
+  isCancelling = false;
   private intervalId: any;
 
   ngOnInit(): void {
@@ -48,15 +47,25 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   get serviceName(): string {
-    return this.ticket?.service?.serviceName || this.ticket?.serviceName || 'Chua xac dinh';
+    return this.ticket?.service?.serviceName || this.ticket?.serviceName || 'Chưa xác định';
   }
 
   get branchName(): string {
-    return this.ticket?.branch?.branchName || this.ticket?.branchName || this.monitor?.branchName || 'Chua xac dinh';
+    return this.ticket?.branch?.branchName || this.ticket?.branchName || this.monitor?.branchName || 'Chưa xác định';
   }
 
   get queueMachineName(): string {
-    return this.ticket?.queueMachine?.machineName || 'May boc so';
+    return this.ticket?.queueMachine?.machineName || 'Máy bốc số';
+  }
+
+  get ticketStatusLabel(): string {
+    const labels: Record<string, string> = {
+      WAITING: 'Đang chờ',
+      SERVING: 'Đang phục vụ',
+      COMPLETED: 'Đã hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    return labels[this.ticket?.status] || 'Đang xử lý';
   }
 
   get servingCounterCount(): number {
@@ -65,14 +74,18 @@ export class TicketResult implements OnInit, OnDestroy {
 
   getCounterStatusLabel(status: string): string {
     if (status === 'SERVING') {
-      return 'Dang phuc vu';
+      return 'Đang phục vụ';
     }
 
     if (status === 'IDLE') {
-      return 'Dang ranh';
+      return 'Đang rảnh';
     }
 
-    return 'Khong hoat dong';
+    return 'Không hoạt động';
+  }
+
+  getCounterStatusClass(status: string): string {
+    return `customer-counter--${status.toLowerCase()}`;
   }
 
   cancelTicket(): void {
@@ -80,14 +93,18 @@ export class TicketResult implements OnInit, OnDestroy {
       return;
     }
 
+    this.isCancelling = true;
+    this.errorMessage = '';
     this.ticketService.cancelTicket(this.ticket.ticketId).subscribe({
       next: (ticket: any) => {
         this.ticket = ticket;
         localStorage.setItem('currentTicket', JSON.stringify(ticket));
+        this.isCancelling = false;
         this.cdr.detectChanges();
       },
       error: () => {
-        this.errorMessage = 'Khong huy duoc ticket nay.';
+        this.errorMessage = 'Không hủy được phiếu này.';
+        this.isCancelling = false;
         this.cdr.detectChanges();
       },
     });
@@ -113,7 +130,7 @@ export class TicketResult implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: () => {
-        this.errorMessage = 'Khong tai duoc bang goi so.';
+        this.errorMessage = 'Không tải được bảng gọi số.';
         this.cdr.detectChanges();
       },
     });

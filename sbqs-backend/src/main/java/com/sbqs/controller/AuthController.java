@@ -3,6 +3,8 @@ package com.sbqs.controller;
 import com.sbqs.dto.LoginRequest;
 import com.sbqs.dto.RefreshTokenRequest;
 import com.sbqs.dto.RegisterRequest;
+import com.sbqs.dto.ForgotPasswordRequest;
+import com.sbqs.dto.ResetPasswordRequest;
 import com.sbqs.entity.User;
 import com.sbqs.service.AuthService;
 import org.springframework.http.ResponseEntity;
@@ -46,12 +48,19 @@ public class AuthController {
                 authService.refresh(request.getRefreshToken()));
     }
 
-    @PostMapping("/repair-login")
-    public ResponseEntity<Void> repairLogin(
-            @RequestBody LoginRequest request) {
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(
+            @RequestBody ForgotPasswordRequest request) {
 
-        authService.repairLoginAccount(request);
+        authService.requestPasswordReset(request.getEmail());
+        return ResponseEntity.accepted().build();
+    }
 
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(
+            @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.noContent().build();
     }
 }

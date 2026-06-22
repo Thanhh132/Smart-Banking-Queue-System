@@ -13,14 +13,18 @@ import java.util.List;
 public class HistoryService {
 
     private final HistoryRepository historyRepository;
+    private final CurrentUserService currentUserService;
 
     public HistoryService(
-            HistoryRepository historyRepository) {
+            HistoryRepository historyRepository,
+            CurrentUserService currentUserService) {
 
         this.historyRepository = historyRepository;
+        this.currentUserService = currentUserService;
     }
 
     public List<HistoryResponse> getHistoryByBranch(Long branchId) {
+        currentUserService.requireBranch(branchId);
         return historyRepository.findByBranchBranchId(branchId)
                 .stream()
                 .map(this::convertToResponse)
@@ -29,7 +33,7 @@ public class HistoryService {
 
     public List<HistoryResponse> getAllHistory() {
 
-        return historyRepository.findAll()
+        return historyRepository.findByBranchBranchId(currentUserService.requireBranchId())
                 .stream()
                 .map(this::convertToResponse)
                 .toList();
@@ -44,7 +48,8 @@ public class HistoryService {
         LocalDateTime toDateTime = to.atTime(23, 59, 59);
 
         return historyRepository
-                .findByCompletedAtBetween(
+                .findByBranchBranchIdAndCompletedAtBetween(
+                        currentUserService.requireBranchId(),
                         fromDateTime,
                         toDateTime)
                 .stream()
