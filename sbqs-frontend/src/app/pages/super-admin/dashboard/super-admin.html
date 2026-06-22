@@ -1,116 +1,63 @@
-<app-dashboard-layout title="Super Admin">
-  <div class="page-section">
-    <section class="page-heading">
-      <div>
-        <span class="page-kicker">Super Admin</span>
-        <h1>Quan ly tai khoan admin chi nhanh</h1>
-        <p>Tao tai khoan de admin branch dang nhap va cau hinh chi nhanh duoc gan.</p>
+<app-dashboard-layout title="Quản trị hệ thống">
+  <div class="super-dashboard">
+    <header class="super-header">
+      <div><span>SUPER ADMIN</span><h1>Quản trị toàn hệ thống</h1><p>Quản lý chi nhánh và cấp tài khoản quản trị theo đúng phạm vi vận hành.</p></div>
+      <a routerLink="/super-admin/branches" class="btn btn-primary">Quản lý chi nhánh</a>
+    </header>
+
+    <section class="super-summary">
+      <div><span>Tổng chi nhánh</span><strong>{{ branches.length }}</strong><p>Điểm giao dịch đã khai báo</p></div>
+      <div><span>Quản trị chi nhánh</span><strong>{{ adminBranches.length }}</strong><p>Tài khoản đã cấp</p></div>
+      <div><span>Đang hoạt động</span><strong>{{ activeAdminCount }}</strong><p>Tài khoản có thể đăng nhập</p></div>
+    </section>
+
+    <section class="report-center">
+      <div class="report-center__heading"><div><span>BÁO CÁO</span><h2>Xuất dữ liệu toàn hệ thống</h2></div><p>Template Jasper chuẩn cho PDF và Excel.</p></div>
+      <div class="report-center__grid">
+        <div class="report-center__item"><div><strong>Người dùng</strong><p>Tài khoản và phạm vi chi nhánh</p></div><app-report-export-buttons reportType="users" /></div>
+        <div class="report-center__item"><div><strong>Dịch vụ</strong><p>Danh mục dịch vụ toàn hệ thống</p></div><app-report-export-buttons reportType="services" /></div>
+        <div class="report-center__item"><div><strong>Ticket</strong><p>Phiếu giao dịch và trạng thái xử lý</p></div><app-report-export-buttons reportType="tickets" /></div>
       </div>
     </section>
 
-    <section class="ui-card-grid">
-      <a routerLink="/super-admin/branches" class="ui-card ui-action-card">
-        <span>Chi nhanh</span>
-        <strong>Quan ly chi nhanh</strong>
-        <p>Tao va cap nhat chi nhanh truoc khi gan tai khoan Branch Admin.</p>
-      </a>
-    </section>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-    <div *ngIf="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
-
-    <section class="ui-card form-card">
-      <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="ui-form ui-form-grid">
-        <label>
-          Ho ten
-          <input type="text" formControlName="fullName" placeholder="Admin chi nhanh" />
-        </label>
-
-        <label>
-          Email
-          <input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" />
-        </label>
-
-        <label>
-          So dien thoai
-          <input type="tel" formControlName="phone" placeholder="0900000000" />
-        </label>
-
-        <label>
-          Mat khau
-          <input type="password" formControlName="password" placeholder="Toi thieu 6 ky tu" />
-        </label>
-
-        <label>
-          Chi nhanh
-          <select formControlName="branchId">
-            <option [ngValue]="null">Chon chi nhanh</option>
-            <option *ngFor="let branch of branches" [ngValue]="branch.branchId">
-              {{ branch.branchName }} - {{ branch.branchCode }}
-            </option>
-          </select>
-        </label>
-
-        <div class="ui-form-actions form-actions-full">
-          <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-            {{ isSubmitting ? 'Dang tao...' : 'Tao admin branch' }}
-          </button>
-        </div>
-      </form>
-    </section>
-
-    <section class="ui-card">
-      <div class="table-heading">
-        <div>
-          <h3>Danh sach admin branch</h3>
-          <p>Theo doi tai khoan quan tri chi nhanh da cap.</p>
-        </div>
-
-        <button type="button" class="btn btn-secondary" (click)="loadAdminBranches()" [disabled]="isListLoading">
-          {{ isListLoading ? 'Dang tai...' : 'Tai lai' }}
-        </button>
+    <section class="admin-account-grid">
+      <div class="super-panel account-form-panel">
+        <div class="panel-heading"><div><span>CẤP TÀI KHOẢN</span><h2>Thêm quản trị chi nhánh</h2></div><p>Tài khoản được đồng bộ bảo mật với Keycloak.</p></div>
+        <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="account-form">
+          <label>Họ và tên<input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" /></label>
+          <label>Email<input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" autocomplete="email" /></label>
+          <label>Số điện thoại<input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" /></label>
+          <label>Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" /></label>
+          <label class="full-row">Chi nhánh phụ trách<select formControlName="branchId"><option [ngValue]="null">Chọn chi nhánh</option><option *ngFor="let branch of branches" [ngValue]="branch.branchId">{{ branch.branchName }} · {{ branch.branchCode }}</option></select></label>
+          <div class="full-row form-actions"><button type="submit" class="btn btn-primary" [disabled]="isSubmitting">{{ isSubmitting ? 'Đang tạo...' : 'Tạo tài khoản' }}</button></div>
+        </form>
       </div>
 
-      <div *ngIf="isListLoading" class="admin-empty">Dang tai danh sach admin branch...</div>
-      <div *ngIf="!isListLoading && adminBranches.length === 0" class="admin-empty">Chua co admin branch nao.</div>
+      <div class="super-panel account-list-panel">
+        <div class="panel-heading list-heading">
+          <div><span>DANH SÁCH</span><h2>Quản trị chi nhánh</h2></div>
+          <label class="admin-search"><span>Tìm kiếm</span><input type="search" [(ngModel)]="searchTerm" placeholder="Tên, email, chi nhánh..." /></label>
+        </div>
 
-      <div *ngIf="!isListLoading && adminBranches.length > 0" class="table-wrapper">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Ho ten</th>
-              <th>Email</th>
-              <th>So dien thoai</th>
-              <th>Chi nhanh</th>
-              <th>Trang thai</th>
-              <th>Thao tac</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr *ngFor="let admin of adminBranches">
-              <td><strong>{{ admin.fullName }}</strong></td>
-              <td>{{ admin.email }}</td>
-              <td>{{ admin.phone || '-' }}</td>
-              <td>{{ admin.branch?.branchName || '-' }}</td>
-              <td>
-                <span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
-                  {{ admin.status || 'ACTIVE' }}
-                </span>
-              </td>
-              <td>
-                <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
-                  Xoa han
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div *ngIf="isListLoading" class="admin-empty">Đang tải danh sách...</div>
+        <div *ngIf="!isListLoading && filteredAdmins.length === 0" class="admin-empty">Chưa có tài khoản phù hợp.</div>
+        <div *ngIf="!isListLoading && filteredAdmins.length > 0" class="table-wrapper">
+          <table class="admin-table">
+            <thead><tr><th>Người dùng</th><th>Chi nhánh</th><th>Liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <tbody>
+              <tr *ngFor="let admin of filteredAdmins">
+                <td><strong>{{ admin.fullName }}</strong><small>{{ admin.email }}</small></td>
+                <td>{{ admin.branch?.branchName || 'Chưa gán' }}<small>{{ admin.branch?.branchCode || '-' }}</small></td>
+                <td>{{ admin.phone || '-' }}</td>
+                <td><span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">{{ admin.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}</span></td>
+                <td><button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">Xóa</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   </div>

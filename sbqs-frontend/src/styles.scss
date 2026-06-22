@@ -688,12 +688,72 @@ button[type="submit"]:hover {
   font-weight: 700;
 }
 
+.report-center {
+  padding: 24px;
+  background: #ffffff;
+  border: 1px solid #d6e0eb;
+  border-radius: 8px;
+}
+
+.report-center__heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid #e4eaf1;
+}
+
+.report-center__heading span {
+  color: #08756d;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.report-center__heading h2 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.report-center__heading p,
+.report-center__item p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.report-center__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.report-center__item {
+  display: grid;
+  gap: 16px;
+  align-content: space-between;
+  min-height: 138px;
+  padding: 18px;
+  border: 1px solid #dce4ed;
+  border-radius: 7px;
+  background: #f9fbfd;
+}
+
+.report-center__item strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 17px;
+}
+
 @media (max-width: 760px) {
   .customer-page__intro h1 { font-size: 29px; }
   .customer-primary-action,
   .customer-section__header { align-items: stretch; flex-direction: column; }
   .customer-steps { grid-template-columns: 1fr; }
   .customer-section { padding: 20px; }
+  .report-center__heading { align-items: stretch; flex-direction: column; }
+  .report-center__grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 560px) {

@@ -96,6 +96,9 @@ export class AuthService {
     localStorage.removeItem('email');
     localStorage.removeItem('selectedBranchId');
     localStorage.removeItem('currentTicket');
+    localStorage.removeItem('customerAddress');
+    localStorage.removeItem('customerLatitude');
+    localStorage.removeItem('customerLongitude');
   }
 
   isLoggedIn(): boolean {

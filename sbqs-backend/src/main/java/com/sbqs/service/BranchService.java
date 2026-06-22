@@ -94,6 +94,7 @@ public class BranchService {
         branch.setBranchName(request.getBranchName());
         branch.setProvince(request.getProvince());
         branch.setDistrict(request.getDistrict());
+        branch.setWard(request.getWard());
         branch.setAddress(request.getAddress());
         branch.setPhone(request.getPhone());
         branch.setLatitude(request.getLatitude());

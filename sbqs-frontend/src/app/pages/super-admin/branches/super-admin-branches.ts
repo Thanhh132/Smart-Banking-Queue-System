@@ -1,16 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
+import { DistrictOption, ProvinceOption, VIETNAM_LOCATIONS } from '../../../core/data/vietnam-locations';
 import { Branch } from '../../../core/models/branch.model';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
+import { GeocodeResult, LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
   selector: 'app-super-admin-branches',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DashboardLayout],
   templateUrl: './super-admin-branches.html',
   styleUrl: './super-admin-branches.scss',
 })
@@ -19,16 +22,23 @@ export class SuperAdminBranches implements OnInit {
   private branchService = inject(BranchService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private locationService = inject(LocationService);
+  private sanitizer = inject(DomSanitizer);
+  private isHydratingForm = false;
 
   branches: Branch[] = [];
   isLoading = false;
   isSubmitting = false;
+  isGeocoding = false;
+  locationConfirmed = false;
   isEditMode = false;
   editingBranchId: number | null = null;
   successMessage = '';
   errorMessage = '';
+  searchTerm = '';
+  mapPreviewUrl: SafeResourceUrl = '';
 
-  bankOptions = [
+  readonly bankOptions = [
     { label: 'BIDV', value: 'BIDV', code: 'BIDV' },
     { label: 'Vietcombank', value: 'Vietcombank', code: 'VCB' },
     { label: 'VietinBank', value: 'VietinBank', code: 'VTB' },
@@ -39,74 +49,55 @@ export class SuperAdminBranches implements OnInit {
     { label: 'Sacombank', value: 'Sacombank', code: 'STB' },
     { label: 'VPBank', value: 'VPBank', code: 'VPB' },
   ];
-
-  provinceOptions = [
-    'Binh Duong',
-    'Ho Chi Minh',
-    'Dong Nai',
-    'Ba Ria - Vung Tau',
-    'Long An',
-    'Tay Ninh',
-    'Can Tho',
-    'Da Nang',
-    'Ha Noi',
-  ];
-
-  districtOptions = [
-    { label: 'Thu Dau Mot', value: 'Thu Dau Mot', code: 'TDM' },
-    { label: 'Ben Cat', value: 'Ben Cat', code: 'BC' },
-    { label: 'Di An', value: 'Di An', code: 'DA' },
-    { label: 'Thuan An', value: 'Thuan An', code: 'TA' },
-    { label: 'Tan Uyen', value: 'Tan Uyen', code: 'TU' },
-    { label: 'Bau Bang', value: 'Bau Bang', code: 'BB' },
-    { label: 'Bac Tan Uyen', value: 'Bac Tan Uyen', code: 'BTU' },
-    { label: 'Phu Giao', value: 'Phu Giao', code: 'PG' },
-    { label: 'Dau Tieng', value: 'Dau Tieng', code: 'DT' },
-    { label: 'Quan 1', value: 'Quan 1', code: 'Q1' },
-    { label: 'Quan 3', value: 'Quan 3', code: 'Q3' },
-    { label: 'Quan 7', value: 'Quan 7', code: 'Q7' },
-    { label: 'Thu Duc', value: 'Thu Duc', code: 'TD' },
-    { label: 'Bien Hoa', value: 'Bien Hoa', code: 'BH' },
-    { label: 'Vung Tau', value: 'Vung Tau', code: 'VT' },
-    { label: 'Ninh Kieu', value: 'Ninh Kieu', code: 'NK' },
-    { label: 'Hai Chau', value: 'Hai Chau', code: 'HC' },
-    { label: 'Hoan Kiem', value: 'Hoan Kiem', code: 'HK' },
-    { label: 'Cau Giay', value: 'Cau Giay', code: 'CG' },
-  ];
+  readonly provinceOptions: ProvinceOption[] = VIETNAM_LOCATIONS;
 
   branchForm = this.fb.group({
     bankName: ['BIDV', [Validators.required]],
-    branchCode: [''],
+    branchCode: [{ value: '', disabled: true }],
     branchName: ['', [Validators.required]],
-    province: ['Binh Duong', [Validators.required]],
-    district: ['Thu Dau Mot', [Validators.required]],
+    province: ['', [Validators.required]],
+    district: ['', [Validators.required]],
+    ward: ['', [Validators.required]],
     address: ['', [Validators.required]],
-    phone: ['', [Validators.required]],
-    latitude: [10.7769, [Validators.required]],
-    longitude: [106.7009, [Validators.required]],
+    phone: ['', [Validators.required, Validators.pattern(/^[0-9+\s.-]{8,15}$/)]],
+    latitude: this.fb.control<number | null>(null, [Validators.required]),
+    longitude: this.fb.control<number | null>(null, [Validators.required]),
     status: ['ACTIVE', [Validators.required]],
   });
 
+  get filteredBranches(): Branch[] {
+    const keyword = this.searchTerm.trim().toLocaleLowerCase('vi');
+    if (!keyword) return this.branches;
+    return this.branches.filter((branch) =>
+      [branch.bankName, branch.branchCode, branch.branchName, branch.province, branch.district, branch.ward]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword))
+    );
+  }
+
+  get activeBranchCount(): number {
+    return this.branches.filter((branch) => branch.status === 'ACTIVE').length;
+  }
+
   ngOnInit(): void {
-    this.syncGeneratedBranchFields();
-    this.branchForm.get('bankName')?.valueChanges.subscribe(() => this.syncGeneratedBranchFields());
-    this.branchForm.get('district')?.valueChanges.subscribe(() => this.syncGeneratedBranchFields());
+    this.branchForm.get('bankName')?.valueChanges.subscribe(() => this.syncGeneratedFields());
+    this.syncGeneratedFields();
+    this.updateMapPreview();
     this.loadBranches();
   }
 
   loadBranches(): void {
     this.isLoading = true;
     this.errorMessage = '';
-
     this.branchService.getBranches().subscribe({
       next: (branches) => {
         this.branches = branches || [];
         this.isLoading = false;
+        this.syncGeneratedFields();
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Load branches error:', err);
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc danh sach chi nhanh.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được danh sách chi nhánh.');
         this.isLoading = false;
         this.cdr.detectChanges();
       },
@@ -114,34 +105,45 @@ export class SuperAdminBranches implements OnInit {
   }
 
   submitBranch(): void {
-    if (this.branchForm.invalid) {
-      this.branchForm.markAllAsTouched();
+    if (!this.locationConfirmed) {
+      const requiredSourceControls = ['bankName', 'address', 'phone', 'status'];
+      const sourceInvalid = requiredSourceControls.some((name) => this.branchForm.get(name)?.invalid);
+      if (sourceInvalid) {
+        this.branchForm.markAllAsTouched();
+        this.cdr.detectChanges();
+        return;
+      }
+      this.resolveLocation(true);
       return;
     }
 
+    if (this.branchForm.invalid) {
+      this.branchForm.markAllAsTouched();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.persistBranch();
+  }
+
+  private persistBranch(): void {
     const payload = this.branchForm.getRawValue();
     this.isSubmitting = true;
     this.successMessage = '';
     this.errorMessage = '';
-
-    const request$ =
-      this.isEditMode && this.editingBranchId
-        ? this.branchService.updateBranch(this.editingBranchId, payload)
-        : this.branchService.createBranch(payload);
+    const request$ = this.isEditMode && this.editingBranchId
+      ? this.branchService.updateBranch(this.editingBranchId, payload)
+      : this.branchService.createBranch(payload);
 
     request$.subscribe({
       next: () => {
-        this.successMessage = this.isEditMode
-          ? 'Branch updated successfully.'
-          : 'Branch created successfully.';
+        this.successMessage = this.isEditMode ? 'Đã cập nhật chi nhánh.' : 'Đã tạo chi nhánh mới.';
         this.isSubmitting = false;
         this.cancelEdit();
         this.loadBranches();
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Save branch error:', err);
-        this.errorMessage = this.apiError.getMessage(err, 'Khong luu duoc chi nhanh.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không lưu được chi nhánh.');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -151,44 +153,39 @@ export class SuperAdminBranches implements OnInit {
   startEdit(branch: Branch): void {
     this.isEditMode = true;
     this.editingBranchId = branch.branchId;
+    this.isHydratingForm = true;
+
     this.branchForm.patchValue({
       bankName: branch.bankName,
       branchCode: branch.branchCode,
       branchName: branch.branchName,
-      province: branch.province || 'Binh Duong',
-      district: branch.district || 'Thu Dau Mot',
+      province: branch.province || '',
+      district: branch.district || '',
+      ward: branch.ward || '',
       address: branch.address,
       phone: branch.phone,
-      latitude: branch.latitude ?? 10.7769,
-      longitude: branch.longitude ?? 106.7009,
+      latitude: branch.latitude ?? null,
+      longitude: branch.longitude ?? null,
       status: branch.status || 'ACTIVE',
     });
+    this.isHydratingForm = false;
+    this.locationConfirmed = true;
+    this.updateMapPreview();
+    this.cdr.detectChanges();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   deleteBranch(branch: Branch): void {
-    const confirmed = confirm(
-      `Xoa han chi nhanh "${branch.branchName}"? Neu chi nhanh dang co user/ticket, he thong se khong cho xoa.`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
+    if (!confirm(`Xóa vĩnh viễn chi nhánh "${branch.branchName}"?`)) return;
     this.successMessage = '';
     this.errorMessage = '';
-
     this.branchService.deleteBranch(branch.branchId).subscribe({
       next: () => {
-        this.successMessage = 'Da xoa chi nhanh.';
+        this.successMessage = 'Đã xóa chi nhánh.';
         this.loadBranches();
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Delete branch error:', err);
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Khong xoa duoc chi nhanh. Co the chi nhanh dang duoc su dung.'
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Không xóa được chi nhánh đang được sử dụng.');
         this.cdr.detectChanges();
       },
     });
@@ -197,38 +194,176 @@ export class SuperAdminBranches implements OnInit {
   cancelEdit(): void {
     this.isEditMode = false;
     this.editingBranchId = null;
+    this.isHydratingForm = true;
     this.branchForm.reset({
-      bankName: 'BIDV',
-      branchCode: '',
-      branchName: '',
-      province: 'Binh Duong',
-      district: 'Thu Dau Mot',
-      address: '',
-      phone: '',
-      latitude: 10.7769,
-      longitude: 106.7009,
-      status: 'ACTIVE',
+      bankName: 'BIDV', branchCode: '', branchName: '', province: '',
+      district: '', ward: '', address: '', phone: '',
+      latitude: null, longitude: null, status: 'ACTIVE',
     });
-    this.syncGeneratedBranchFields();
+    this.isHydratingForm = false;
+    this.locationConfirmed = false;
+    this.syncGeneratedFields();
+    this.updateMapPreview();
     this.cdr.detectChanges();
   }
 
-  private syncGeneratedBranchFields(): void {
-    if (this.isEditMode) {
+  updateMapPreview(): void {
+    const latitude = this.branchForm.get('latitude')?.value;
+    const longitude = this.branchForm.get('longitude')?.value;
+    const query = latitude != null && longitude != null
+      ? `${latitude},${longitude}`
+      : this.addressQuery || 'Việt Nam';
+    this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+      `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
+    );
+  }
+
+  markLocationUnconfirmed(): void {
+    this.locationConfirmed = false;
+    this.branchForm.patchValue({
+      province: '', district: '', ward: '', latitude: null, longitude: null,
+    }, { emitEvent: false });
+    this.successMessage = '';
+  }
+
+  confirmMapLocation(): void {
+    if (!this.branchForm.get('address')?.value?.trim()) return;
+    this.resolveLocation(false);
+  }
+
+  private resolveLocation(saveAfterResolved: boolean): void {
+    if (!this.addressQuery) {
+      this.errorMessage = 'Vui lòng nhập địa chỉ chi nhánh.';
       return;
     }
 
-    const bank = this.branchForm.get('bankName')?.value || 'BIDV';
-    const district = this.branchForm.get('district')?.value || 'Thu Dau Mot';
-    const bankOption = this.bankOptions.find((item) => item.value === bank);
-    const districtOption = this.districtOptions.find((item) => item.value === district);
-
-    this.branchForm.patchValue(
-      {
-        branchCode: `${bankOption?.code || 'BANK'}-${districtOption?.code || 'BR'}`,
-        branchName: `${bank} ${district}`,
+    this.isGeocoding = true;
+    this.errorMessage = '';
+    this.locationService.geocode(this.addressQuery).subscribe({
+      next: (result) => {
+        const administrative = this.resolveAdministrativeFields(result);
+        this.isHydratingForm = true;
+        this.branchForm.patchValue({
+          province: administrative.province,
+          district: administrative.district,
+          ward: administrative.ward,
+          latitude: result.latitude,
+          longitude: result.longitude,
+        }, { emitEvent: false });
+        this.isHydratingForm = false;
+        this.syncGeneratedFields();
+        this.locationConfirmed = true;
+        this.isGeocoding = false;
+        this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
+          `https://www.google.com/maps?q=${result.latitude},${result.longitude}&output=embed`
+        );
+        this.successMessage = saveAfterResolved
+          ? 'Đã xác định địa chỉ. Đang lưu chi nhánh...'
+          : 'Đã xác định địa chỉ chi nhánh.';
+        this.cdr.detectChanges();
+        if (saveAfterResolved) {
+          this.persistBranch();
+        }
       },
-      { emitEvent: false }
+      error: (err) => {
+        this.isGeocoding = false;
+        this.locationConfirmed = false;
+        this.errorMessage = this.apiError.getMessage(err, 'Không tìm thấy địa chỉ này. Hãy nhập thêm phường, quận và tỉnh/thành phố.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  get googleMapsUrl(): string {
+    return this.locationService.googleMapsUrl({
+      address: this.fullAddress,
+      branchName: this.branchForm.get('branchName')?.value || '',
+    });
+  }
+
+  branchMapUrl(branch: Branch): string {
+    return this.locationService.googleMapsUrl(branch);
+  }
+
+  private get fullAddress(): string {
+    return this.branchForm.get('address')?.value?.trim() || '';
+  }
+
+  private get addressQuery(): string {
+    const address = this.fullAddress;
+    if (!address) return '';
+    return this.normalizeText(address).includes('viet nam') ? address : `${address}, Việt Nam`;
+  }
+
+  private syncGeneratedFields(): void {
+    if (this.isEditMode || this.isHydratingForm) return;
+    const bank = this.branchForm.get('bankName')?.value || 'BIDV';
+    const districtName = this.branchForm.get('district')?.value?.trim() || '';
+    const ward = this.branchForm.get('ward')?.value || '';
+    const bankCode = this.bankOptions.find((item) => item.value === bank)?.code || 'BANK';
+    const districtCode = this.findDistrictOption()?.code || this.createAreaCode(districtName);
+    const prefix = `${bankCode}-${districtCode}-`;
+    const sequence = this.branches.filter((branch) => branch.branchCode?.startsWith(prefix)).length + 1;
+    this.branchForm.patchValue({
+      branchCode: `${prefix}${String(sequence).padStart(2, '0')}`,
+      branchName: [bank, districtName, ward ? `- ${ward}` : ''].filter(Boolean).join(' '),
+    }, { emitEvent: false });
+  }
+
+  private findDistrictOption(): DistrictOption | undefined {
+    const province = this.branchForm.get('province')?.value || '';
+    const district = this.branchForm.get('district')?.value || '';
+    const provinceOption = this.provinceOptions.find((item) =>
+      this.sameAdministrativeName(item.label, province)
     );
+    return provinceOption?.districts.find((item) =>
+      this.sameAdministrativeName(item.label, district)
+    );
+  }
+
+  private resolveAdministrativeFields(result: GeocodeResult): {
+    province: string;
+    district: string;
+    ward: string;
+  } {
+    const typedAddress = this.normalizeText(this.fullAddress);
+    const provinceOption = this.provinceOptions.find((item) =>
+      typedAddress.includes(this.normalizeText(item.label))
+    ) || this.provinceOptions.find((item) => this.sameAdministrativeName(item.label, result.province));
+    const districtOption = provinceOption?.districts.find((item) =>
+      typedAddress.includes(this.normalizeText(item.label))
+    ) || provinceOption?.districts.find((item) => this.sameAdministrativeName(item.label, result.district));
+    const wardOption = districtOption?.wards.find((item) =>
+      typedAddress.includes(this.normalizeText(item.label))
+    );
+
+    return {
+      province: provinceOption?.label || result.province || '',
+      district: districtOption?.label || result.district || '',
+      ward: wardOption?.label || result.ward || '',
+    };
+  }
+
+  private sameAdministrativeName(left: string, right: string): boolean {
+    const clean = (value: string) => this.normalizeText(value)
+      .replace(/\b(thanh pho|tinh|quan|huyen|thi xa|phuong|xa)\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return clean(left) === clean(right);
+  }
+
+  private createAreaCode(value: string): string {
+    const words = this.normalizeText(value)
+      .replace(/\b(thanh pho|quan|huyen|thi xa)\b/g, '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!words.length) return 'BR';
+    return (words.length === 1 ? words[0].slice(0, 3) : words.map((word) => word[0]).join(''))
+      .toUpperCase();
+  }
+
+  private normalizeText(value: string): string {
+    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   }
 }

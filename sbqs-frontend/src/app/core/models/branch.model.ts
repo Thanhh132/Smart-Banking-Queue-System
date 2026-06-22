@@ -5,6 +5,7 @@ export interface Branch {
   branchName: string;
   province?: string;
   district?: string;
+  ward?: string;
   address: string;
   phone: string;
   status: string;

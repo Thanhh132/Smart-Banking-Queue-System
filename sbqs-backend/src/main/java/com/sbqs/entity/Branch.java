@@ -34,6 +34,9 @@ public class Branch {
     @Column(name = "district")
     private String district;
 
+    @Column(name = "ward")
+    private String ward;
+
     @Column(name = "address")
     private String address;
 

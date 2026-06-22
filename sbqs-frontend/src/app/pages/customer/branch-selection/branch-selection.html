@@ -2,40 +2,50 @@
   <div class="customer-page">
     <header class="customer-page__intro">
       <span class="customer-kicker">Bước 1/3</span>
-      <h1>Chọn điểm giao dịch</h1>
-      <p>Tìm chi nhánh theo ngân hàng, khu vực hoặc địa chỉ.</p>
+      <h1>Tìm điểm giao dịch phù hợp</h1>
+      <p>Chọn ngân hàng, nhập vị trí và xem các chi nhánh gần bạn nhất.</p>
     </header>
 
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="locationMessage" class="alert alert-success">{{ locationMessage }}</div>
+
+    <section class="location-panel">
+      <div class="location-panel__address">
+        <label>Vị trí của bạn</label>
+        <div class="location-input-row">
+          <input type="text" [(ngModel)]="customerAddress" placeholder="Nhập số nhà, đường, phường/xã, tỉnh thành..." (keyup.enter)="findNearbyByAddress()" />
+          <button type="button" class="btn btn-primary" (click)="findNearbyByAddress()" [disabled]="isLocating">Tìm gần tôi</button>
+          <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()" [disabled]="isLocating">Vị trí hiện tại</button>
+        </div>
+      </div>
+      <div class="location-panel__filters">
+        <label>Ngân hàng<select [(ngModel)]="selectedBank"><option value="ALL">Tất cả ngân hàng</option><option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option></select></label>
+        <label>Tìm trong kết quả<input type="search" [(ngModel)]="searchTerm" placeholder="Tên hoặc khu vực..." /></label>
+      </div>
+    </section>
 
     <section class="customer-section">
-      <div class="customer-section__header customer-section__header--search">
-        <div>
-          <h2>Danh sách chi nhánh</h2>
-          <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
-        </div>
-        <label class="customer-search">
-          <span>Tìm kiếm</span>
-          <input type="search" [(ngModel)]="searchTerm" placeholder="Ngân hàng, tỉnh thành, quận huyện..." />
-        </label>
+      <div class="customer-section__header">
+        <div><h2>Chi nhánh đang hoạt động</h2><p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p></div>
       </div>
 
-      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">
-        Đang tải danh sách chi nhánh...
-      </div>
+      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">Đang tải danh sách chi nhánh...</div>
+      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">Không tìm thấy chi nhánh phù hợp.</div>
 
-      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">
-        Không tìm thấy chi nhánh phù hợp.
-      </div>
-
-      <div class="customer-option-grid" *ngIf="filteredBranches.length > 0">
-        <button type="button" class="customer-option" *ngFor="let branch of filteredBranches" (click)="selectBranch(branch.branchId)">
-          <span class="customer-option__eyebrow">{{ branch.bankName }}</span>
-          <strong>{{ branch.branchName }}</strong>
-          <p>{{ branch.district || 'Chưa xác định' }}, {{ branch.province || 'Chưa xác định' }}</p>
-          <small>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</small>
-          <span class="customer-option__action">Chọn chi nhánh</span>
-        </button>
+      <div class="branch-result-grid" *ngIf="filteredBranches.length > 0">
+        <article class="branch-result" *ngFor="let branch of filteredBranches">
+          <div class="branch-result__heading">
+            <span>{{ branch.bankName }}</span>
+            <strong *ngIf="distanceLabel(branch)">{{ distanceLabel(branch) }}</strong>
+          </div>
+          <h3>{{ branch.branchName }}</h3>
+          <p>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</p>
+          <small>{{ branch.ward || '' }}{{ branch.ward ? ', ' : '' }}{{ branch.district || '-' }}, {{ branch.province || '-' }}</small>
+          <div class="branch-result__actions">
+            <button type="button" class="btn btn-primary" (click)="selectBranch(branch.branchId)">Chọn chi nhánh</button>
+            <a class="btn btn-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">Google Maps</a>
+          </div>
+        </article>
       </div>
     </section>
   </div>

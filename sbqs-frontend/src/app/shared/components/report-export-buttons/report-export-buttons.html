@@ -1,0 +1,11 @@
+<div class="report-export">
+  <div class="report-export__buttons">
+    <button type="button" class="report-button report-button--pdf" (click)="export('pdf')" [disabled]="loadingFormat !== null">
+      {{ loadingFormat === 'pdf' ? 'Đang tạo...' : 'Xuất PDF' }}
+    </button>
+    <button type="button" class="report-button report-button--excel" (click)="export('xlsx')" [disabled]="loadingFormat !== null">
+      {{ loadingFormat === 'xlsx' ? 'Đang tạo...' : 'Xuất Excel' }}
+    </button>
+  </div>
+  <small *ngIf="errorMessage">{{ errorMessage }}</small>
+</div>

@@ -1,149 +1,97 @@
-<app-dashboard-layout title="Branch Management">
-  <div class="page-section">
-    <section class="page-heading">
-      <span class="page-kicker">Super Admin</span>
-      <h1>Manage branches</h1>
-      <p>Create and maintain branch records before assigning Branch Admin accounts.</p>
+<app-dashboard-layout title="Quản lý chi nhánh">
+  <div class="super-page">
+    <header class="super-page__header">
+      <div><span>SUPER ADMIN</span><h1>Hệ thống chi nhánh</h1><p>Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị.</p></div>
+      <button type="button" class="btn btn-secondary" (click)="loadBranches()" [disabled]="isLoading">
+        {{ isLoading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
+      </button>
+    </header>
+
+    <section class="super-stats">
+      <div><span>Tổng chi nhánh</span><strong>{{ branches.length }}</strong></div>
+      <div><span>Đang hoạt động</span><strong>{{ activeBranchCount }}</strong></div>
+      <div><span>Ngừng hoạt động</span><strong>{{ branches.length - activeBranchCount }}</strong></div>
     </section>
 
-    <div *ngIf="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
-
-    <section class="admin-panel-grid">
-      <div class="ui-card">
-        <div class="card-heading">
-          <h3>{{ isEditMode ? 'Edit branch' : 'Create branch' }}</h3>
-          <p>Branch data is stored in the application database; Keycloak keeps only login security data.</p>
+    <section class="branch-management-grid">
+      <div class="super-panel branch-form-panel">
+        <div class="super-panel__heading">
+          <div><span>{{ isEditMode ? 'CHỈNH SỬA' : 'TẠO MỚI' }}</span><h2>{{ isEditMode ? 'Cập nhật chi nhánh' : 'Thêm chi nhánh' }}</h2></div>
         </div>
 
-        <form class="ui-form" [formGroup]="branchForm" (ngSubmit)="submitBranch()">
-          <label>
-            Bank name
-            <select formControlName="bankName">
-              <option *ngFor="let bank of bankOptions" [value]="bank.value">
-                {{ bank.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            Province
-            <select formControlName="province">
-              <option *ngFor="let province of provinceOptions" [value]="province">
-                {{ province }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            District
-            <select formControlName="district">
-              <option *ngFor="let district of districtOptions" [value]="district.value">
-                {{ district.label }}
-              </option>
-            </select>
-          </label>
-
-          <label>
-            Branch code
-            <input type="text" formControlName="branchCode" placeholder="Auto generated" readonly />
-          </label>
-
-          <label>
-            Branch name
-            <input type="text" formControlName="branchName" placeholder="Auto generated" />
-          </label>
-
-          <label>
-            Address
-            <input type="text" formControlName="address" placeholder="123 Main Street" />
-          </label>
-
-          <label>
-            Phone
-            <input type="tel" formControlName="phone" placeholder="0900000000" />
-          </label>
-
-          <div class="ui-form-grid compact-grid">
-            <label>
-              Latitude
-              <input type="number" formControlName="latitude" step="0.0001" />
-            </label>
-
-            <label>
-              Longitude
-              <input type="number" formControlName="longitude" step="0.0001" />
-            </label>
+        <form class="branch-form" [formGroup]="branchForm" (ngSubmit)="submitBranch()">
+          <div class="form-group full-width">
+            <label>Ngân hàng</label>
+            <select formControlName="bankName"><option *ngFor="let bank of bankOptions" [value]="bank.value">{{ bank.label }}</option></select>
           </div>
 
-          <label>
-            Status
-            <select formControlName="status">
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-            </select>
-          </label>
+          <div class="form-group full-width">
+            <label>Địa chỉ chi nhánh</label>
+            <div class="address-search">
+              <input
+                type="text"
+                formControlName="address"
+                placeholder="Ví dụ: 35 Hàng Vôi, Lý Thái Tổ, Hoàn Kiếm, Hà Nội"
+                autocomplete="street-address"
+                (input)="markLocationUnconfirmed()"
+                (blur)="confirmMapLocation()"
+              />
+              <button type="button" class="btn btn-primary" (click)="confirmMapLocation()" [disabled]="isGeocoding">
+                {{ isGeocoding ? 'Đang tìm...' : 'Xác định địa chỉ' }}
+              </button>
+            </div>
+          </div>
 
-          <div class="ui-form-actions">
-            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-              {{ isSubmitting ? 'Saving...' : isEditMode ? 'Update branch' : 'Create branch' }}
-            </button>
+          <div class="branch-map full-width">
+            <iframe title="Vị trí chi nhánh trên Google Maps" [src]="mapPreviewUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <div class="branch-map__actions">
+              <a class="btn btn-secondary" [href]="googleMapsUrl" target="_blank" rel="noopener">Mở Google Maps</a>
+              <span class="location-status" [class.location-status--confirmed]="locationConfirmed">
+                {{ locationConfirmed ? 'Đã xác định vị trí' : 'Chưa xác định vị trí' }}
+              </span>
+            </div>
+          </div>
 
-            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">
-              Cancel
-            </button>
+          <div class="address-grid full-width">
+            <div class="form-group"><label>Tỉnh/Thành phố</label><input type="text" formControlName="province" readonly /></div>
+            <div class="form-group"><label>Quận/Huyện/Thành phố</label><input type="text" formControlName="district" readonly /></div>
+            <div class="form-group"><label>Phường/Xã</label><input type="text" formControlName="ward" readonly /></div>
+          </div>
+
+          <div class="form-group code-field"><label>Mã chi nhánh</label><input type="text" formControlName="branchCode" readonly /></div>
+          <div class="form-group name-field"><label>Tên chi nhánh</label><input type="text" formControlName="branchName" /></div>
+          <div class="form-group"><label>Số điện thoại</label><input type="tel" formControlName="phone" placeholder="0900000000" /></div>
+          <div class="form-group"><label>Trạng thái</label><select formControlName="status"><option value="ACTIVE">Đang hoạt động</option><option value="INACTIVE">Ngừng hoạt động</option></select></div>
+
+          <div class="form-actions full-width">
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || isGeocoding">{{ (isSubmitting || isGeocoding) ? 'Đang xử lý...' : isEditMode ? 'Lưu thay đổi' : 'Tạo chi nhánh' }}</button>
+            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">Hủy chỉnh sửa</button>
           </div>
         </form>
       </div>
 
-      <div class="ui-card">
-        <div class="table-heading">
-          <div>
-            <h3>Branch list</h3>
-          <p>Only branches without linked operational data can be deleted permanently.</p>
-          </div>
-
-          <button type="button" class="btn btn-secondary" (click)="loadBranches()" [disabled]="isLoading">
-            {{ isLoading ? 'Loading...' : 'Refresh' }}
-          </button>
+      <div class="super-panel branch-list-panel">
+        <div class="super-panel__heading list-heading">
+          <div><span>DANH SÁCH</span><h2>Chi nhánh hiện có</h2></div>
+          <label class="branch-search"><span>Tìm kiếm</span><input type="search" [(ngModel)]="searchTerm" placeholder="Mã, tên, ngân hàng, khu vực..." /></label>
         </div>
 
-        <div *ngIf="isLoading" class="admin-empty">Loading branches...</div>
-        <div *ngIf="!isLoading && branches.length === 0" class="admin-empty">No branches yet.</div>
+        <div *ngIf="isLoading" class="admin-empty">Đang tải danh sách chi nhánh...</div>
+        <div *ngIf="!isLoading && filteredBranches.length === 0" class="admin-empty">Không có chi nhánh phù hợp.</div>
 
-        <div *ngIf="!isLoading && branches.length > 0" class="table-wrapper">
+        <div *ngIf="!isLoading && filteredBranches.length > 0" class="table-wrapper">
           <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Name</th>
-                <th>District</th>
-                <th>Phone</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
+            <thead><tr><th>Chi nhánh</th><th>Khu vực</th><th>Liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
             <tbody>
-              <tr *ngFor="let branch of branches">
-                <td><strong>{{ branch.branchCode }}</strong></td>
-                <td>{{ branch.branchName }}</td>
-                <td>{{ branch.district || '-' }}</td>
-                <td>{{ branch.phone || '-' }}</td>
-                <td>
-                  <span class="admin-badge" [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
-                    {{ branch.status || 'ACTIVE' }}
-                  </span>
-                </td>
-                <td>
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">Edit</button>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">Xoa han</button>
-                </td>
+              <tr *ngFor="let branch of filteredBranches">
+                <td><strong>{{ branch.branchName }}</strong><small>{{ branch.branchCode }} · {{ branch.bankName }}</small></td>
+                <td>{{ branch.ward || '-' }}, {{ branch.district || '-' }}<small>{{ branch.province || '-' }} · <a [href]="branchMapUrl(branch)" target="_blank" rel="noopener">Bản đồ</a></small></td>
+                <td>{{ branch.phone || '-' }}<small>{{ branch.address || '-' }}</small></td>
+                <td><span class="admin-badge" [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">{{ branch.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngừng' }}</span></td>
+                <td><div class="row-actions"><button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">Sửa</button><button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">Xóa</button></div></td>
               </tr>
             </tbody>
           </table>

@@ -17,6 +17,7 @@ public class DatabaseSchemaInitializer {
     public void initialize() {
         jdbcTemplate.execute("alter table branches add column if not exists province varchar(255)");
         jdbcTemplate.execute("alter table branches add column if not exists district varchar(255)");
+        jdbcTemplate.execute("alter table branches add column if not exists ward varchar(255)");
         jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
 
         jdbcTemplate.execute("""

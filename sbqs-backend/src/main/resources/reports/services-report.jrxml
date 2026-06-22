@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="services_report" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" whenNoDataType="AllSectionsNoDetail">
+    <style name="Base" fontName="DejaVu Sans" fontSize="9"/>
+    <style name="Title" style="Base" fontSize="19" isBold="true" forecolor="#123B5D"/>
+    <style name="Meta" style="Base" fontSize="9" forecolor="#5B667A"/>
+    <style name="Header" style="Base" mode="Opaque" backcolor="#123B5D" forecolor="#FFFFFF" isBold="true"/>
+    <style name="Cell" style="Base"><box><bottomPen lineWidth="0.5" lineColor="#D8E1EA"/></box></style>
+    <parameter name="REPORT_TITLE" class="java.lang.String"/><parameter name="REPORT_SCOPE" class="java.lang.String"/><parameter name="GENERATED_AT" class="java.lang.String"/><parameter name="TOTAL_RECORDS" class="java.lang.Integer"/>
+    <field name="serviceCode" class="java.lang.String"/><field name="serviceName" class="java.lang.String"/><field name="serviceType" class="java.lang.String"/><field name="estimatedTime" class="java.lang.Integer"/><field name="branchName" class="java.lang.String"/><field name="status" class="java.lang.String"/>
+    <title><band height="70">
+        <textField><reportElement x="0" y="0" width="520" height="28" style="Title"/><textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression></textField>
+        <textField><reportElement x="0" y="34" width="500" height="16" style="Meta"/><textFieldExpression><![CDATA[$P{REPORT_SCOPE}]]></textFieldExpression></textField>
+        <textField><reportElement x="540" y="4" width="262" height="16" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Xuất lúc: " + $P{GENERATED_AT}]]></textFieldExpression></textField>
+        <textField><reportElement x="540" y="26" width="262" height="16" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Tổng bản ghi: " + $P{TOTAL_RECORDS}]]></textFieldExpression></textField>
+        <line><reportElement x="0" y="59" width="802" height="1" forecolor="#B8C8D8"/></line>
+    </band></title>
+    <columnHeader><band height="28">
+        <staticText><reportElement x="0" y="0" width="110" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Mã dịch vụ]]></text></staticText>
+        <staticText><reportElement x="110" y="0" width="210" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Tên dịch vụ]]></text></staticText>
+        <staticText><reportElement x="320" y="0" width="100" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Loại]]></text></staticText>
+        <staticText><reportElement x="420" y="0" width="90" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Thời gian]]></text></staticText>
+        <staticText><reportElement x="510" y="0" width="200" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Chi nhánh]]></text></staticText>
+        <staticText><reportElement x="710" y="0" width="92" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Trạng thái]]></text></staticText>
+    </band></columnHeader>
+    <detail><band height="25">
+        <textField><reportElement x="0" y="0" width="110" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{serviceCode}]]></textFieldExpression></textField>
+        <textField><reportElement x="110" y="0" width="210" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{serviceName}]]></textFieldExpression></textField>
+        <textField><reportElement x="320" y="0" width="100" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{serviceType}]]></textFieldExpression></textField>
+        <textField><reportElement x="420" y="0" width="90" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{estimatedTime} + " phút"]]></textFieldExpression></textField>
+        <textField><reportElement x="510" y="0" width="200" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{branchName}]]></textFieldExpression></textField>
+        <textField><reportElement x="710" y="0" width="92" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{status}]]></textFieldExpression></textField>
+    </band></detail>
+    <pageFooter><band height="20"><textField><reportElement x="650" y="4" width="152" height="14" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></textFieldExpression></textField></band></pageFooter>
+</jasperReport>

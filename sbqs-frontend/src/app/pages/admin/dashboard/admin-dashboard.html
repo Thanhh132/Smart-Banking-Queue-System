@@ -34,5 +34,17 @@
         <p>Tao va quan ly tai khoan nhan vien giao dich.</p>
       </a>
     </section>
+
+    <section class="report-center">
+      <div class="report-center__heading">
+        <div><span>BÁO CÁO CHI NHÁNH</span><h2>Xuất dữ liệu vận hành</h2></div>
+        <p>Dữ liệu chỉ thuộc chi nhánh đang đăng nhập.</p>
+      </div>
+      <div class="report-center__grid">
+        <div class="report-center__item"><div><strong>Nhân viên</strong><p>Danh sách tài khoản trong chi nhánh</p></div><app-report-export-buttons reportType="users" /></div>
+        <div class="report-center__item"><div><strong>Dịch vụ</strong><p>Dịch vụ đang được cấu hình</p></div><app-report-export-buttons reportType="services" /></div>
+        <div class="report-center__item"><div><strong>Ticket</strong><p>Phiếu và trạng thái phục vụ</p></div><app-report-export-buttons reportType="tickets" /></div>
+      </div>
+    </section>
   </div>
 </app-dashboard-layout>
