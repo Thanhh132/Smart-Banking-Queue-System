@@ -25,6 +25,12 @@ export class StaffService {
     );
   }
 
+  getPendingApprovalTasks() {
+    return this.http.get<any[]>(
+      'http://localhost:8081/api/workflows/tickets/pending-approval'
+    );
+  }
+
   getCounters() {
     const branchId = Number(localStorage.getItem('selectedBranchId'));
     const url = branchId

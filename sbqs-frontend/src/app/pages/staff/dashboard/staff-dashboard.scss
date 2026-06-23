@@ -137,6 +137,79 @@ $text-secondary: #6b7280;
   text-transform: uppercase;
 }
 
+.workflow-header {
+  align-items: flex-start;
+
+  strong {
+    display: inline-grid;
+    min-width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 8px;
+    background: #eaf4fc;
+    color: $primary-color;
+    font-size: 24px;
+  }
+}
+
+.workflow-empty {
+  padding: 16px;
+  border-radius: 8px;
+  background: $light-bg;
+  color: $text-secondary;
+  font-weight: 600;
+}
+
+.workflow-list {
+  display: grid;
+  gap: 10px;
+}
+
+.workflow-item {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid $border-color;
+  border-radius: 8px;
+  background: #fff;
+
+  span {
+    color: $primary-color;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  div {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: $text-secondary;
+    font-weight: 600;
+  }
+
+  em {
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #fff7ed;
+    color: #9a3412;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 800;
+  }
+}
+
 // Action Buttons
 .action-buttons {
   display: flex;

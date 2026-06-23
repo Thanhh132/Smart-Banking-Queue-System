@@ -31,6 +31,7 @@ export class StaffDashboard implements OnInit {
   counters: any[] = [];
   selectedCounter: any = null;
   selectedCounterId: number | null = null;
+  pendingApprovalTasks: any[] = [];
   errorMessage = '';
   successMessage = '';
 
@@ -41,6 +42,7 @@ export class StaffDashboard implements OnInit {
   loadDashboard(): void {
     this.loadCounters();
     this.loadAssignedCounter();
+    this.loadPendingApprovalTasks();
   }
 
   loadCounters(): void {
@@ -54,7 +56,7 @@ export class StaffDashboard implements OnInit {
 
         if (this.counters.length === 0) {
           this.errorMessage =
-            'Chi nhanh nay chua co quay giao dich. Branch Admin can tao quay truoc.';
+            'Chi nhánh này chưa có quầy giao dịch. Branch Admin cần tạo quầy trước.';
         }
 
         this.cdr.detectChanges();
@@ -62,7 +64,7 @@ export class StaffDashboard implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tai duoc trang thai quay.'
+          'Không tải được trạng thái quầy.'
         );
         this.cdr.detectChanges();
       },
@@ -84,7 +86,23 @@ export class StaffDashboard implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tai duoc ca lam hien tai.'
+          'Không tải được ca làm hiện tại.'
+        );
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadPendingApprovalTasks(): void {
+    this.staffService.getPendingApprovalTasks().subscribe({
+      next: (tasks: any[]) => {
+        this.pendingApprovalTasks = tasks || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Không tải được danh sách phiếu chờ duyệt.'
         );
         this.cdr.detectChanges();
       },
@@ -93,7 +111,7 @@ export class StaffDashboard implements OnInit {
 
   assignCounter(): void {
     if (!this.selectedCounterId) {
-      this.errorMessage = 'Hay chon quay de bat dau ca.';
+      this.errorMessage = 'Hãy chọn quầy để bắt đầu ca.';
       return;
     }
 
@@ -104,11 +122,11 @@ export class StaffDashboard implements OnInit {
       next: (counter: any) => {
         this.selectedCounter = counter;
         this.currentTicket = counter.currentTicket || null;
-        this.successMessage = `Da assign vao ${counter.counterName}.`;
+        this.successMessage = `Đã assign vào ${counter.counterName}.`;
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Assign quay that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Assign quầy thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -124,13 +142,13 @@ export class StaffDashboard implements OnInit {
 
     this.staffService.unassignCounter(this.selectedCounter.counterId).subscribe({
       next: () => {
-        this.successMessage = 'Da ket thuc ca va dong quay.';
+        this.successMessage = 'Đã kết thúc ca và đóng quầy.';
         this.selectedCounter = null;
         this.currentTicket = null;
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Unassign quay that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Unassign quầy thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -140,7 +158,7 @@ export class StaffDashboard implements OnInit {
     this.errorMessage = '';
 
     if (!this.selectedCounter?.counterId) {
-      this.errorMessage = 'Hay assign vao mot quay truoc khi goi so.';
+      this.errorMessage = 'Hãy assign vào một quầy trước khi gọi số.';
       this.cdr.detectChanges();
       return;
     }
@@ -153,7 +171,7 @@ export class StaffDashboard implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong goi duoc khach tiep theo.'
+          'Không gọi được khách tiếp theo.'
         );
         this.cdr.detectChanges();
       },
@@ -175,7 +193,7 @@ export class StaffDashboard implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong hoan thanh duoc ticket.'
+          'Không hoàn thành được ticket.'
         );
         this.cdr.detectChanges();
       },

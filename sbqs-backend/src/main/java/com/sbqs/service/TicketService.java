@@ -36,6 +36,7 @@ public class TicketService {
     private final ServiceRepository serviceRepository;
     private final CurrentUserService currentUserService;
     private final CounterSessionRepository counterSessionRepository;
+    private final TicketWorkflowService ticketWorkflowService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -45,7 +46,8 @@ public class TicketService {
             BranchRepository branchRepository,
             ServiceRepository serviceRepository,
             CurrentUserService currentUserService,
-            CounterSessionRepository counterSessionRepository) {
+            CounterSessionRepository counterSessionRepository,
+            TicketWorkflowService ticketWorkflowService) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -55,6 +57,7 @@ public class TicketService {
         this.serviceRepository = serviceRepository;
         this.currentUserService = currentUserService;
         this.counterSessionRepository = counterSessionRepository;
+        this.ticketWorkflowService = ticketWorkflowService;
     }
 
     public List<Ticket> getAllTickets() {
@@ -124,7 +127,10 @@ public class TicketService {
         ticket.setStatus("WAITING");
         ticket.setCustomerEmail(customerEmail);
 
-        return ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+        ticketWorkflowService.startTicketApproval(savedTicket);
+
+        return savedTicket;
     }
 
     public List<Ticket> getTicketsByStatus(String status) {
@@ -172,6 +178,8 @@ public class TicketService {
             throw new RuntimeException("Khong con khach dang cho");
         }
 
+        ticketWorkflowService.approveForServing(nextTicket, counter);
+
         nextTicket.setStatus("SERVING");
         nextTicket.setServingStartedAt(LocalDateTime.now());
         Ticket savedTicket = ticketRepository.save(nextTicket);
@@ -190,8 +198,6 @@ public class TicketService {
             throw new RuntimeException("Chi ticket dang phuc vu moi duoc hoan thanh");
         }
 
-        ticket.setStatus("COMPLETED");
-
         Counter counter = counterRepository.findAll()
                 .stream()
                 .filter(c -> c.getCurrentTicket() != null
@@ -204,6 +210,9 @@ public class TicketService {
         }
 
         requireCurrentStaffOwnsCounter(counter);
+        ticketWorkflowService.completeServing(ticket);
+
+        ticket.setStatus("COMPLETED");
 
         History history = new History();
         history.setTicket(ticket);
@@ -242,6 +251,8 @@ public class TicketService {
         }
 
         ticket.setStatus("CANCELLED");
+        ticketWorkflowService.cancelTicket(ticket);
+
         return ticketRepository.save(ticket);
     }
 

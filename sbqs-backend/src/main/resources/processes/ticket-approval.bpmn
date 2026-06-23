@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  id="Definitions_TicketApproval"
+                  targetNamespace="http://sbqs.com/workflow/ticket">
+  <bpmn:process id="ticketApprovalProcess"
+                name="SBQS Ticket Approval Flow"
+                isExecutable="true"
+                camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="StartEvent_TicketCreated" name="Khách tạo phiếu">
+      <bpmn:outgoing>Flow_ToApprove</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:userTask id="Task_ApproveTicket"
+                   name="Duyệt phiếu chờ"
+                   camunda:candidateGroups="STAFF">
+      <bpmn:incoming>Flow_ToApprove</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToServe</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:userTask id="Task_ServeTicket"
+                   name="Phục vụ khách hàng"
+                   camunda:assignee="${staffEmail}">
+      <bpmn:incoming>Flow_ToServe</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+    </bpmn:userTask>
+
+    <bpmn:endEvent id="EndEvent_TicketCompleted" name="Hoàn tất">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_ToApprove" sourceRef="StartEvent_TicketCreated" targetRef="Task_ApproveTicket" />
+    <bpmn:sequenceFlow id="Flow_ToServe" sourceRef="Task_ApproveTicket" targetRef="Task_ServeTicket" />
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="Task_ServeTicket" targetRef="EndEvent_TicketCompleted" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_TicketApproval">
+    <bpmndi:BPMNPlane id="BPMNPlane_TicketApproval" bpmnElement="ticketApprovalProcess">
+      <bpmndi:BPMNShape id="StartEvent_TicketCreated_di" bpmnElement="StartEvent_TicketCreated">
+        <dc:Bounds x="160" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ApproveTicket_di" bpmnElement="Task_ApproveTicket">
+        <dc:Bounds x="260" y="78" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_ServeTicket_di" bpmnElement="Task_ServeTicket">
+        <dc:Bounds x="480" y="78" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_TicketCompleted_di" bpmnElement="EndEvent_TicketCompleted">
+        <dc:Bounds x="700" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToApprove_di" bpmnElement="Flow_ToApprove">
+        <di:waypoint x="196" y="118" />
+        <di:waypoint x="260" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToServe_di" bpmnElement="Flow_ToServe">
+        <di:waypoint x="410" y="118" />
+        <di:waypoint x="480" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
+        <di:waypoint x="630" y="118" />
+        <di:waypoint x="700" y="118" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

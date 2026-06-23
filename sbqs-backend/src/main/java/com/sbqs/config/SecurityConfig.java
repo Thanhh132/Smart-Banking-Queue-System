@@ -57,6 +57,8 @@ public class SecurityConfig {
                         .hasAnyRole("SUPER_ADMIN", "CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/reports/**")
                         .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/workflows/tickets/pending-approval")
+                        .hasRole("STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/services").hasRole("BRANCH_ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/services/**").hasRole("BRANCH_ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/services/**").hasRole("BRANCH_ADMIN")

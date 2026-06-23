@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 import java.util.List;
 
-@Service
+@Service("sbqsHistoryService")
 public class HistoryService {
 
     private final HistoryRepository historyRepository;
