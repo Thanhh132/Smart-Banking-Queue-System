@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -7,13 +7,10 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { finalize, timeout, catchError, of } from 'rxjs';
-import { ChangeDetectorRef } from '@angular/core';
-import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
-import { AppCard } from '../../../shared/components/app-card/app-card';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
-
+import { AppCard } from '../../../shared/components/app-card/app-card';
+import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
   selector: 'app-admin-users',
@@ -24,10 +21,8 @@ import { UserManagementService } from '../../../core/services/user-management.se
 })
 export class AdminUsers implements OnInit {
   users: any[] = [];
-
   staffForm!: FormGroup;
 
-  isLoading = false;
   isListLoading = false;
   isSubmitting = false;
   isEditMode = false;
@@ -41,7 +36,7 @@ export class AdminUsers implements OnInit {
     private userManagementService: UserManagementService,
     private apiError: ApiErrorService,
     private cdr: ChangeDetectorRef
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.initForm();
@@ -63,27 +58,25 @@ export class AdminUsers implements OnInit {
     if (!branchId) {
       this.errorMessage = 'Chưa chọn chi nhánh.';
       this.users = [];
-      this.isLoading = false;
+      this.isListLoading = false;
       this.cdr.detectChanges();
       return;
     }
 
-    this.isLoading = true;
+    this.isListLoading = true;
     this.errorMessage = '';
     this.cdr.detectChanges();
 
     this.userManagementService.getUsersByBranch(branchId).subscribe({
       next: (res: any) => {
         this.users = Array.isArray(res) ? res : [];
-        this.isLoading = false;
+        this.isListLoading = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Load users error:', err);
-
         this.users = [];
-        this.errorMessage = 'Không thể tải danh sách nhân viên.';
-        this.isLoading = false;
+        this.errorMessage = this.apiError.getMessage(err, 'Không thể tải danh sách nhân viên.');
+        this.isListLoading = false;
         this.cdr.detectChanges();
       },
     });
@@ -94,6 +87,7 @@ export class AdminUsers implements OnInit {
       this.updateUser();
       return;
     }
+
     this.successMessage = '';
     this.errorMessage = '';
 
@@ -125,18 +119,13 @@ export class AdminUsers implements OnInit {
         this.successMessage = 'Tạo tài khoản nhân viên thành công.';
         this.staffForm.reset();
         this.isSubmitting = false;
-        this.cdr.detectChanges();
-
         this.loadUsers();
       },
       error: (err) => {
-        console.error('Create staff error:', err);
-
         this.errorMessage = this.apiError.getMessage(
           err,
           'Tạo tài khoản thất bại. Vui lòng kiểm tra lại dữ liệu.'
         );
-
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -144,9 +133,7 @@ export class AdminUsers implements OnInit {
   }
 
   deleteUser(user: any): void {
-    const confirmed = confirm(
-      `Bạn có chắc muốn xóa nhân viên "${user.fullName}" không?`
-    );
+    const confirmed = confirm(`Bạn có chắc muốn xóa nhân viên "${user.fullName}" không?`);
 
     if (!confirmed) {
       return;
@@ -159,16 +146,9 @@ export class AdminUsers implements OnInit {
       next: () => {
         this.successMessage = 'Xóa nhân viên thành công.';
         this.loadUsers();
-        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Delete user error:', err);
-
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Xóa nhân viên thất bại.'
-        );
-
+        this.errorMessage = this.apiError.getMessage(err, 'Xóa nhân viên thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -198,7 +178,6 @@ export class AdminUsers implements OnInit {
   }
 
   updateUser(): void {
-
     this.successMessage = '';
     this.errorMessage = '';
 
@@ -211,50 +190,26 @@ export class AdminUsers implements OnInit {
       fullName: this.staffForm.value.fullName,
       email: this.staffForm.value.email,
       phone: this.staffForm.value.phone,
-      status: 'ACTIVE'
+      status: 'ACTIVE',
     };
 
     this.isSubmitting = true;
 
-    this.userManagementService
-      .updateUser(
-        this.editingUserId,
-        payload
-      )
-      .subscribe({
-        next: () => {
-
-          this.successMessage =
-            'Cập nhật nhân viên thành công.';
-
-          this.isSubmitting = false;
-
-          this.isEditMode = false;
-          this.editingUserId = null;
-
-          this.staffForm.reset();
-
-          this.loadUsers();
-
-          this.cdr.detectChanges();
-        },
-        error: (err) => {
-
-          console.error(
-            'Update user error:',
-            err
-          );
-
-          this.errorMessage = this.apiError.getMessage(
-            err,
-            'Cập nhật thất bại.'
-          );
-
-          this.isSubmitting = false;
-
-          this.cdr.detectChanges();
-        }
-      });
+    this.userManagementService.updateUser(this.editingUserId, payload).subscribe({
+      next: () => {
+        this.successMessage = 'Cập nhật nhân viên thành công.';
+        this.isSubmitting = false;
+        this.isEditMode = false;
+        this.editingUserId = null;
+        this.staffForm.reset();
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Cập nhật thất bại.');
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   isInvalid(controlName: string): boolean {

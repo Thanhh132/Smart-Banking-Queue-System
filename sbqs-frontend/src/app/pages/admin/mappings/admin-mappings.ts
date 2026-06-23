@@ -62,7 +62,7 @@ export class AdminMappings implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc may boc so.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được máy bốc số.');
         this.cdr.detectChanges();
       },
     });
@@ -73,7 +73,7 @@ export class AdminMappings implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc dich vu.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được dịch vụ.');
         this.cdr.detectChanges();
       },
     });
@@ -90,7 +90,7 @@ export class AdminMappings implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc mapping.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được danh sách liên kết.');
         this.cdr.detectChanges();
       },
     });
@@ -110,7 +110,7 @@ export class AdminMappings implements OnInit {
     this.errorMessage = '';
 
     if (!this.selectedQueueMachineId || this.selectedServiceIds.length === 0) {
-      this.errorMessage = 'Hay chon may boc so va it nhat mot dich vu.';
+      this.errorMessage = 'Hãy chọn máy bốc số và ít nhất một dịch vụ.';
       this.cdr.detectChanges();
       return;
     }
@@ -121,7 +121,7 @@ export class AdminMappings implements OnInit {
       )
     ).subscribe({
       next: () => {
-        this.successMessage = `Da tao ${this.selectedServiceIds.length} mapping.`;
+        this.successMessage = `Đã tạo ${this.selectedServiceIds.length} liên kết.`;
         this.selectedServiceIds = [];
         this.loadMappings();
         this.cdr.detectChanges();
@@ -129,7 +129,7 @@ export class AdminMappings implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tao duoc mapping. Co the mot mapping da ton tai.'
+          'Không tạo được liên kết. Có thể một liên kết đã tồn tại.'
         );
         this.cdr.detectChanges();
       },
@@ -137,7 +137,7 @@ export class AdminMappings implements OnInit {
   }
 
   deleteMapping(mapping: any): void {
-    if (!confirm('Go mapping nay?')) {
+    if (!confirm('Gỡ liên kết này?')) {
       return;
     }
 
@@ -145,19 +145,19 @@ export class AdminMappings implements OnInit {
     const serviceId = mapping.service?.serviceId || mapping.id?.serviceId;
 
     if (!queueMachineId || !serviceId) {
-      this.errorMessage = 'Khong xac dinh duoc mapping can xoa.';
+      this.errorMessage = 'Không xác định được liên kết cần xóa.';
       this.cdr.detectChanges();
       return;
     }
 
     this.mappingService.deleteMapping(queueMachineId, serviceId).subscribe({
       next: () => {
-        this.successMessage = 'Da go mapping.';
+        this.successMessage = 'Đã gỡ liên kết.';
         this.loadMappings();
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Go mapping that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Gỡ liên kết thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -166,7 +166,7 @@ export class AdminMappings implements OnInit {
   private ensureBranch(): this is this & { branchId: number } {
     if (!this.branchId) {
       this.errorMessage =
-        'Tai khoan Branch Admin nay chua duoc gan chi nhanh. Hay dung tai khoan do Super Admin cap cho chi nhanh.';
+        'Tài khoản Branch Admin này chưa được gán chi nhánh. Hãy dùng tài khoản do Super Admin cấp cho chi nhánh.';
       this.cdr.detectChanges();
       return false;
     }

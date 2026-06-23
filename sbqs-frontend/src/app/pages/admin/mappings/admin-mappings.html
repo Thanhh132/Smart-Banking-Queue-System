@@ -1,24 +1,24 @@
-<app-dashboard-layout title="Service Mapping">
-  <app-page-header title="Gan dich vu cho may boc so" subtitle="Chon mot may va tick nhieu dich vu de gan hang loat">
+<app-dashboard-layout title="Gán dịch vụ">
+  <app-page-header title="Gán dịch vụ cho máy bốc số" subtitle="Chọn một máy và tick nhiều dịch vụ để gán hàng loạt">
   </app-page-header>
 
   <div class="mapping-summary-grid">
     <app-card>
-      <h3>May boc so</h3>
+      <h3>Máy bốc số</h3>
       <p>{{ queueMachines.length }}</p>
-      <small>May da khai bao</small>
+      <small>Máy đã khai báo</small>
     </app-card>
 
     <app-card>
-      <h3>Dich vu</h3>
+      <h3>Dịch vụ</h3>
       <p>{{ services.length }}</p>
-      <small>Dich vu kha dung</small>
+      <small>Dịch vụ khả dụng</small>
     </app-card>
 
     <app-card>
-      <h3>Mapping</h3>
+      <h3>Liên kết</h3>
       <p>{{ mappings.length }}</p>
-      <small>Lien ket hien co</small>
+      <small>Liên kết hiện có</small>
     </app-card>
   </div>
 
@@ -34,21 +34,21 @@
     <app-card>
       <div class="card-header">
         <div>
-          <h2>Them mapping hang loat</h2>
-          <p>Chon may boc so, sau do tick cac dich vu can gan.</p>
+          <h2>Thêm liên kết hàng loạt</h2>
+          <p>Chọn máy bốc số, sau đó tick các dịch vụ cần gán.</p>
         </div>
       </div>
 
       <div class="mapping-form">
-        <label>May boc so</label>
+        <label>Máy bốc số</label>
         <select [(ngModel)]="selectedQueueMachineId">
-          <option [ngValue]="null">Chon may boc so</option>
+          <option [ngValue]="null">Chọn máy bốc số</option>
           <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
             {{ machine.machineName }} - {{ machine.machineCode }}
           </option>
         </select>
 
-        <label>Dich vu</label>
+        <label>Dịch vụ</label>
         <div class="checkbox-list">
           <label class="checkbox-row" *ngFor="let service of services">
             <input
@@ -61,7 +61,7 @@
         </div>
 
         <button class="btn btn-primary" type="button" (click)="createMappings()">
-          Tao mapping
+          Tạo liên kết
         </button>
       </div>
     </app-card>
@@ -69,17 +69,17 @@
     <app-card>
       <div class="card-header">
         <div>
-          <h2>Danh sach mapping</h2>
-          <p>Cac lien ket may boc so va dich vu trong chi nhanh.</p>
+          <h2>Danh sách liên kết</h2>
+          <p>Các liên kết máy bốc số và dịch vụ trong chi nhánh.</p>
         </div>
       </div>
 
       <table class="mapping-table">
         <thead>
           <tr>
-            <th>May boc so</th>
-            <th>Dich vu</th>
-            <th>Thao tac</th>
+            <th>Máy bốc số</th>
+            <th>Dịch vụ</th>
+            <th>Thao tác</th>
           </tr>
         </thead>
         <tbody>
@@ -88,14 +88,14 @@
             <td>{{ mapping.service?.serviceName || '-' }}</td>
             <td>
               <button class="btn btn-danger btn-sm" type="button" (click)="deleteMapping(mapping)">
-                Go
+                Gỡ
               </button>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <p *ngIf="mappings.length === 0">Chua co mapping nao.</p>
+      <p *ngIf="mappings.length === 0">Chưa có liên kết nào.</p>
     </app-card>
   </div>
 </app-dashboard-layout>

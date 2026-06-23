@@ -1,65 +1,57 @@
-<app-dashboard-layout title="User Management">
+<app-dashboard-layout title="Quản lý nhân viên">
   <div class="admin-users-page">
     <div class="page-heading">
       <div>
-        <p class="page-kicker">Admin Portal</p>
+        <p class="page-kicker">Admin chi nhánh</p>
         <h2>Quản lý nhân viên</h2>
-        <p>
-          Tạo tài khoản nhân viên, quản lý vai trò và theo dõi danh sách người dùng trong hệ thống SBQS.
-        </p>
+        <p>Tạo tài khoản nhân viên, quản lý thông tin liên hệ và theo dõi danh sách người dùng của chi nhánh.</p>
       </div>
 
       <button class="btn-secondary" type="button" (click)="loadUsers()" [disabled]="isListLoading">
-        {{ isListLoading ? 'Loading...' : 'Refresh' }}
+        {{ isListLoading ? 'Đang tải...' : 'Tải lại' }}
       </button>
     </div>
 
     <div class="summary-grid">
       <app-card>
         <div class="summary-card">
-          <span class="summary-card__label">Total Users</span>
+          <span class="summary-card__label">Tổng nhân viên</span>
           <strong>{{ users.length }}</strong>
-          <p>Người dùng hiện có</p>
+          <p>Tài khoản hiện có</p>
         </div>
       </app-card>
 
       <app-card>
         <div class="summary-card">
-          <span class="summary-card__label">Staff</span>
-          <strong>{{ users.length }}</strong>
-          <p>Tài khoản nhân viên</p>
+          <span class="summary-card__label">Vai trò</span>
+          <strong>STAFF</strong>
+          <p>Nhân viên giao dịch</p>
         </div>
       </app-card>
 
       <app-card>
         <div class="summary-card">
-          <span class="summary-card__label">Current Role</span>
-          <strong>Branch Admin</strong>
-          <p>Quản lý nhân viên chi nhánh</p>
+          <span class="summary-card__label">Phạm vi</span>
+          <strong>Chi nhánh</strong>
+          <p>Chỉ quản lý nhân viên thuộc chi nhánh hiện tại</p>
         </div>
       </app-card>
     </div>
 
-    <div *ngIf="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <div class="admin-panel-grid">
       <app-card>
         <div class="card-heading">
-          <h3>Create Staff Account</h3>
-          <p>Nhập thông tin để cấp tài khoản cho nhân viên chi nhánh.</p>
+          <h3>{{ isEditMode ? 'Cập nhật nhân viên' : 'Tạo tài khoản nhân viên' }}</h3>
+          <p>Nhập thông tin để cấp tài khoản cho nhân viên thuộc chi nhánh hiện tại.</p>
         </div>
 
         <form class="admin-form" [formGroup]="staffForm" (ngSubmit)="createStaff()">
           <div class="admin-field">
-            <label>Full name</label>
+            <label>Họ tên</label>
             <input type="text" formControlName="fullName" placeholder="Ví dụ: Nguyễn Văn A" />
-
             <div class="validation-error" *ngIf="isInvalid('fullName')">
               {{ getErrorMessage('fullName', 'Họ tên') }}
             </div>
@@ -68,47 +60,39 @@
           <div class="admin-field">
             <label>Email</label>
             <input type="email" formControlName="email" placeholder="Ví dụ: staff01@sbqs.com" />
-
             <div class="validation-error" *ngIf="isInvalid('email')">
               {{ getErrorMessage('email', 'Email') }}
             </div>
           </div>
 
           <div class="admin-field">
-            <label>Phone number</label>
+            <label>Số điện thoại</label>
             <input type="text" formControlName="phone" placeholder="Ví dụ: 0901234567" />
-
             <div class="validation-error" *ngIf="isInvalid('phone')">
               {{ getErrorMessage('phone', 'Số điện thoại') }}
             </div>
           </div>
 
-          <div class="admin-field">
-            class="admin-field"
-            *ngIf="!isEditMode"
-            <label>Password</label>
+          <div class="admin-field" *ngIf="!isEditMode">
+            <label>Mật khẩu</label>
             <input type="password" formControlName="password" placeholder="Tối thiểu 6 ký tự" />
-
             <div class="validation-error" *ngIf="isInvalid('password')">
               {{ getErrorMessage('password', 'Mật khẩu') }}
             </div>
           </div>
-          
+
           <div class="role-note">
-            <span>Role</span>
+            <span>Vai trò</span>
             <strong>STAFF</strong>
-            <p>
-              Branch Admin chỉ được tạo tài khoản nhân viên cho chi nhánh hiện tại.
-            </p>
+            <p>Branch Admin chỉ được tạo tài khoản nhân viên cho chi nhánh hiện tại.</p>
           </div>
 
           <div class="admin-actions">
             <button class="btn-primary" type="submit" [disabled]="isSubmitting">
-              {{
-              isEditMode
-              ? 'Update Staff'
-              : 'Create Staff'
-              }}
+              {{ isEditMode ? 'Cập nhật nhân viên' : 'Tạo nhân viên' }}
+            </button>
+            <button *ngIf="isEditMode" class="btn-secondary" type="button" (click)="cancelEdit()">
+              Hủy
             </button>
           </div>
         </form>
@@ -117,60 +101,37 @@
       <app-card>
         <div class="card-heading table-heading">
           <div>
-            <h3>Staff List</h3>
-            <p>Danh sách tài khoản nhân viên đã tạo trong hệ thống.</p>
+            <h3>Danh sách nhân viên</h3>
+            <p>Các tài khoản nhân viên đã tạo trong chi nhánh.</p>
           </div>
         </div>
 
-        <div *ngIf="isListLoading" class="admin-empty">
-          Đang tải danh sách nhân viên...
-        </div>
-
-        <div *ngIf="!isListLoading && users.length === 0" class="admin-empty">
-          Chưa có nhân viên nào.
-        </div>
+        <div *ngIf="isListLoading" class="admin-empty">Đang tải danh sách nhân viên...</div>
+        <div *ngIf="!isListLoading && users.length === 0" class="admin-empty">Chưa có nhân viên nào.</div>
 
         <div *ngIf="!isListLoading && users.length > 0" class="table-wrapper">
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Full name</th>
+                <th>Họ tên</th>
                 <th>Email</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>Số điện thoại</th>
+                <th>Vai trò</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
 
             <tbody>
               <tr *ngFor="let user of users">
-                <td>
-                  <strong>{{ user.fullName || '-' }}</strong>
-                </td>
-
+                <td><strong>{{ user.fullName || '-' }}</strong></td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ user.phone || '-' }}</td>
-
+                <td><span class="admin-badge badge-info">{{ user.role || 'STAFF' }}</span></td>
+                <td><span class="admin-badge badge-success">{{ user.status || 'ACTIVE' }}</span></td>
                 <td>
-                  <span class="admin-badge badge-info">
-                    {{ user.role || 'STAFF' }}
-                  </span>
-                </td>
-
-                <td>
-                  <span class="admin-badge badge-success">
-                    {{ user.status || 'ACTIVE' }}
-                  </span>
-                </td>
-
-                <td>
-                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">
-                    Edit
-                  </button>
-                  <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
-                    Delete
-                  </button>
+                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">Sửa</button>
+                  <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">Xóa</button>
                 </td>
               </tr>
             </tbody>

@@ -1,33 +1,33 @@
-<app-dashboard-layout title="Queue Monitor">
+<app-dashboard-layout title="Màn hình hàng đợi">
   <app-page-header
-    title="Man hinh hang doi"
-    subtitle="Theo doi khach dang cho va cac quay dang phuc vu theo chi nhanh"
+    title="Màn hình hàng đợi"
+    subtitle="Theo dõi khách đang chờ và các quầy đang phục vụ theo chi nhánh"
   >
   </app-page-header>
 
   <div class="admin-summary-grid">
     <div class="admin-summary-card">
-      <span>Trang thai</span>
-      <strong>{{ errorMessage ? 'OFF' : activeCounterCount > 0 ? 'LIVE' : 'OFF' }}</strong>
-      <p>{{ activeCounterCount > 0 ? 'Co quay dang mo' : 'Chua co quay hoat dong' }}</p>
+      <span>Trạng thái</span>
+      <strong>{{ errorMessage ? 'Lỗi' : activeCounterCount > 0 ? 'Đang hoạt động' : 'Tạm dừng' }}</strong>
+      <p>{{ activeCounterCount > 0 ? 'Có quầy đang mở' : 'Chưa có quầy hoạt động' }}</p>
     </div>
 
     <div class="admin-summary-card">
-      <span>Chi nhanh</span>
+      <span>Chi nhánh</span>
       <strong>{{ monitor?.branchName || '-' }}</strong>
-      <p>Du lieu theo chi nhanh dang dang nhap</p>
+      <p>Dữ liệu theo chi nhánh đang đăng nhập</p>
     </div>
 
     <div class="admin-summary-card">
-      <span>Dang cho</span>
+      <span>Đang chờ</span>
       <strong>{{ monitor?.waitingCount ?? 0 }}</strong>
-      <p>Ticket dang o trang thai WAITING</p>
+      <p>Ticket đang chờ gọi số</p>
     </div>
 
     <div class="admin-summary-card">
-      <span>Dang phuc vu</span>
+      <span>Đang phục vụ</span>
       <strong>{{ servingCounterCount }}</strong>
-      <p>Quay dang goi khach</p>
+      <p>Quầy đang gọi khách</p>
     </div>
   </div>
 
@@ -35,12 +35,12 @@
     <app-card>
       <div class="admin-section-title">
         <div>
-          <h2>Bang goi so</h2>
-          <p>Danh sach quay dang phuc vu va so ticket hien tai.</p>
+          <h2>Bảng gọi số</h2>
+          <p>Danh sách quầy đang phục vụ và số ticket hiện tại.</p>
         </div>
 
         <span class="admin-badge" [ngClass]="errorMessage ? 'badge-danger' : 'badge-success'">
-          {{ errorMessage ? 'ERROR' : activeCounterCount > 0 ? 'LIVE' : 'OFF' }}
+          {{ errorMessage ? 'Lỗi' : activeCounterCount > 0 ? 'Hoạt động' : 'Tạm dừng' }}
         </span>
       </div>
 
@@ -52,7 +52,7 @@
         class="admin-empty"
         *ngIf="!errorMessage && (!monitor?.servingCounters || monitor?.servingCounters?.length === 0)"
       >
-        Chua co quay nao dang phuc vu.
+        Chưa có quầy nào đang phục vụ.
       </div>
 
       <div class="queue-monitor-grid" *ngIf="!errorMessage && monitor?.servingCounters?.length">

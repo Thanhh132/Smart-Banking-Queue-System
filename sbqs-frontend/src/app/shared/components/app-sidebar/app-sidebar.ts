@@ -23,20 +23,20 @@ export class AppSidebar {
 
   private menusByRole: Record<string, SidebarItem[]> = {
     SUPER_ADMIN: [
-      { label: 'System', icon: 'SA', route: '/super-admin' },
-      { label: 'Branches', icon: 'BR', route: '/super-admin/branches' },
+      { label: 'Tổng quan', icon: 'SA', route: '/super-admin' },
+      { label: 'Chi nhánh', icon: 'BR', route: '/super-admin/branches' },
     ],
     BRANCH_ADMIN: [
-      { label: 'Dashboard', icon: 'DB', route: '/admin' },
-      { label: 'Operations', icon: 'OP', route: '/admin/operations' },
-      { label: 'Services', icon: 'SV', route: '/admin/services' },
-      { label: 'Mappings', icon: 'MP', route: '/admin/mappings' },
-      { label: 'Staff', icon: 'ST', route: '/admin/users' },
-      { label: 'Queue Monitor', icon: 'QM', route: '/monitor' },
+      { label: 'Tổng quan', icon: 'DB', route: '/admin' },
+      { label: 'Vận hành', icon: 'OP', route: '/admin/operations' },
+      { label: 'Dịch vụ', icon: 'SV', route: '/admin/services' },
+      { label: 'Gán dịch vụ', icon: 'MP', route: '/admin/mappings' },
+      { label: 'Nhân viên', icon: 'ST', route: '/admin/users' },
+      { label: 'Màn hình hàng đợi', icon: 'QM', route: '/monitor' },
     ],
     STAFF: [
-      { label: 'Staff Desk', icon: 'SD', route: '/staff' },
-      { label: 'Queue Monitor', icon: 'QM', route: '/monitor' },
+      { label: 'Quầy phục vụ', icon: 'SD', route: '/staff' },
+      { label: 'Màn hình hàng đợi', icon: 'QM', route: '/monitor' },
     ],
     CUSTOMER: [
       { label: 'Tổng quan', icon: 'CU', route: '/customer' },

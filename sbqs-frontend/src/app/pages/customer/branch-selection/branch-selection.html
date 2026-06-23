@@ -13,24 +13,50 @@
       <div class="location-panel__address">
         <label>Vị trí của bạn</label>
         <div class="location-input-row">
-          <input type="text" [(ngModel)]="customerAddress" placeholder="Nhập số nhà, đường, phường/xã, tỉnh thành..." (keyup.enter)="findNearbyByAddress()" />
-          <button type="button" class="btn btn-primary" (click)="findNearbyByAddress()" [disabled]="isLocating">Tìm gần tôi</button>
-          <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()" [disabled]="isLocating">Vị trí hiện tại</button>
+          <input
+            type="text"
+            [(ngModel)]="customerAddress"
+            placeholder="Nhập số nhà, đường, phường/xã, tỉnh thành..."
+            (keyup.enter)="findNearbyByAddress()"
+          />
+          <button type="button" class="btn btn-primary" (click)="findNearbyByAddress()" [disabled]="isLocating">
+            Tìm gần tôi
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()" [disabled]="isLocating">
+            Vị trí hiện tại
+          </button>
         </div>
       </div>
+
       <div class="location-panel__filters">
-        <label>Ngân hàng<select [(ngModel)]="selectedBank"><option value="ALL">Tất cả ngân hàng</option><option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option></select></label>
-        <label>Tìm trong kết quả<input type="search" [(ngModel)]="searchTerm" placeholder="Tên hoặc khu vực..." /></label>
+        <label>
+          Ngân hàng
+          <select [(ngModel)]="selectedBank">
+            <option value="ALL">Tất cả ngân hàng</option>
+            <option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option>
+          </select>
+        </label>
+        <label>
+          Tìm trong kết quả
+          <input type="search" [(ngModel)]="searchTerm" placeholder="Tên hoặc khu vực..." />
+        </label>
       </div>
     </section>
 
     <section class="customer-section">
       <div class="customer-section__header">
-        <div><h2>Chi nhánh đang hoạt động</h2><p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p></div>
+        <div>
+          <h2>Chi nhánh đang hoạt động</h2>
+          <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
+        </div>
       </div>
 
-      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">Đang tải danh sách chi nhánh...</div>
-      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">Không tìm thấy chi nhánh phù hợp.</div>
+      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">
+        Đang tải danh sách chi nhánh...
+      </div>
+      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">
+        Không tìm thấy chi nhánh phù hợp.
+      </div>
 
       <div class="branch-result-grid" *ngIf="filteredBranches.length > 0">
         <article class="branch-result" *ngFor="let branch of filteredBranches">

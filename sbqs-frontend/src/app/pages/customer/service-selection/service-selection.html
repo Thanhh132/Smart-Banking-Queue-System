@@ -23,7 +23,10 @@
 
     <section class="customer-section">
       <div class="customer-section__header">
-        <div><h2>Dịch vụ khả dụng</h2><p>Chọn một dịch vụ để nhận số thứ tự.</p></div>
+        <div>
+          <h2>Dịch vụ khả dụng</h2>
+          <p>Chọn một dịch vụ để nhận số thứ tự.</p>
+        </div>
       </div>
 
       <div class="customer-state" *ngIf="isLoading">Đang tải danh sách dịch vụ...</div>
@@ -32,7 +35,13 @@
       </div>
 
       <div class="customer-option-grid" *ngIf="!isLoading && services.length > 0">
-        <button type="button" class="customer-option service-option" *ngFor="let service of services" (click)="selectService(service)" [disabled]="isCreatingTicket">
+        <button
+          type="button"
+          class="customer-option service-option"
+          *ngFor="let service of services"
+          (click)="selectService(service)"
+          [disabled]="isCreatingTicket"
+        >
           <span class="customer-option__eyebrow">{{ service.serviceType || 'Dịch vụ' }}</span>
           <strong>{{ service.serviceName }}</strong>
           <p>{{ service.description || 'Dịch vụ giao dịch tại quầy' }}</p>
@@ -44,12 +53,15 @@
 
     <section class="customer-section" *ngIf="monitor?.servingCounters?.length">
       <div class="customer-section__header">
-        <div><h2>Bảng gọi số tại chi nhánh</h2><p>Tham khảo trạng thái các khu vực đang hoạt động.</p></div>
+        <div>
+          <h2>Bảng gọi số tại chi nhánh</h2>
+          <p>Tham khảo trạng thái các khu vực đang hoạt động.</p>
+        </div>
       </div>
       <div class="customer-queue-grid">
         <div class="customer-counter" *ngFor="let counter of monitor?.servingCounters" [ngClass]="getCounterStatusClass(counter.status)">
           <span>{{ counter.counterName }}</span>
-          <strong>{{ counter.ticketNumber || '–' }}</strong>
+          <strong>{{ counter.ticketNumber || '-' }}</strong>
           <p>{{ getCounterStatusLabel(counter.status) }}</p>
           <small>{{ counter.queueMachineName || 'Máy bốc số' }}</small>
         </div>

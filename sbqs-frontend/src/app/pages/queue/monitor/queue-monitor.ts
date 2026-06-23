@@ -40,14 +40,14 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
 
   getCounterStatusLabel(status: string): string {
     if (status === 'SERVING') {
-      return 'Dang phuc vu';
+      return 'Đang phục vụ';
     }
 
     if (status === 'IDLE') {
-      return 'Dang ranh';
+      return 'Đang rảnh';
     }
 
-    return 'Khong hoat dong';
+    return 'Không hoạt động';
   }
 
   ngOnInit(): void {
@@ -68,7 +68,7 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
     const branchId = localStorage.getItem('selectedBranchId');
 
     if (!branchId) {
-      this.errorMessage = 'Chua chon chi nhanh.';
+      this.errorMessage = 'Chưa chọn chi nhánh.';
       this.cdr.detectChanges();
       return;
     }
@@ -82,10 +82,9 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong tai duoc du lieu monitor.'
+          'Không tải được dữ liệu màn hình hàng đợi.'
         );
         this.cdr.detectChanges();
-        console.error(err);
       },
     });
   }

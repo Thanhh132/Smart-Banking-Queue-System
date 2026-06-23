@@ -1,22 +1,17 @@
-<app-dashboard-layout>
+<app-dashboard-layout title="Quầy phục vụ">
   <app-page-header
     title="Màn hình giao dịch viên"
-    subtitle="Assign vào quầy, gọi số và kết thúc ca phục vụ"
+    subtitle="Chọn quầy, gọi số và kết thúc ca phục vụ"
   >
   </app-page-header>
 
-  <div *ngIf="successMessage" class="alert alert-success">
-    {{ successMessage }}
-  </div>
-
-  <div *ngIf="errorMessage" class="alert alert-danger">
-    {{ errorMessage }}
-  </div>
+  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
   <app-card *ngIf="!selectedCounter">
     <div class="card-header">
       <h2>Bắt đầu ca phục vụ</h2>
-      <p>Chọn quầy để assign. Quầy chỉ hoạt động khi có nhân viên assign.</p>
+      <p>Chọn quầy để bắt đầu ca. Quầy chỉ hoạt động khi có nhân viên đang phục vụ.</p>
     </div>
 
     <div class="assign-panel">
@@ -31,7 +26,7 @@
       </label>
 
       <button type="button" class="btn btn-primary" (click)="assignCounter()">
-        Assign quầy
+        Vào quầy
       </button>
     </div>
   </app-card>
@@ -39,12 +34,12 @@
   <app-card *ngIf="selectedCounter">
     <div class="card-header">
       <h2>{{ selectedCounter.counterName }}</h2>
-      <p>Quầy đang hoạt động. Kết thúc ca sẽ lưu giờ kết thúc vào lịch sử.</p>
+      <p>Quầy đang hoạt động. Khi kết thúc ca, hệ thống sẽ lưu thời gian vào lịch sử.</p>
     </div>
 
     <div class="action-buttons">
       <button type="button" class="btn btn-secondary" (click)="unassignCounter()">
-        Unassign / kết thúc ca
+        Kết thúc ca
       </button>
     </div>
   </app-card>
@@ -53,7 +48,7 @@
     <div class="card-header workflow-header">
       <div>
         <h2>Phiếu chờ duyệt</h2>
-        <p>Workflow Camunda đang giữ các phiếu chờ staff gọi vào quầy.</p>
+        <p>Camunda đang giữ các phiếu chờ nhân viên gọi vào quầy.</p>
       </div>
       <strong>{{ pendingApprovalTasks.length }}</strong>
     </div>
@@ -78,16 +73,11 @@
     <app-card>
       <div class="card-header">
         <h2>Khách hàng tiếp theo</h2>
-        <p>Gọi khách hàng từ hàng chờ của máy bốc số gắn với quầy.</p>
+        <p>Gọi khách từ hàng chờ của máy bốc số gắn với quầy.</p>
       </div>
 
       <div class="action-buttons">
-        <app-button
-          [label]="'Gọi khách tiếp theo'"
-          (clicked)="callNext()"
-          class="btn-primary"
-        >
-        </app-button>
+        <app-button [label]="'Gọi khách tiếp theo'" (clicked)="callNext()" class="btn-primary"></app-button>
       </div>
     </app-card>
   </div>
@@ -122,8 +112,7 @@
       </div>
 
       <div class="action-buttons">
-        <app-button [label]="'Hoàn thành'" (clicked)="complete()" class="btn-success">
-        </app-button>
+        <app-button [label]="'Hoàn thành'" (clicked)="complete()" class="btn-success"></app-button>
       </div>
     </app-card>
   </div>

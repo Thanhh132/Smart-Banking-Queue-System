@@ -1,49 +1,70 @@
-<app-dashboard-layout title="Admin Branch">
+<app-dashboard-layout title="Admin chi nhánh">
   <div class="page-section">
     <section class="page-heading">
-      <span class="page-kicker">Xin chao, {{ fullName }}</span>
-      <h1>Quan ly van hanh chi nhanh</h1>
-      <p>
-        Cau hinh dich vu, gan dich vu cho may boc so va cap tai khoan nhan vien
-        cho chi nhanh cua ban.
-      </p>
+      <span class="page-kicker">Xin chào, {{ fullName }}</span>
+      <h1>Quản lý vận hành chi nhánh</h1>
+      <p>Cấu hình dịch vụ, gán dịch vụ cho máy bốc số và cấp tài khoản nhân viên cho chi nhánh của bạn.</p>
     </section>
 
     <section class="ui-card-grid">
       <a routerLink="/admin/services" class="ui-card ui-action-card">
-        <span>Dich vu</span>
-        <strong>Quan ly dich vu</strong>
-        <p>Tao, cap nhat va theo doi danh sach dich vu cua chi nhanh.</p>
+        <span>Dịch vụ</span>
+        <strong>Quản lý dịch vụ</strong>
+        <p>Tạo, cập nhật và theo dõi danh sách dịch vụ của chi nhánh.</p>
       </a>
 
       <a routerLink="/admin/operations" class="ui-card ui-action-card">
-        <span>Van hanh</span>
-        <strong>May boc so va quay</strong>
-        <p>Quan ly kiosk, quay giao dich va lien ket tai nguyen van hanh.</p>
+        <span>Vận hành</span>
+        <strong>Máy bốc số và quầy</strong>
+        <p>Quản lý kiosk, quầy giao dịch và tài nguyên phục vụ khách hàng.</p>
       </a>
 
       <a routerLink="/admin/mappings" class="ui-card ui-action-card">
-        <span>May boc so</span>
-        <strong>Gan dich vu</strong>
-        <p>Thiet lap dich vu nao duoc phuc vu tai tung may boc so.</p>
+        <span>Máy bốc số</span>
+        <strong>Gán dịch vụ</strong>
+        <p>Thiết lập dịch vụ được phục vụ tại từng máy bốc số.</p>
       </a>
 
       <a routerLink="/admin/users" class="ui-card ui-action-card">
-        <span>Nhan vien</span>
-        <strong>Cap tai khoan staff</strong>
-        <p>Tao va quan ly tai khoan nhan vien giao dich.</p>
+        <span>Nhân viên</span>
+        <strong>Cấp tài khoản staff</strong>
+        <p>Tạo và quản lý tài khoản nhân viên giao dịch.</p>
       </a>
     </section>
 
     <section class="report-center">
       <div class="report-center__heading">
-        <div><span>BÁO CÁO CHI NHÁNH</span><h2>Xuất dữ liệu vận hành</h2></div>
+        <div>
+          <span>BÁO CÁO CHI NHÁNH</span>
+          <h2>Xuất dữ liệu vận hành</h2>
+        </div>
         <p>Dữ liệu chỉ thuộc chi nhánh đang đăng nhập.</p>
       </div>
+
       <div class="report-center__grid">
-        <div class="report-center__item"><div><strong>Nhân viên</strong><p>Danh sách tài khoản trong chi nhánh</p></div><app-report-export-buttons reportType="users" /></div>
-        <div class="report-center__item"><div><strong>Dịch vụ</strong><p>Dịch vụ đang được cấu hình</p></div><app-report-export-buttons reportType="services" /></div>
-        <div class="report-center__item"><div><strong>Ticket</strong><p>Phiếu và trạng thái phục vụ</p></div><app-report-export-buttons reportType="tickets" /></div>
+        <div class="report-center__item">
+          <div>
+            <strong>Nhân viên</strong>
+            <p>Danh sách tài khoản trong chi nhánh</p>
+          </div>
+          <app-report-export-buttons reportType="users" />
+        </div>
+
+        <div class="report-center__item">
+          <div>
+            <strong>Dịch vụ</strong>
+            <p>Dịch vụ đang được cấu hình</p>
+          </div>
+          <app-report-export-buttons reportType="services" />
+        </div>
+
+        <div class="report-center__item">
+          <div>
+            <strong>Ticket</strong>
+            <p>Phiếu và trạng thái phục vụ</p>
+          </div>
+          <app-report-export-buttons reportType="tickets" />
+        </div>
       </div>
     </section>
   </div>

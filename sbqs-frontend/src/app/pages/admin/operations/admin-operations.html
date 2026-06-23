@@ -1,9 +1,9 @@
-<app-dashboard-layout title="Branch Operations">
+<app-dashboard-layout title="Vận hành chi nhánh">
   <div class="page-section">
     <section class="page-heading">
       <span class="page-kicker">Branch Admin</span>
-      <h1>Van hanh chi nhanh</h1>
-      <p>Tao nhanh may boc so va quay giao dich. Ma va ten se duoc he thong tu sinh theo chi nhanh.</p>
+      <h1>Vận hành chi nhánh</h1>
+      <p>Tạo nhanh máy bốc số và quầy giao dịch. Mã và tên được hệ thống tự sinh theo chi nhánh.</p>
     </section>
 
     <div *ngIf="successMessage" class="alert alert-success">
@@ -16,33 +16,33 @@
 
     <section class="ui-card-grid">
       <div class="ui-card metric-card">
-        <span>May boc so</span>
+        <span>Máy bốc số</span>
         <strong>{{ queueMachines.length }}</strong>
-        <p>Thiet bi lay so cua chi nhanh.</p>
+        <p>Thiết bị lấy số của chi nhánh.</p>
       </div>
 
       <div class="ui-card metric-card">
-        <span>Quay</span>
+        <span>Quầy</span>
         <strong>{{ counters.length }}</strong>
-        <p>Quay giao dich gan voi may boc so.</p>
+        <p>Quầy giao dịch gắn với máy bốc số.</p>
       </div>
     </section>
 
     <section class="admin-panel-grid">
       <div class="ui-card">
         <div class="card-heading">
-          <h3>Them may boc so</h3>
-          <p>Bam nut la he thong tu tao may tiep theo. Ghi chu vi tri co the bo trong.</p>
+          <h3>Thêm máy bốc số</h3>
+          <p>Bấm nút để hệ thống tạo máy tiếp theo. Ghi chú vị trí có thể bỏ trống.</p>
         </div>
 
         <div class="ui-form">
           <label>
-            Ghi chu vi tri
-            <input type="text" [(ngModel)]="machineNote" placeholder="Vi du: sanh chinh, tang 2" />
+            Ghi chú vị trí
+            <input type="text" [(ngModel)]="machineNote" placeholder="Ví dụ: sảnh chính, tầng 2" />
           </label>
 
           <button type="button" class="btn btn-primary" (click)="quickCreateMachine()" [disabled]="isSubmittingMachine">
-            {{ isSubmittingMachine ? 'Dang tao...' : 'Them may' }}
+            {{ isSubmittingMachine ? 'Đang tạo...' : 'Thêm máy' }}
           </button>
         </div>
       </div>
@@ -50,26 +50,26 @@
       <div class="ui-card">
         <div class="table-heading">
           <div>
-            <h3>Danh sach may</h3>
-            <p>May thuoc chi nhanh hien tai.</p>
+            <h3>Danh sách máy</h3>
+            <p>Máy thuộc chi nhánh hiện tại.</p>
           </div>
 
           <button type="button" class="btn btn-secondary" (click)="loadQueueMachines()" [disabled]="isLoadingMachines">
-            {{ isLoadingMachines ? 'Dang tai...' : 'Tai lai' }}
+            {{ isLoadingMachines ? 'Đang tải...' : 'Tải lại' }}
           </button>
         </div>
 
-        <div *ngIf="isLoadingMachines" class="admin-empty">Dang tai may...</div>
-        <div *ngIf="!isLoadingMachines && queueMachines.length === 0" class="admin-empty">Chua co may nao.</div>
+        <div *ngIf="isLoadingMachines" class="admin-empty">Đang tải máy...</div>
+        <div *ngIf="!isLoadingMachines && queueMachines.length === 0" class="admin-empty">Chưa có máy nào.</div>
 
         <div *ngIf="!isLoadingMachines && queueMachines.length > 0" class="table-wrapper">
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Ma</th>
-                <th>Ten</th>
-                <th>Ghi chu</th>
-                <th>Thao tac</th>
+                <th>Mã</th>
+                <th>Tên</th>
+                <th>Ghi chú</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -78,7 +78,7 @@
                 <td>{{ machine.machineName }}</td>
                 <td>{{ machine.locationNote || '-' }}</td>
                 <td>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteMachine(machine)">Xoa han</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteMachine(machine)">Xóa hẳn</button>
                 </td>
               </tr>
             </tbody>
@@ -90,20 +90,20 @@
     <section class="admin-panel-grid">
       <div class="ui-card">
         <div class="card-heading">
-          <h3>Them quay hang loat</h3>
-          <p>Nhap so luong, he thong tu sinh Quay 1, Quay 2... va gan vao may da chon.</p>
+          <h3>Thêm quầy hàng loạt</h3>
+          <p>Nhập số lượng, hệ thống tự sinh Quầy 1, Quầy 2... và gắn vào máy đã chọn.</p>
         </div>
 
         <div class="ui-form">
           <label>
-            So luong quay
+            Số lượng quầy
             <input type="number" min="1" max="20" [(ngModel)]="counterCount" />
           </label>
 
           <label>
-            Gan vao may
+            Gắn vào máy
             <select [(ngModel)]="selectedMachineForCounters">
-              <option [ngValue]="null">Chon may boc so</option>
+              <option [ngValue]="null">Chọn máy bốc số</option>
               <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
                 {{ machine.machineName }} - {{ machine.machineCode }}
               </option>
@@ -111,7 +111,7 @@
           </label>
 
           <button type="button" class="btn btn-primary" (click)="quickCreateCounters()" [disabled]="isSubmittingCounter">
-            {{ isSubmittingCounter ? 'Dang tao...' : 'Tao quay' }}
+            {{ isSubmittingCounter ? 'Đang tạo...' : 'Tạo quầy' }}
           </button>
         </div>
       </div>
@@ -119,26 +119,26 @@
       <div class="ui-card">
         <div class="table-heading">
           <div>
-            <h3>Danh sach quay</h3>
-            <p>Quay se duoc staff dung de goi khach.</p>
+            <h3>Danh sách quầy</h3>
+            <p>Quầy sẽ được nhân viên dùng để gọi khách.</p>
           </div>
 
           <button type="button" class="btn btn-secondary" (click)="loadCounters()" [disabled]="isLoadingCounters">
-            {{ isLoadingCounters ? 'Dang tai...' : 'Tai lai' }}
+            {{ isLoadingCounters ? 'Đang tải...' : 'Tải lại' }}
           </button>
         </div>
 
-        <div *ngIf="isLoadingCounters" class="admin-empty">Dang tai quay...</div>
-        <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">Chua co quay nao.</div>
+        <div *ngIf="isLoadingCounters" class="admin-empty">Đang tải quầy...</div>
+        <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">Chưa có quầy nào.</div>
 
         <div *ngIf="!isLoadingCounters && counters.length > 0" class="table-wrapper">
           <table class="admin-table">
             <thead>
               <tr>
-                <th>Ma</th>
-                <th>Ten</th>
-                <th>May</th>
-                <th>Thao tac</th>
+                <th>Mã</th>
+                <th>Tên</th>
+                <th>Máy</th>
+                <th>Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -147,7 +147,7 @@
                 <td>{{ counter.counterName }}</td>
                 <td>{{ counter.queueMachine?.machineName || '-' }}</td>
                 <td>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteCounter(counter)">Xoa han</button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteCounter(counter)">Xóa hẳn</button>
                 </td>
               </tr>
             </tbody>

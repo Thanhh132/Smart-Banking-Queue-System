@@ -72,7 +72,7 @@ export class AdminOperations implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc danh sach may boc so.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được danh sách máy bốc số.');
         this.isLoadingMachines = false;
         this.cdr.detectChanges();
       },
@@ -93,7 +93,7 @@ export class AdminOperations implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc danh sach quay.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được danh sách quầy.');
         this.isLoadingCounters = false;
         this.cdr.detectChanges();
       },
@@ -109,9 +109,9 @@ export class AdminOperations implements OnInit {
     const code = `QM-${this.branchId}-${nextNumber}`;
     const payload: QueueMachinePayload = {
       machineCode: code,
-      machineName: `May boc so ${nextNumber}`,
+      machineName: `Máy bốc số ${nextNumber}`,
       locationNote: this.machineNote,
-      instructionNote: 'Chon dich vu va nhan so thu tu',
+      instructionNote: 'Chọn dịch vụ và nhận số thứ tự',
       status: 'ACTIVE',
       branch: { branchId: this.branchId },
     };
@@ -122,14 +122,14 @@ export class AdminOperations implements OnInit {
 
     this.operationsService.createQueueMachine(payload).subscribe({
       next: (machine) => {
-        this.successMessage = 'Da tao may boc so.';
+        this.successMessage = 'Đã tạo máy bốc số.';
         this.machineNote = '';
         this.selectedMachineForCounters = machine.queueMachineId;
         this.isSubmittingMachine = false;
         this.loadQueueMachines();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tao duoc may boc so.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tạo được máy bốc số.');
         this.isSubmittingMachine = false;
         this.cdr.detectChanges();
       },
@@ -142,7 +142,7 @@ export class AdminOperations implements OnInit {
     }
 
     if (!this.selectedMachineForCounters) {
-      this.errorMessage = 'Hay tao hoac chon mot may boc so truoc khi tao quay.';
+      this.errorMessage = 'Hãy tạo hoặc chọn một máy bốc số trước khi tạo quầy.';
       return;
     }
 
@@ -152,7 +152,7 @@ export class AdminOperations implements OnInit {
       const number = startNumber + index;
       const payload: CounterPayload = {
         counterCode: `C-${this.branchId}-${number}`,
-        counterName: `Quay ${number}`,
+        counterName: `Quầy ${number}`,
         status: 'INACTIVE',
         branch: { branchId: this.branchId },
         queueMachine: { queueMachineId: Number(this.selectedMachineForCounters) },
@@ -167,12 +167,12 @@ export class AdminOperations implements OnInit {
 
     forkJoin(requests).subscribe({
       next: () => {
-        this.successMessage = `Da tao ${count} quay.`;
+        this.successMessage = `Đã tạo ${count} quầy.`;
         this.isSubmittingCounter = false;
         this.loadCounters();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tao duoc quay.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tạo được quầy.');
         this.isSubmittingCounter = false;
         this.cdr.detectChanges();
       },
@@ -180,19 +180,19 @@ export class AdminOperations implements OnInit {
   }
 
   deleteMachine(machine: any): void {
-    if (!confirm(`Xoa han may boc so "${machine.machineName}"?`)) {
+    if (!confirm(`Xóa hẳn máy bốc số "${machine.machineName}"?`)) {
       return;
     }
 
     this.operationsService.deleteQueueMachine(machine.queueMachineId).subscribe({
       next: () => {
-        this.successMessage = 'Da xoa may boc so.';
+        this.successMessage = 'Đã xóa máy bốc số.';
         this.loadQueueMachines();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong xoa duoc may boc so. Hay go mapping/quay/ticket lien quan truoc.'
+          'Không xóa được máy bốc số. Hãy gỡ liên kết, quầy hoặc phiếu liên quan trước.'
         );
         this.cdr.detectChanges();
       },
@@ -200,19 +200,19 @@ export class AdminOperations implements OnInit {
   }
 
   deleteCounter(counter: any): void {
-    if (!confirm(`Xoa han quay "${counter.counterName}"?`)) {
+    if (!confirm(`Xóa hẳn quầy "${counter.counterName}"?`)) {
       return;
     }
 
     this.operationsService.deleteCounter(counter.counterId).subscribe({
       next: () => {
-        this.successMessage = 'Da xoa quay.';
+        this.successMessage = 'Đã xóa quầy.';
         this.loadCounters();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Khong xoa duoc quay. Hay hoan tat ticket dang gan voi quay truoc.'
+          'Không xóa được quầy. Hãy hoàn tất phiếu đang gắn với quầy trước.'
         );
         this.cdr.detectChanges();
       },
@@ -222,7 +222,7 @@ export class AdminOperations implements OnInit {
   private ensureBranch(): this is this & { branchId: number } {
     if (!this.branchId) {
       this.errorMessage =
-        'Tai khoan Branch Admin nay chua duoc gan chi nhanh. Hay dung tai khoan do Super Admin cap cho chi nhanh.';
+        'Tài khoản Branch Admin này chưa được gán chi nhánh. Hãy dùng tài khoản do Super Admin cấp cho chi nhánh.';
       this.cdr.detectChanges();
       return false;
     }

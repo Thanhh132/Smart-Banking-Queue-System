@@ -1,16 +1,17 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
-import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-import { AppButton } from '../../../shared/components/app-button/app-button';
-import { AppCard } from '../../../shared/components/app-card/app-card';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { StaffService } from '../../../core/services/staff.service';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
   selector: 'app-staff-dashboard',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -62,10 +63,7 @@ export class StaffDashboard implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Không tải được trạng thái quầy.'
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được trạng thái quầy.');
         this.cdr.detectChanges();
       },
     });
@@ -84,10 +82,7 @@ export class StaffDashboard implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Không tải được ca làm hiện tại.'
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được ca làm hiện tại.');
         this.cdr.detectChanges();
       },
     });
@@ -122,11 +117,11 @@ export class StaffDashboard implements OnInit {
       next: (counter: any) => {
         this.selectedCounter = counter;
         this.currentTicket = counter.currentTicket || null;
-        this.successMessage = `Đã assign vào ${counter.counterName}.`;
+        this.successMessage = `Đã vào ${counter.counterName}.`;
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Assign quầy thất bại.');
+        this.errorMessage = this.apiError.getMessage(err, 'Vào quầy thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -148,7 +143,7 @@ export class StaffDashboard implements OnInit {
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Unassign quầy thất bại.');
+        this.errorMessage = this.apiError.getMessage(err, 'Kết thúc ca thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -158,7 +153,7 @@ export class StaffDashboard implements OnInit {
     this.errorMessage = '';
 
     if (!this.selectedCounter?.counterId) {
-      this.errorMessage = 'Hãy assign vào một quầy trước khi gọi số.';
+      this.errorMessage = 'Hãy vào một quầy trước khi gọi số.';
       this.cdr.detectChanges();
       return;
     }
@@ -169,10 +164,7 @@ export class StaffDashboard implements OnInit {
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Không gọi được khách tiếp theo.'
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Không gọi được khách tiếp theo.');
         this.cdr.detectChanges();
       },
     });
@@ -191,10 +183,7 @@ export class StaffDashboard implements OnInit {
         this.loadDashboard();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Không hoàn thành được ticket.'
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Không hoàn thành được phiếu.');
         this.cdr.detectChanges();
       },
     });

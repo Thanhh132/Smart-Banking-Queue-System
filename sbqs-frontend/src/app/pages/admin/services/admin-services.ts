@@ -41,87 +41,87 @@ export class AdminServices implements OnInit {
   serviceCatalog: ServiceTemplate[] = [
     {
       key: 'CASH_WITHDRAW',
-      name: 'Rut tien',
+      name: 'Rút tiền',
       type: 'BASIC',
       estimatedTime: 7,
-      description: 'Rut tien mat tai quay',
+      description: 'Rút tiền mặt tại quầy',
     },
     {
       key: 'CASH_DEPOSIT',
-      name: 'Nop tien',
+      name: 'Nộp tiền',
       type: 'BASIC',
       estimatedTime: 8,
-      description: 'Nop tien vao tai khoan',
+      description: 'Nộp tiền vào tài khoản',
     },
     {
       key: 'TRANSFER',
-      name: 'Chuyen khoan',
+      name: 'Chuyển khoản',
       type: 'BASIC',
       estimatedTime: 10,
-      description: 'Ho tro chuyen khoan tai quay',
+      description: 'Hỗ trợ chuyển khoản tại quầy',
     },
     {
       key: 'ACCOUNT_OPEN',
-      name: 'Mo tai khoan',
+      name: 'Mở tài khoản',
       type: 'BASIC',
       estimatedTime: 15,
-      description: 'Dang ky tai khoan moi',
+      description: 'Đăng ký tài khoản mới',
     },
     {
       key: 'CARD_REGISTER',
-      name: 'Dang ky the',
+      name: 'Đăng ký thẻ',
       type: 'CARD',
       estimatedTime: 15,
-      description: 'Dang ky the ATM/ghi no/tin dung',
+      description: 'Đăng ký thẻ ATM, ghi nợ hoặc tín dụng',
     },
     {
       key: 'CARD_REISSUE',
-      name: 'Cap lai the',
+      name: 'Cấp lại thẻ',
       type: 'CARD',
       estimatedTime: 12,
-      description: 'Cap lai the mat/hong',
+      description: 'Cấp lại thẻ mất hoặc hỏng',
     },
     {
       key: 'CARD_PIN',
-      name: 'Doi PIN hoac mo khoa the',
+      name: 'Đổi PIN hoặc mở khóa thẻ',
       type: 'CARD',
       estimatedTime: 8,
-      description: 'Ho tro PIN va trang thai the',
+      description: 'Hỗ trợ PIN và trạng thái thẻ',
     },
     {
       key: 'LOAN_CONSULT',
-      name: 'Tu van vay',
+      name: 'Tư vấn vay',
       type: 'LOAN',
       estimatedTime: 20,
-      description: 'Tu van san pham tin dung',
+      description: 'Tư vấn sản phẩm tín dụng',
     },
     {
       key: 'LOAN_PAYMENT',
-      name: 'Thanh toan khoan vay',
+      name: 'Thanh toán khoản vay',
       type: 'LOAN',
       estimatedTime: 12,
-      description: 'Ho tro nop tien thanh toan khoan vay',
+      description: 'Hỗ trợ nộp tiền thanh toán khoản vay',
     },
     {
       key: 'CUSTOMER_SUPPORT',
-      name: 'Ho tro khach hang',
+      name: 'Hỗ trợ khách hàng',
       type: 'SUPPORT',
       estimatedTime: 10,
-      description: 'Giai dap va xu ly yeu cau chung',
+      description: 'Giải đáp và xử lý yêu cầu chung',
     },
     {
       key: 'INFORMATION_UPDATE',
-      name: 'Cap nhat thong tin',
+      name: 'Cập nhật thông tin',
       type: 'SUPPORT',
       estimatedTime: 12,
-      description: 'Cap nhat thong tin ca nhan/KYC',
+      description: 'Cập nhật thông tin cá nhân hoặc KYC',
     },
     {
       key: 'COMPLAINT',
-      name: 'Khieu nai tra soat',
+      name: 'Khiếu nại tra soát',
       type: 'SUPPORT',
       estimatedTime: 18,
-      description: 'Tiep nhan khieu nai va tra soat giao dich',
+      description: 'Tiếp nhận khiếu nại và tra soát giao dịch',
     },
   ];
 
@@ -167,7 +167,7 @@ export class AdminServices implements OnInit {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Khong tai duoc danh sach dich vu.');
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được danh sách dịch vụ.');
         this.isListLoading = false;
         this.cdr.detectChanges();
       },
@@ -198,7 +198,7 @@ export class AdminServices implements OnInit {
     );
 
     if (templates.length === 0) {
-      this.errorMessage = 'Hay chon it nhat mot dich vu mau.';
+      this.errorMessage = 'Hãy chọn ít nhất một dịch vụ mẫu.';
       this.cdr.detectChanges();
       return;
     }
@@ -212,7 +212,7 @@ export class AdminServices implements OnInit {
     );
 
     if (filteredTemplates.length === 0) {
-      this.errorMessage = 'Cac dich vu da chon da ton tai trong chi nhanh.';
+      this.errorMessage = 'Các dịch vụ đã chọn đã tồn tại trong chi nhánh.';
       this.cdr.detectChanges();
       return;
     }
@@ -236,13 +236,13 @@ export class AdminServices implements OnInit {
 
     forkJoin(requests).subscribe({
       next: () => {
-        this.successMessage = `Da tao ${filteredTemplates.length} dich vu.`;
+        this.successMessage = `Đã tạo ${filteredTemplates.length} dịch vụ.`;
         this.selectedTemplateKeys = [];
         this.isSubmitting = false;
         this.loadServices();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Tao dich vu hang loat that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Tạo dịch vụ hàng loạt thất bại.');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -275,7 +275,7 @@ export class AdminServices implements OnInit {
     }
 
     if (!this.editingServiceId) {
-      this.errorMessage = 'Khong tim thay dich vu can cap nhat.';
+      this.errorMessage = 'Không tìm thấy dịch vụ cần cập nhật.';
       return;
     }
 
@@ -294,13 +294,13 @@ export class AdminServices implements OnInit {
 
     this.adminService.updateService(this.editingServiceId, payload).subscribe({
       next: () => {
-        this.successMessage = 'Da cap nhat dich vu.';
+        this.successMessage = 'Đã cập nhật dịch vụ.';
         this.cancelEdit();
         this.isSubmitting = false;
         this.loadServices();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Cap nhat dich vu that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Cập nhật dịch vụ thất bại.');
         this.isSubmitting = false;
         this.cdr.detectChanges();
       },
@@ -308,7 +308,7 @@ export class AdminServices implements OnInit {
   }
 
   deleteService(service: any): void {
-    if (!confirm(`Xoa dich vu "${service.serviceName}"?`)) {
+    if (!confirm(`Xóa dịch vụ "${service.serviceName}"?`)) {
       return;
     }
 
@@ -317,11 +317,11 @@ export class AdminServices implements OnInit {
 
     this.adminService.deleteService(service.serviceId).subscribe({
       next: () => {
-        this.successMessage = 'Da xoa dich vu.';
+        this.successMessage = 'Đã xóa dịch vụ.';
         this.loadServices();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Xoa dich vu that bai.');
+        this.errorMessage = this.apiError.getMessage(err, 'Xóa dịch vụ thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -356,14 +356,14 @@ export class AdminServices implements OnInit {
     }
 
     if (control.errors['required']) {
-      return `${label} khong duoc de trong.`;
+      return `${label} không được để trống.`;
     }
 
     if (control.errors['min']) {
-      return `${label} phai lon hon 0.`;
+      return `${label} phải lớn hơn 0.`;
     }
 
-    return `${label} khong hop le.`;
+    return `${label} không hợp lệ.`;
   }
 
   private generateServiceCode(branchId: number, type: string, number: number): string {
@@ -375,7 +375,7 @@ export class AdminServices implements OnInit {
 
     if (!branchId) {
       this.errorMessage =
-        'Tai khoan Branch Admin nay chua duoc gan chi nhanh. Hay dung tai khoan do Super Admin cap cho chi nhanh.';
+        'Tài khoản Branch Admin này chưa được gán chi nhánh. Hãy dùng tài khoản do Super Admin cấp cho chi nhánh.';
       this.isListLoading = false;
       this.isSubmitting = false;
       this.cdr.detectChanges();

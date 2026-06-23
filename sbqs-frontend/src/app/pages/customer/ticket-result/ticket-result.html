@@ -41,13 +41,16 @@
 
       <section class="customer-section" *ngIf="monitor?.servingCounters?.length">
         <div class="customer-section__header">
-          <div><h2>Bảng gọi số hiện tại</h2><p>Theo dõi tất cả quầy thuộc máy bốc số của bạn.</p></div>
+          <div>
+            <h2>Bảng gọi số hiện tại</h2>
+            <p>Theo dõi tất cả quầy thuộc máy bốc số của bạn.</p>
+          </div>
           <span class="live-indicator">Đang cập nhật</span>
         </div>
         <div class="customer-queue-grid">
           <div class="customer-counter" *ngFor="let counter of monitor?.servingCounters" [ngClass]="getCounterStatusClass(counter.status)">
             <span>{{ counter.counterName }}</span>
-            <strong>{{ counter.ticketNumber || '–' }}</strong>
+            <strong>{{ counter.ticketNumber || '-' }}</strong>
             <p>{{ getCounterStatusLabel(counter.status) }}</p>
             <small>{{ counter.queueMachineName || 'Máy bốc số' }}</small>
           </div>
