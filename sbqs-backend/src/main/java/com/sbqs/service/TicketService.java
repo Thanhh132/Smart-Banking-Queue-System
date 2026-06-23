@@ -8,6 +8,7 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
+import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.CounterSessionRepository;
@@ -15,6 +16,7 @@ import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TicketService {
@@ -37,6 +40,7 @@ public class TicketService {
     private final CurrentUserService currentUserService;
     private final CounterSessionRepository counterSessionRepository;
     private final TicketWorkflowService ticketWorkflowService;
+    private final DomainEventPublisher eventPublisher;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -47,7 +51,8 @@ public class TicketService {
             ServiceRepository serviceRepository,
             CurrentUserService currentUserService,
             CounterSessionRepository counterSessionRepository,
-            TicketWorkflowService ticketWorkflowService) {
+            TicketWorkflowService ticketWorkflowService,
+            DomainEventPublisher eventPublisher) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -58,6 +63,7 @@ public class TicketService {
         this.currentUserService = currentUserService;
         this.counterSessionRepository = counterSessionRepository;
         this.ticketWorkflowService = ticketWorkflowService;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<Ticket> getAllTickets() {
@@ -65,6 +71,7 @@ public class TicketService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Ticket createTicket(Ticket ticket) {
         String customerEmail = getCurrentEmail();
         if (customerEmail == null || customerEmail.isBlank()) {
@@ -129,6 +136,16 @@ public class TicketService {
 
         Ticket savedTicket = ticketRepository.save(ticket);
         ticketWorkflowService.startTicketApproval(savedTicket);
+        eventPublisher.publish(
+                "TICKET_CREATED",
+                "TICKET",
+                savedTicket.getTicketId().toString(),
+                savedTicket.getBranch().getBranchId(),
+                Map.of(
+                        "ticketNumber", savedTicket.getTicketNumber(),
+                        "customerEmail", savedTicket.getCustomerEmail(),
+                        "serviceName", savedTicket.getService().getServiceName(),
+                        "queueMachineName", savedTicket.getQueueMachine().getMachineName()));
 
         return savedTicket;
     }
@@ -150,6 +167,7 @@ public class TicketService {
                 .orElse(null);
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Ticket callNextTicket(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -186,10 +204,20 @@ public class TicketService {
 
         counter.setCurrentTicket(savedTicket);
         counterRepository.save(counter);
+        eventPublisher.publish(
+                "TICKET_CALLED",
+                "TICKET",
+                savedTicket.getTicketId().toString(),
+                savedTicket.getBranch().getBranchId(),
+                Map.of(
+                        "ticketNumber", savedTicket.getTicketNumber(),
+                        "counterName", counter.getCounterName(),
+                        "serviceName", savedTicket.getService().getServiceName()));
 
         return savedTicket;
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Ticket completeTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
@@ -232,9 +260,21 @@ public class TicketService {
             counterRepository.save(counter);
         }
 
-        return ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+        eventPublisher.publish(
+                "TICKET_COMPLETED",
+                "TICKET",
+                savedTicket.getTicketId().toString(),
+                savedTicket.getBranch().getBranchId(),
+                Map.of(
+                        "ticketNumber", savedTicket.getTicketNumber(),
+                        "counterName", counter.getCounterName(),
+                        "serviceName", savedTicket.getService().getServiceName()));
+
+        return savedTicket;
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Ticket cancelTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
@@ -253,7 +293,18 @@ public class TicketService {
         ticket.setStatus("CANCELLED");
         ticketWorkflowService.cancelTicket(ticket);
 
-        return ticketRepository.save(ticket);
+        Ticket savedTicket = ticketRepository.save(ticket);
+        eventPublisher.publish(
+                "TICKET_CANCELLED",
+                "TICKET",
+                savedTicket.getTicketId().toString(),
+                savedTicket.getBranch().getBranchId(),
+                Map.of(
+                        "ticketNumber", savedTicket.getTicketNumber(),
+                        "customerEmail", savedTicket.getCustomerEmail(),
+                        "serviceName", savedTicket.getService().getServiceName()));
+
+        return savedTicket;
     }
 
     private String getCurrentEmail() {

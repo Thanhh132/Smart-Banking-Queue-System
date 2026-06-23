@@ -1,5 +1,6 @@
 package com.sbqs.service;
 
+import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Counter;
 import com.sbqs.entity.CounterSession;
@@ -10,10 +11,13 @@ import com.sbqs.repository.UserRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CounterService {
@@ -22,17 +26,20 @@ public class CounterService {
     private final CounterSessionRepository sessionRepository;
     private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
+    private final DomainEventPublisher eventPublisher;
 
     public CounterService(
             CounterRepository counterRepository,
             CounterSessionRepository sessionRepository,
             UserRepository userRepository,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            DomainEventPublisher eventPublisher) {
 
         this.counterRepository = counterRepository;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.currentUserService = currentUserService;
+        this.eventPublisher = eventPublisher;
     }
 
     public List<Counter> getAllCounters() {
@@ -53,6 +60,7 @@ public class CounterService {
                 .orElse(null);
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Counter createCounter(Counter counter) {
         currentUserService.requireBranch(counter.getBranch().getBranchId());
         counter.setBranch(currentUserService.requireUser().getBranch());
@@ -63,9 +71,20 @@ public class CounterService {
         }
 
         counter.setStatus("INACTIVE");
-        return counterRepository.save(counter);
+        Counter savedCounter = counterRepository.save(counter);
+        eventPublisher.publish(
+                "COUNTER_CREATED",
+                "COUNTER",
+                savedCounter.getCounterId().toString(),
+                savedCounter.getBranch().getBranchId(),
+                Map.of(
+                        "counterCode", savedCounter.getCounterCode(),
+                        "counterName", savedCounter.getCounterName()));
+
+        return savedCounter;
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Counter updateCounter(Long counterId, Counter request) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -89,9 +108,21 @@ public class CounterService {
             counter.setStatus(request.getStatus());
         }
 
-        return counterRepository.save(counter);
+        Counter savedCounter = counterRepository.save(counter);
+        eventPublisher.publish(
+                "COUNTER_UPDATED",
+                "COUNTER",
+                savedCounter.getCounterId().toString(),
+                savedCounter.getBranch().getBranchId(),
+                Map.of(
+                        "counterCode", savedCounter.getCounterCode(),
+                        "counterName", savedCounter.getCounterName(),
+                        "status", savedCounter.getStatus()));
+
+        return savedCounter;
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Counter assignCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -121,9 +152,21 @@ public class CounterService {
         sessionRepository.save(session);
 
         counter.setStatus("ACTIVE");
-        return counterRepository.save(counter);
+        Counter savedCounter = counterRepository.save(counter);
+        eventPublisher.publish(
+                "COUNTER_ASSIGNED",
+                "COUNTER",
+                savedCounter.getCounterId().toString(),
+                savedCounter.getBranch().getBranchId(),
+                Map.of(
+                        "counterName", savedCounter.getCounterName(),
+                        "staffEmail", staff.getEmail(),
+                        "startedAt", session.getStartedAt().toString()));
+
+        return savedCounter;
     }
 
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     public Counter unassignCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -146,9 +189,24 @@ public class CounterService {
         sessionRepository.save(session);
 
         counter.setStatus("INACTIVE");
-        return counterRepository.save(counter);
+        Counter savedCounter = counterRepository.save(counter);
+        eventPublisher.publish(
+                "COUNTER_UNASSIGNED",
+                "COUNTER",
+                savedCounter.getCounterId().toString(),
+                savedCounter.getBranch().getBranchId(),
+                Map.of(
+                        "counterName", savedCounter.getCounterName(),
+                        "staffEmail", staff.getEmail(),
+                        "endedAt", session.getEndedAt().toString()));
+
+        return savedCounter;
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "queueMonitor", allEntries = true),
+            @CacheEvict(cacheNames = "services", allEntries = true)
+    })
     public void deleteCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -156,6 +214,12 @@ public class CounterService {
         currentUserService.requireBranch(counter.getBranch().getBranchId());
 
         counterRepository.delete(counter);
+        eventPublisher.publish(
+                "COUNTER_DELETED",
+                "COUNTER",
+                counterId.toString(),
+                counter.getBranch().getBranchId(),
+                Map.of("counterCode", counter.getCounterCode(), "counterName", counter.getCounterName()));
     }
 
     private User getCurrentUser() {

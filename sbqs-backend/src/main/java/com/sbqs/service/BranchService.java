@@ -1,5 +1,6 @@
 package com.sbqs.service;
 
+import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Counter;
 import com.sbqs.entity.QueueMachineServiceMapping;
@@ -14,11 +15,15 @@ import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
 import com.sbqs.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 public class BranchService {
@@ -33,6 +38,7 @@ public class BranchService {
     private final QueueMachineRepository queueMachineRepository;
     private final ServiceRepository serviceRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
+    private final DomainEventPublisher eventPublisher;
 
     public BranchService(
             BranchRepository branchRepository,
@@ -44,7 +50,8 @@ public class BranchService {
             CounterRepository counterRepository,
             QueueMachineRepository queueMachineRepository,
             ServiceRepository serviceRepository,
-            QueueMachineServiceMappingRepository mappingRepository) {
+            QueueMachineServiceMappingRepository mappingRepository,
+            DomainEventPublisher eventPublisher) {
 
         this.branchRepository = branchRepository;
         this.userRepository = userRepository;
@@ -56,20 +63,27 @@ public class BranchService {
         this.queueMachineRepository = queueMachineRepository;
         this.serviceRepository = serviceRepository;
         this.mappingRepository = mappingRepository;
+        this.eventPublisher = eventPublisher;
     }
 
+    @Cacheable(cacheNames = "branches", key = "'all'")
     public List<Branch> getAllBranches() {
         return branchRepository.findAll();
     }
 
+    @Cacheable(cacheNames = "branches", key = "'bank:' + #bankName")
     public List<Branch> getBranchesByBank(String bankName) {
         return branchRepository.findByBankName(bankName);
     }
 
+    @Cacheable(
+            cacheNames = "branches",
+            key = "'nearest:' + #bankName + ':' + #latitude + ':' + #longitude")
     public List<Branch> getNearestBranches(String bankName, double latitude, double longitude) {
         return branchRepository.findNearestBranches(latitude, longitude, bankName);
     }
 
+    @CacheEvict(cacheNames = "branches", allEntries = true)
     public Branch createBranch(Branch branch) {
         if (branch.getBranchCode() == null
                 || branch.getBranchCode().isBlank()
@@ -77,9 +91,25 @@ public class BranchService {
             branch.setBranchCode(generateBranchCode(branch));
         }
 
-        return branchRepository.save(branch);
+        Branch savedBranch = branchRepository.save(branch);
+        eventPublisher.publish(
+                "BRANCH_CREATED",
+                "BRANCH",
+                savedBranch.getBranchId().toString(),
+                savedBranch.getBranchId(),
+                Map.of(
+                        "branchCode", savedBranch.getBranchCode(),
+                        "branchName", savedBranch.getBranchName(),
+                        "bankName", savedBranch.getBankName()));
+
+        return savedBranch;
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "branches", allEntries = true),
+            @CacheEvict(cacheNames = "services", allEntries = true),
+            @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    })
     public Branch updateBranch(Long branchId, Branch request) {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
@@ -104,10 +134,26 @@ public class BranchService {
             branch.setStatus(request.getStatus());
         }
 
-        return branchRepository.save(branch);
+        Branch savedBranch = branchRepository.save(branch);
+        eventPublisher.publish(
+                "BRANCH_UPDATED",
+                "BRANCH",
+                savedBranch.getBranchId().toString(),
+                savedBranch.getBranchId(),
+                Map.of(
+                        "branchCode", savedBranch.getBranchCode(),
+                        "branchName", savedBranch.getBranchName(),
+                        "status", savedBranch.getStatus()));
+
+        return savedBranch;
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "branches", allEntries = true),
+            @CacheEvict(cacheNames = "services", allEntries = true),
+            @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    })
     public void deleteBranch(Long branchId) {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
@@ -139,6 +185,13 @@ public class BranchService {
         serviceRepository.deleteAll(serviceRepository.findByBranch(branch));
         queueMachineRepository.deleteAll(queueMachineRepository.findByBranch(branch));
         branchRepository.delete(branch);
+
+        eventPublisher.publish(
+                "BRANCH_DELETED",
+                "BRANCH",
+                branchId.toString(),
+                branchId,
+                Map.of("branchCode", branch.getBranchCode(), "branchName", branch.getBranchName()));
     }
 
     private String generateBranchCode(Branch branch) {

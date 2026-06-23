@@ -7,6 +7,7 @@ import com.sbqs.entity.Counter;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.TicketRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -36,6 +37,9 @@ public class QueueMonitorService {
         return getMonitor(branchId, null);
     }
 
+    @Cacheable(
+            cacheNames = "queueMonitor",
+            key = "'branch:' + #branchId + ':machine:' + (#queueMachineId == null ? 'all' : #queueMachineId)")
     public QueueMonitorResponse getMonitor(Long branchId, Long queueMachineId) {
         if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
             currentUserService.requireBranch(branchId);
