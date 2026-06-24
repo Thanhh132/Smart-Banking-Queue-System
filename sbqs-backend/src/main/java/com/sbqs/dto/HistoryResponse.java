@@ -17,6 +17,16 @@ public class HistoryResponse {
 
     private String counterName;
 
+    private String branchName;
+
+    private String queueMachineName;
+
+    private String customerEmail;
+
+    private String staffName;
+
+    private String status;
+
     private LocalDateTime startedAt;
 
     private LocalDateTime completedAt;

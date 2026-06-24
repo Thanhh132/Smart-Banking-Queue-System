@@ -3,6 +3,7 @@ package com.sbqs.repository;
 import com.sbqs.entity.QueueMachineServiceMapping;
 import com.sbqs.entity.QueueMachineServiceMappingId;
 import com.sbqs.entity.Branch;
+import com.sbqs.entity.QueueMachine;
 import com.sbqs.entity.Services;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -16,9 +17,13 @@ public interface QueueMachineServiceMappingRepository
 
     Optional<QueueMachineServiceMapping> findFirstByService(Services service);
 
+    List<QueueMachineServiceMapping> findByService(Services service);
+
     Optional<QueueMachineServiceMapping> findFirstByQueueMachineBranchAndService(
             Branch branch,
             Services service);
+
+    List<QueueMachineServiceMapping> findByQueueMachine(QueueMachine queueMachine);
 
     List<QueueMachineServiceMapping> findByQueueMachineBranchBranchId(Long branchId);
 }

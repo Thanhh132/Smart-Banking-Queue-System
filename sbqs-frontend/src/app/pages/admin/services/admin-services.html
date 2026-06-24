@@ -1,101 +1,61 @@
 <app-dashboard-layout title="Quản lý dịch vụ">
-  <div class="admin-users-page">
-    <div class="page-heading">
+  <div class="service-admin-page">
+    <header class="service-header">
       <div>
         <p class="page-kicker">Branch Admin</p>
         <h2>Quản lý dịch vụ</h2>
-        <p>Chọn nhiều dịch vụ mẫu để tạo hàng loạt. Mã dịch vụ sẽ được hệ thống tự sinh theo chi nhánh.</p>
+        <p>Quản lý danh mục dịch vụ khách có thể lấy số tại chi nhánh.</p>
       </div>
 
       <button class="btn-secondary" type="button" (click)="loadServices()" [disabled]="isListLoading">
         {{ isListLoading ? 'Đang tải...' : 'Tải lại' }}
       </button>
+    </header>
+
+    <div class="service-stats">
+      <div>
+        <span>Tổng dịch vụ</span>
+        <strong>{{ services.length }}</strong>
+      </div>
+      <div>
+        <span>Đang hoạt động</span>
+        <strong>{{ activeServiceCount }}</strong>
+      </div>
+      <div>
+        <span>Tạm khóa</span>
+        <strong>{{ inactiveServiceCount }}</strong>
+      </div>
+      <div>
+        <span>Mẫu đã chọn</span>
+        <strong>{{ selectedTemplateKeys.length }}</strong>
+      </div>
     </div>
 
-    <div class="summary-grid">
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <section class="service-workspace">
       <app-card>
-        <div class="summary-card">
-          <span class="summary-card__label">Tổng dịch vụ</span>
-          <strong>{{ services.length }}</strong>
-          <p>Dịch vụ trong chi nhánh</p>
-        </div>
-      </app-card>
+        <div class="list-toolbar">
+          <div>
+            <h3>Danh sách dịch vụ</h3>
+            <p>{{ filteredServices.length }} dịch vụ phù hợp</p>
+          </div>
 
-      <app-card>
-        <div class="summary-card">
-          <span class="summary-card__label">Mẫu có sẵn</span>
-          <strong>{{ serviceCatalog.length }}</strong>
-          <p>Có thể tạo nhanh</p>
-        </div>
-      </app-card>
-
-      <app-card>
-        <div class="summary-card">
-          <span class="summary-card__label">Đã chọn</span>
-          <strong>{{ selectedTemplateKeys.length }}</strong>
-          <p>Chờ tạo hàng loạt</p>
-        </div>
-      </app-card>
-    </div>
-
-    <div *ngIf="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
-
-    <div class="admin-panel-grid">
-      <app-card>
-        <div class="card-heading">
-          <h3>Tạo dịch vụ hàng loạt</h3>
-          <p>Tick các dịch vụ cần bật cho chi nhánh, sau đó bấm tạo.</p>
-        </div>
-
-        <div class="service-catalog">
-          <label class="catalog-row" *ngFor="let template of serviceCatalog">
-            <input
-              type="checkbox"
-              [checked]="selectedTemplateKeys.includes(template.key)"
-              (change)="toggleTemplate(template.key, $any($event.target).checked)"
-            />
-            <span>
-              <strong>{{ template.name }}</strong>
-              <small>{{ template.type }} - {{ template.estimatedTime }} phút</small>
-            </span>
+          <label class="service-search">
+            Tìm kiếm
+            <input type="search" [(ngModel)]="searchTerm" placeholder="Mã, tên, loại dịch vụ..." />
           </label>
         </div>
 
-        <div class="admin-actions catalog-actions">
-          <button class="btn-primary" type="button" (click)="createSelectedServices()" [disabled]="isSubmitting">
-            {{ isSubmitting ? 'Đang tạo...' : 'Tạo dịch vụ đã chọn' }}
-          </button>
-        </div>
-      </app-card>
+        <div *ngIf="isListLoading" class="admin-empty">Đang tải danh sách dịch vụ...</div>
+        <div *ngIf="!isListLoading && filteredServices.length === 0" class="admin-empty">Không có dịch vụ phù hợp.</div>
 
-      <app-card>
-        <div class="card-heading table-heading">
-          <div>
-            <h3>Danh sách dịch vụ</h3>
-            <p>Dịch vụ hiện có trong chi nhánh.</p>
-          </div>
-        </div>
-
-        <div *ngIf="isListLoading" class="admin-empty">
-          Đang tải danh sách dịch vụ...
-        </div>
-
-        <div *ngIf="!isListLoading && services.length === 0" class="admin-empty">
-          Chưa có dịch vụ nào.
-        </div>
-
-        <div *ngIf="!isListLoading && services.length > 0" class="table-wrapper">
-          <table class="admin-table">
+        <div *ngIf="!isListLoading && filteredServices.length > 0" class="table-wrapper">
+          <table class="service-table">
             <thead>
               <tr>
-                <th>Mã</th>
-                <th>Tên dịch vụ</th>
+                <th>Dịch vụ</th>
                 <th>Loại</th>
                 <th>Thời gian</th>
                 <th>Trạng thái</th>
@@ -104,99 +64,117 @@
             </thead>
 
             <tbody>
-              <tr *ngFor="let service of services">
+              <tr *ngFor="let service of filteredServices" [class.is-editing]="editingServiceId === service.serviceId">
                 <td>
-                  <strong>{{ service.serviceCode }}</strong>
+                  <strong>{{ service.serviceName }}</strong>
+                  <small>{{ service.serviceCode }} · {{ service.description || 'Chưa có mô tả' }}</small>
                 </td>
-                <td>{{ service.serviceName }}</td>
                 <td>{{ service.serviceType || '-' }}</td>
                 <td>{{ service.estimatedTime }} phút</td>
                 <td>
-                  <span
-                    class="admin-badge"
-                    [ngClass]="service.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'"
-                  >
-                    {{ service.status || 'ACTIVE' }}
+                  <span class="status-pill" [ngClass]="service.status === 'ACTIVE' ? 'status-pill--active' : 'status-pill--inactive'">
+                    {{ service.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
                   </span>
                 </td>
                 <td>
-                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(service)">
-                    Sửa
-                  </button>
-                  <button class="btn-danger btn-sm" type="button" (click)="deleteService(service)">
-                    Xóa
-                  </button>
+                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(service)">Sửa</button>
+                  <button class="btn-danger btn-sm" type="button" (click)="deleteService(service)">Xóa</button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </app-card>
-    </div>
 
-    <app-card *ngIf="isEditMode">
-      <div class="card-heading">
-        <h3>Chỉnh sửa dịch vụ</h3>
-        <p>Chỉ dùng khi cần sửa thông tin chi tiết của dịch vụ đã tạo.</p>
-      </div>
-
-      <form class="admin-form edit-form" [formGroup]="serviceForm" (ngSubmit)="updateService()">
-        <div class="admin-field">
-          <label>Mã dịch vụ</label>
-          <input type="text" formControlName="serviceCode" />
-          <div class="validation-error" *ngIf="isInvalid('serviceCode')">
-            {{ getErrorMessage('serviceCode', 'Mã dịch vụ') }}
+      <aside class="service-side-panel">
+        <app-card>
+          <div class="side-heading">
+            <h3>Tạo nhanh từ mẫu</h3>
+            <p>Chọn nhiều dịch vụ mẫu rồi tạo một lần.</p>
           </div>
-        </div>
 
-        <div class="admin-field">
-          <label>Tên dịch vụ</label>
-          <input type="text" formControlName="serviceName" />
-          <div class="validation-error" *ngIf="isInvalid('serviceName')">
-            {{ getErrorMessage('serviceName', 'Tên dịch vụ') }}
+          <div class="service-catalog">
+            <label class="catalog-row" *ngFor="let template of serviceCatalog">
+              <input
+                type="checkbox"
+                [checked]="selectedTemplateKeys.includes(template.key)"
+                (change)="toggleTemplate(template.key, $any($event.target).checked)"
+              />
+              <span>
+                <strong>{{ template.name }}</strong>
+                <small>{{ template.type }} · {{ template.estimatedTime }} phút</small>
+              </span>
+            </label>
           </div>
-        </div>
 
-        <div class="admin-field">
-          <label>Loại dịch vụ</label>
-          <select formControlName="serviceType">
-            <option value="BASIC">BASIC</option>
-            <option value="CARD">CARD</option>
-            <option value="LOAN">LOAN</option>
-            <option value="SUPPORT">SUPPORT</option>
-          </select>
-        </div>
-
-        <div class="admin-field">
-          <label>Thời gian ước tính</label>
-          <input type="number" formControlName="estimatedTime" />
-          <div class="validation-error" *ngIf="isInvalid('estimatedTime')">
-            {{ getErrorMessage('estimatedTime', 'Thời gian ước tính') }}
+          <div class="admin-actions catalog-actions">
+            <button class="btn-primary" type="button" (click)="createSelectedServices()" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Đang tạo...' : 'Tạo dịch vụ đã chọn' }}
+            </button>
           </div>
-        </div>
+        </app-card>
 
-        <div class="admin-field">
-          <label>Mô tả</label>
-          <textarea formControlName="description" rows="3"></textarea>
-        </div>
+        <app-card>
+          <div class="side-heading">
+            <h3>{{ isEditMode ? 'Chỉnh sửa dịch vụ' : 'Chi tiết dịch vụ' }}</h3>
+            <p>{{ isEditMode ? 'Cập nhật dữ liệu vận hành của dịch vụ.' : 'Chọn Sửa ở danh sách để cập nhật.' }}</p>
+          </div>
 
-        <div class="admin-field">
-          <label>Trạng thái</label>
-          <select formControlName="status">
-            <option value="ACTIVE">ACTIVE</option>
-            <option value="INACTIVE">INACTIVE</option>
-          </select>
-        </div>
+          <form *ngIf="isEditMode" class="service-edit-form" [formGroup]="serviceForm" (ngSubmit)="updateService()">
+            <label>
+              Mã dịch vụ
+              <input type="text" formControlName="serviceCode" />
+              <span *ngIf="isInvalid('serviceCode')">{{ getErrorMessage('serviceCode', 'Mã dịch vụ') }}</span>
+            </label>
 
-        <div class="admin-actions">
-          <button class="btn-primary" type="submit" [disabled]="isSubmitting">
-            {{ isSubmitting ? 'Đang lưu...' : 'Cập nhật dịch vụ' }}
-          </button>
-          <button class="btn-secondary" type="button" (click)="cancelEdit()">
-            Hủy
-          </button>
-        </div>
-      </form>
-    </app-card>
+            <label>
+              Tên dịch vụ
+              <input type="text" formControlName="serviceName" />
+              <span *ngIf="isInvalid('serviceName')">{{ getErrorMessage('serviceName', 'Tên dịch vụ') }}</span>
+            </label>
+
+            <label>
+              Loại dịch vụ
+              <select formControlName="serviceType">
+                <option value="BASIC">Cơ bản</option>
+                <option value="CARD">Thẻ</option>
+                <option value="LOAN">Khoản vay</option>
+                <option value="SUPPORT">Hỗ trợ</option>
+              </select>
+            </label>
+
+            <label>
+              Thời gian ước tính
+              <input type="number" formControlName="estimatedTime" />
+              <span *ngIf="isInvalid('estimatedTime')">{{ getErrorMessage('estimatedTime', 'Thời gian ước tính') }}</span>
+            </label>
+
+            <label>
+              Trạng thái
+              <select formControlName="status">
+                <option value="ACTIVE">Hoạt động</option>
+                <option value="INACTIVE">Tạm khóa</option>
+              </select>
+            </label>
+
+            <label>
+              Mô tả
+              <textarea formControlName="description" rows="3"></textarea>
+            </label>
+
+            <div class="admin-actions">
+              <button class="btn-primary" type="submit" [disabled]="isSubmitting">
+                {{ isSubmitting ? 'Đang lưu...' : 'Cập nhật' }}
+              </button>
+              <button class="btn-secondary" type="button" (click)="cancelEdit()">Hủy</button>
+            </div>
+          </form>
+
+          <div *ngIf="!isEditMode" class="side-empty">
+            Chưa chọn dịch vụ.
+          </div>
+        </app-card>
+      </aside>
+    </section>
   </div>
 </app-dashboard-layout>

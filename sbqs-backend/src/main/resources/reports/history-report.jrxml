@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="history_report" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" whenNoDataType="AllSectionsNoDetail">
+    <style name="Base" fontName="DejaVu Sans" fontSize="9"/>
+    <style name="Title" style="Base" fontSize="19" isBold="true" forecolor="#123B5D"/>
+    <style name="Meta" style="Base" fontSize="9" forecolor="#5B667A"/>
+    <style name="Header" style="Base" mode="Opaque" backcolor="#123B5D" forecolor="#FFFFFF" isBold="true"/>
+    <style name="Cell" style="Base"><box><bottomPen lineWidth="0.5" lineColor="#D8E1EA"/></box></style>
+    <parameter name="REPORT_TITLE" class="java.lang.String"/>
+    <parameter name="REPORT_SCOPE" class="java.lang.String"/>
+    <parameter name="GENERATED_AT" class="java.lang.String"/>
+    <parameter name="TOTAL_RECORDS" class="java.lang.Integer"/>
+    <field name="ticketNumber" class="java.lang.Integer"/>
+    <field name="customerEmail" class="java.lang.String"/>
+    <field name="staffName" class="java.lang.String"/>
+    <field name="serviceName" class="java.lang.String"/>
+    <field name="counterName" class="java.lang.String"/>
+    <field name="branchName" class="java.lang.String"/>
+    <field name="status" class="java.lang.String"/>
+    <field name="startedAt" class="java.lang.String"/>
+    <field name="completedAt" class="java.lang.String"/>
+    <title><band height="70">
+        <textField><reportElement x="0" y="0" width="520" height="28" style="Title"/><textFieldExpression><![CDATA[$P{REPORT_TITLE}]]></textFieldExpression></textField>
+        <textField><reportElement x="0" y="34" width="500" height="16" style="Meta"/><textFieldExpression><![CDATA[$P{REPORT_SCOPE}]]></textFieldExpression></textField>
+        <textField><reportElement x="540" y="4" width="262" height="16" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Xuất lúc: " + $P{GENERATED_AT}]]></textFieldExpression></textField>
+        <textField><reportElement x="540" y="26" width="262" height="16" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Tổng bản ghi: " + $P{TOTAL_RECORDS}]]></textFieldExpression></textField>
+        <line><reportElement x="0" y="59" width="802" height="1" forecolor="#B8C8D8"/></line>
+    </band></title>
+    <columnHeader><band height="28">
+        <staticText><reportElement x="0" y="0" width="50" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Số]]></text></staticText>
+        <staticText><reportElement x="50" y="0" width="125" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Khách hàng]]></text></staticText>
+        <staticText><reportElement x="175" y="0" width="110" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Nhân viên]]></text></staticText>
+        <staticText><reportElement x="285" y="0" width="120" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Dịch vụ]]></text></staticText>
+        <staticText><reportElement x="405" y="0" width="90" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Quầy]]></text></staticText>
+        <staticText><reportElement x="495" y="0" width="110" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Chi nhánh]]></text></staticText>
+        <staticText><reportElement x="605" y="0" width="78" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Trạng thái]]></text></staticText>
+        <staticText><reportElement x="683" y="0" width="60" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Bắt đầu]]></text></staticText>
+        <staticText><reportElement x="743" y="0" width="59" height="28" style="Header"/><textElement><paragraph leftIndent="6"/></textElement><text><![CDATA[Hoàn tất]]></text></staticText>
+    </band></columnHeader>
+    <detail><band height="25">
+        <textField><reportElement x="0" y="0" width="50" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{ticketNumber}]]></textFieldExpression></textField>
+        <textField><reportElement x="50" y="0" width="125" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{customerEmail}]]></textFieldExpression></textField>
+        <textField><reportElement x="175" y="0" width="110" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{staffName}]]></textFieldExpression></textField>
+        <textField><reportElement x="285" y="0" width="120" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{serviceName}]]></textFieldExpression></textField>
+        <textField><reportElement x="405" y="0" width="90" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{counterName}]]></textFieldExpression></textField>
+        <textField><reportElement x="495" y="0" width="110" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{branchName}]]></textFieldExpression></textField>
+        <textField><reportElement x="605" y="0" width="78" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{status}]]></textFieldExpression></textField>
+        <textField><reportElement x="683" y="0" width="60" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{startedAt}]]></textFieldExpression></textField>
+        <textField><reportElement x="743" y="0" width="59" height="25" style="Cell"/><textElement><paragraph leftIndent="6"/></textElement><textFieldExpression><![CDATA[$F{completedAt}]]></textFieldExpression></textField>
+    </band></detail>
+    <pageFooter><band height="20"><textField><reportElement x="650" y="4" width="152" height="14" style="Meta"/><textElement textAlignment="Right"/><textFieldExpression><![CDATA["Trang " + $V{PAGE_NUMBER}]]></textFieldExpression></textField></band></pageFooter>
+</jasperReport>

@@ -6,6 +6,7 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -147,9 +148,30 @@ public class UserService {
                         user.setStatus(request.getStatus());
                 }
 
-                return userRepository.save(user);
+                if (request.getBranchId() != null) {
+                        Branch branch = branchRepository.findById(request.getBranchId())
+                                        .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
+                        requireBranchAccess(branch.getBranchId());
+                        user.setBranch(branch);
+                }
+
+                User savedUser = userRepository.save(user);
+                keycloakService.updateUserProfile(
+                                savedUser.getKeycloakUserId(),
+                                savedUser.getFullName(),
+                                savedUser.getEmail(),
+                                savedUser.getRole());
+
+                if (request.getStatus() != null && !request.getStatus().isBlank()) {
+                        keycloakService.setUserEnabled(
+                                        savedUser.getKeycloakUserId(),
+                                        "ACTIVE".equalsIgnoreCase(savedUser.getStatus()));
+                }
+
+                return savedUser;
         }
 
+        @Transactional
         public void deleteUser(Long userId) {
 
                 User user = userRepository.findById(userId)
@@ -157,8 +179,15 @@ public class UserService {
 
                 requireUserManagementAccess(user);
 
-                keycloakService.deleteUser(user.getKeycloakUserId());
-                userRepository.delete(user);
+                if ("INACTIVE".equalsIgnoreCase(user.getStatus())) {
+                        keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
+                        userRepository.delete(user);
+                        return;
+                }
+
+                user.setStatus("INACTIVE");
+                userRepository.save(user);
+                keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
         }
 
         private void requireBranchAccess(Long branchId) {

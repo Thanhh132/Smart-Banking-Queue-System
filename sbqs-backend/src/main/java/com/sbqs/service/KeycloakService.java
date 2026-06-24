@@ -177,25 +177,47 @@ public class KeycloakService {
         updateUserSetup(userId, null, null, null, adminToken);
     }
 
-    public void deleteUser(String userId) {
+    public void setUserEnabled(String userId, boolean enabled) {
         if (userId == null || userId.isBlank()) {
             return;
         }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(getAdminAccessToken());
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
             restTemplate.exchange(
                     userUrl(userId),
-                    HttpMethod.DELETE,
-                    new HttpEntity<>(headers),
+                    HttpMethod.PUT,
+                    new HttpEntity<>(Map.of("enabled", enabled), headers),
                     Void.class);
         } catch (HttpClientErrorException.NotFound ex) {
             log.warn("Keycloak user already missing id={}", userId);
         } catch (HttpClientErrorException ex) {
             throw new RuntimeException(
-                    "Khong xoa duoc user tren Keycloak: "
+                    "Khong cap nhat duoc trang thai user tren Keycloak: "
+                            + ex.getResponseBodyAsString());
+        }
+    }
+
+    public void updateUserProfile(
+            String userId,
+            String fullName,
+            String email,
+            String role) {
+
+        if (userId == null || userId.isBlank()) {
+            return;
+        }
+
+        try {
+            updateUserSetup(userId, fullName, email, role, getAdminAccessToken());
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.warn("Keycloak user already missing id={}", userId);
+        } catch (HttpClientErrorException ex) {
+            throw new RuntimeException(
+                    "Khong cap nhat duoc thong tin user tren Keycloak: "
                             + ex.getResponseBodyAsString());
         }
     }

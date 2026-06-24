@@ -31,3 +31,82 @@ td:last-child {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.operations-page {
+  display: grid;
+  gap: 20px;
+}
+
+.split-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.split-form label {
+  display: grid;
+  gap: 8px;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.split-form input,
+.split-form select,
+.split-form textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #bfd0e3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  background: #fff;
+}
+
+.split-form textarea {
+  resize: vertical;
+}
+
+.full-row {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.hint-line {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f0f7ff;
+  color: #0f4f86;
+  font-weight: 800;
+}
+
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.status-chip--active {
+  background: #dcfce7;
+  color: #047857;
+}
+
+.status-chip--inactive {
+  background: #eef2f7;
+  color: #475569;
+}

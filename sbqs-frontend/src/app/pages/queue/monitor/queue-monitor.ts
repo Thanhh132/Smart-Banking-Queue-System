@@ -50,6 +50,18 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
     return 'Không hoạt động';
   }
 
+  getCounterStatusClass(status: string): string {
+    if (status === 'SERVING') {
+      return 'counter-card--serving';
+    }
+
+    if (status === 'IDLE') {
+      return 'counter-card--idle';
+    }
+
+    return 'counter-card--inactive';
+  }
+
   ngOnInit(): void {
     this.loadMonitor();
 

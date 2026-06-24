@@ -32,9 +32,11 @@ export class LocationService {
   }
 
   googleMapsUrl(branch: { latitude?: number; longitude?: number; address?: string; branchName?: string }): string {
-    const query = branch.latitude != null && branch.longitude != null
-      ? `${branch.latitude},${branch.longitude}`
-      : `${branch.branchName || ''} ${branch.address || ''}`;
+    if (branch.latitude != null && branch.longitude != null) {
+      return `https://www.google.com/maps?q=${branch.latitude},${branch.longitude}&z=18`;
+    }
+
+    const query = `${branch.branchName || ''} ${branch.address || ''}`.trim();
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
   }
 }

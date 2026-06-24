@@ -8,7 +8,6 @@ import com.sbqs.entity.User;
 import com.sbqs.repository.AppointmentRepository;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
-import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
@@ -30,8 +29,6 @@ public class BranchService {
 
     private final BranchRepository branchRepository;
     private final UserRepository userRepository;
-    private final KeycloakService keycloakService;
-    private final HistoryRepository historyRepository;
     private final AppointmentRepository appointmentRepository;
     private final TicketRepository ticketRepository;
     private final CounterRepository counterRepository;
@@ -43,8 +40,6 @@ public class BranchService {
     public BranchService(
             BranchRepository branchRepository,
             UserRepository userRepository,
-            KeycloakService keycloakService,
-            HistoryRepository historyRepository,
             AppointmentRepository appointmentRepository,
             TicketRepository ticketRepository,
             CounterRepository counterRepository,
@@ -55,8 +50,6 @@ public class BranchService {
 
         this.branchRepository = branchRepository;
         this.userRepository = userRepository;
-        this.keycloakService = keycloakService;
-        this.historyRepository = historyRepository;
         this.appointmentRepository = appointmentRepository;
         this.ticketRepository = ticketRepository;
         this.counterRepository = counterRepository;
@@ -159,12 +152,13 @@ public class BranchService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
         List<User> users = userRepository.findByBranch(branch);
-        for (User user : users) {
-            keycloakService.deleteUser(user.getKeycloakUserId());
+        if (!users.isEmpty()) {
+            throw new RuntimeException(
+                    "Khong the xoa chi nhanh vi con "
+                            + users.size()
+                            + " tai khoan thuoc chi nhanh nay. Hay khoa hoac chuyen tai khoan truoc.");
         }
-        userRepository.deleteAll(users);
 
-        historyRepository.deleteAll(historyRepository.findByBranchBranchId(branchId));
         appointmentRepository.deleteAll(appointmentRepository.findByBranch(branch));
 
         List<QueueMachineServiceMapping> mappings = mappingRepository.findAll()

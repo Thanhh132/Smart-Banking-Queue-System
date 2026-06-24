@@ -34,20 +34,16 @@ export class ApiErrorService {
   private humanize(message: string): string {
     const lower = message.toLowerCase();
 
-    if (lower.includes('email da ton tai') || lower.includes('email')) {
+    if (lower.includes('email da ton tai') || lower.includes('email đã tồn tại')) {
       return 'Email đã tồn tại. Vui lòng dùng email khác.';
     }
 
-    if (lower.includes('so dien thoai da ton tai') || lower.includes('phone')) {
+    if (lower.includes('so dien thoai da ton tai') || lower.includes('số điện thoại đã tồn tại') || lower.includes('phone')) {
       return 'Số điện thoại đã tồn tại. Vui lòng dùng số khác.';
     }
 
     if (lower.includes('invalid_grant')) {
       return 'Email hoặc mật khẩu không chính xác.';
-    }
-
-    if (lower.includes('constraint') || lower.includes('foreign key')) {
-      return 'Dữ liệu này đang được sử dụng nên chưa thể xóa.';
     }
 
     return message;

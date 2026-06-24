@@ -1,119 +1,181 @@
 <app-dashboard-layout title="Quầy phục vụ">
-  <app-page-header
-    title="Màn hình giao dịch viên"
-    subtitle="Chọn quầy, gọi số và kết thúc ca phục vụ"
-  >
-  </app-page-header>
+  <section class="staff-workspace">
+    <app-page-header
+      title="Màn hình giao dịch viên"
+      subtitle="Vào quầy, gọi số, hoàn tất phục vụ và theo dõi lịch sử trong ca làm."
+    >
+    </app-page-header>
 
-  <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-  <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-  <app-card *ngIf="!selectedCounter">
-    <div class="card-header">
-      <h2>Bắt đầu ca phục vụ</h2>
-      <p>Chọn quầy để bắt đầu ca. Quầy chỉ hoạt động khi có nhân viên đang phục vụ.</p>
-    </div>
-
-    <div class="assign-panel">
-      <label>
-        Chọn quầy
-        <select [(ngModel)]="selectedCounterId">
-          <option [ngValue]="null">Chọn quầy</option>
-          <option *ngFor="let counter of counters" [ngValue]="counter.counterId">
-            {{ counter.counterName }} - {{ counter.status }}
-          </option>
-        </select>
-      </label>
-
-      <button type="button" class="btn btn-primary" (click)="assignCounter()">
-        Vào quầy
-      </button>
-    </div>
-  </app-card>
-
-  <app-card *ngIf="selectedCounter">
-    <div class="card-header">
-      <h2>{{ selectedCounter.counterName }}</h2>
-      <p>Quầy đang hoạt động. Khi kết thúc ca, hệ thống sẽ lưu thời gian vào lịch sử.</p>
-    </div>
-
-    <div class="action-buttons">
-      <button type="button" class="btn btn-secondary" (click)="unassignCounter()">
-        Kết thúc ca
-      </button>
-    </div>
-  </app-card>
-
-  <app-card *ngIf="selectedCounter">
-    <div class="card-header workflow-header">
-      <div>
-        <h2>Phiếu chờ duyệt</h2>
-        <p>Camunda đang giữ các phiếu chờ nhân viên gọi vào quầy.</p>
+    <div class="staff-summary">
+      <div class="summary-item summary-item--primary">
+        <span>Ca hiện tại</span>
+        <strong>{{ selectedCounter?.counterName || 'Chưa vào quầy' }}</strong>
+        <small>{{ selectedCounter ? 'Đang phục vụ' : 'Chọn quầy để bắt đầu nhận khách' }}</small>
       </div>
-      <strong>{{ pendingApprovalTasks.length }}</strong>
+      <div class="summary-item">
+        <span>Phiếu đang xử lý</span>
+        <strong>{{ currentTicket ? ('#' + currentTicket.ticketNumber) : '-' }}</strong>
+        <small>{{ currentTicket?.service?.serviceName || 'Chưa có khách tại quầy' }}</small>
+      </div>
+      <div class="summary-item">
+        <span>Chờ duyệt</span>
+        <strong>{{ pendingApprovalTasks.length }}</strong>
+        <small>Phiếu sẵn sàng gọi vào quầy</small>
+      </div>
+      <div class="summary-item">
+        <span>Hoàn tất hôm nay</span>
+        <strong>{{ todayCompletedCount }}</strong>
+        <small>Lịch sử thuộc tài khoản của bạn</small>
+      </div>
     </div>
 
-    <div *ngIf="pendingApprovalTasks.length === 0" class="workflow-empty">
-      Hiện chưa có khách hàng chờ duyệt.
+    <div class="staff-grid">
+      <app-card>
+        <div class="card-header">
+          <div>
+            <h2>{{ selectedCounter ? 'Thông tin ca làm' : 'Bắt đầu ca phục vụ' }}</h2>
+            <p>{{ selectedCounter ? 'Quầy chỉ hoạt động trong thời gian bạn đang assign.' : 'Chọn một quầy đang rảnh để bắt đầu phục vụ khách hàng.' }}</p>
+          </div>
+          <span class="status-pill" [class.status-pill--active]="selectedCounter">
+            {{ selectedCounter ? 'Đang hoạt động' : 'Chưa hoạt động' }}
+          </span>
+        </div>
+
+        <div *ngIf="!selectedCounter" class="assign-panel">
+          <label>
+            Quầy giao dịch
+            <select [(ngModel)]="selectedCounterId">
+              <option [ngValue]="null">Chọn quầy</option>
+              <option *ngFor="let counter of availableCounters" [ngValue]="counter.counterId">
+                {{ counter.counterName }} · {{ counter.queueMachine?.machineName || 'Chưa gán máy' }}
+              </option>
+            </select>
+          </label>
+
+          <button type="button" class="btn btn-primary" (click)="assignCounter()" [disabled]="availableCounters.length === 0">
+            Vào quầy
+          </button>
+        </div>
+
+        <div *ngIf="selectedCounter" class="session-panel">
+          <div>
+            <span>Quầy đang phục vụ</span>
+            <strong>{{ selectedCounter.counterName }}</strong>
+            <small>{{ selectedCounter.queueMachine?.machineName || 'Chưa có máy bốc số' }}</small>
+          </div>
+          <button type="button" class="btn btn-secondary" (click)="unassignCounter()">
+            Kết thúc ca
+          </button>
+        </div>
+
+        <div *ngIf="!selectedCounter && counters.length > 0 && availableCounters.length === 0" class="empty-note">
+          Tất cả quầy đang có nhân viên phục vụ.
+        </div>
+      </app-card>
+
+      <app-card>
+        <div class="card-header">
+          <div>
+            <h2>Khách hàng hiện tại</h2>
+            <p>Phiếu đang được phục vụ tại quầy của bạn.</p>
+          </div>
+          <span class="status-pill" [class.status-pill--active]="currentTicket">
+            {{ currentTicket ? 'Đang phục vụ' : 'Đang rảnh' }}
+          </span>
+        </div>
+
+        <div *ngIf="!currentTicket" class="next-ticket-panel">
+          <strong>-</strong>
+          <p>Chưa có phiếu tại quầy.</p>
+          <button type="button" class="btn btn-primary" (click)="callNext()" [disabled]="!selectedCounter">
+            Gọi khách tiếp theo
+          </button>
+        </div>
+
+        <div *ngIf="currentTicket" class="ticket-current">
+          <div class="ticket-number">#{{ currentTicket.ticketNumber }}</div>
+          <div class="ticket-detail">
+            <span>Dịch vụ</span>
+            <strong>{{ currentTicket.service?.serviceName || '-' }}</strong>
+          </div>
+          <div class="ticket-detail">
+            <span>Trạng thái</span>
+            <strong>{{ currentTicket.status }}</strong>
+          </div>
+          <button type="button" class="btn btn-success" (click)="complete()">
+            Hoàn thành phục vụ
+          </button>
+        </div>
+      </app-card>
     </div>
 
-    <div *ngIf="pendingApprovalTasks.length > 0" class="workflow-list">
-      <div class="workflow-item" *ngFor="let task of pendingApprovalTasks | slice:0:5">
-        <span>#{{ task.ticketNumber }}</span>
+    <app-card *ngIf="selectedCounter">
+      <div class="card-header">
         <div>
-          <strong>{{ task.serviceName }}</strong>
-          <small>{{ task.queueMachineName }} · {{ task.customerEmail }}</small>
+          <h2>Phiếu chờ gọi</h2>
+          <p>Danh sách phiếu Camunda đã duyệt và đang chờ nhân viên gọi vào quầy.</p>
         </div>
-        <em>{{ task.status }}</em>
-      </div>
-    </div>
-  </app-card>
-
-  <div class="staff-actions" *ngIf="selectedCounter && !currentTicket">
-    <app-card>
-      <div class="card-header">
-        <h2>Khách hàng tiếp theo</h2>
-        <p>Gọi khách từ hàng chờ của máy bốc số gắn với quầy.</p>
+        <strong class="count-badge">{{ pendingApprovalTasks.length }}</strong>
       </div>
 
-      <div class="action-buttons">
-        <app-button [label]="'Gọi khách tiếp theo'" (clicked)="callNext()" class="btn-primary"></app-button>
+      <div *ngIf="pendingApprovalTasks.length === 0" class="empty-note">
+        Hiện chưa có khách hàng chờ gọi.
+      </div>
+
+      <div *ngIf="pendingApprovalTasks.length > 0" class="workflow-list">
+        <div class="workflow-item" *ngFor="let task of pendingApprovalTasks | slice:0:6">
+          <span>#{{ task.ticketNumber }}</span>
+          <div>
+            <strong>{{ task.serviceName }}</strong>
+            <small>{{ task.queueMachineName }} · {{ task.customerEmail }}</small>
+          </div>
+          <em>{{ task.status }}</em>
+        </div>
       </div>
     </app-card>
-  </div>
 
-  <div class="staff-dashboard-container" *ngIf="currentTicket">
     <app-card>
       <div class="card-header">
-        <h2>Khách hàng hiện tại</h2>
-        <p>Thông tin phiếu giao dịch</p>
+        <div>
+          <h2>Lịch sử phục vụ</h2>
+          <p>Chỉ hiển thị các phiếu liên quan tới tài khoản giao dịch viên hiện tại.</p>
+        </div>
+        <app-report-export-buttons reportType="history"></app-report-export-buttons>
       </div>
 
-      <div class="ticket-info-grid">
-        <div class="info-item">
-          <h3>Số phiếu</h3>
-          <p class="ticket-number">{{ currentTicket.ticketNumber }}</p>
-        </div>
-
-        <div class="info-item">
-          <h3>Dịch vụ</h3>
-          <p>{{ currentTicket.service?.serviceName || 'N/A' }}</p>
-        </div>
-
-        <div class="info-item">
-          <h3>Trạng thái</h3>
-          <p class="status-badge">{{ currentTicket.status }}</p>
-        </div>
-
-        <div class="info-item">
-          <h3>Quầy</h3>
-          <p>{{ selectedCounter?.counterName }}</p>
-        </div>
+      <div *ngIf="histories.length === 0" class="empty-note">
+        Chưa có lịch sử phục vụ.
       </div>
 
-      <div class="action-buttons">
-        <app-button [label]="'Hoàn thành'" (clicked)="complete()" class="btn-success"></app-button>
+      <div *ngIf="histories.length > 0" class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Số phiếu</th>
+              <th>Dịch vụ</th>
+              <th>Quầy</th>
+              <th>Khách hàng</th>
+              <th>Bắt đầu</th>
+              <th>Hoàn tất</th>
+              <th>Trạng thái</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of histories | slice:0:10">
+              <td><strong>#{{ item.ticketNumber }}</strong></td>
+              <td>{{ item.serviceName || '-' }}</td>
+              <td>{{ item.counterName || '-' }}</td>
+              <td>{{ item.customerEmail || '-' }}</td>
+              <td>{{ formatDate(item.startedAt) }}</td>
+              <td>{{ formatDate(item.completedAt) }}</td>
+              <td>{{ statusLabel(item.status) }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </app-card>
-  </div>
+  </section>
 </app-dashboard-layout>

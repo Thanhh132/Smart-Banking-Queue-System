@@ -126,12 +126,34 @@ export class AdminServices implements OnInit {
   ];
 
   selectedTemplateKeys: string[] = [];
+  searchTerm = '';
   isListLoading = false;
   isSubmitting = false;
   isEditMode = false;
   editingServiceId: number | null = null;
   successMessage = '';
   errorMessage = '';
+
+  get activeServiceCount(): number {
+    return this.services.filter((service) => service.status === 'ACTIVE').length;
+  }
+
+  get inactiveServiceCount(): number {
+    return this.services.length - this.activeServiceCount;
+  }
+
+  get filteredServices(): any[] {
+    const keyword = this.searchTerm.trim().toLocaleLowerCase('vi');
+    if (!keyword) {
+      return this.services;
+    }
+
+    return this.services.filter((service) =>
+      [service.serviceCode, service.serviceName, service.serviceType, service.description]
+        .filter(Boolean)
+        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword))
+    );
+  }
 
   ngOnInit(): void {
     this.initForm();

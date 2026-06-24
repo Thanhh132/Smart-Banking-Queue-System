@@ -70,5 +70,44 @@
         <a routerLink="/branches" class="btn btn-primary">Lấy số ngay</a>
       </section>
     </ng-template>
+
+    <section class="customer-section">
+      <div class="customer-section__header">
+        <div>
+          <h2>Lịch sử giao dịch</h2>
+          <p>Các phiếu đã hoàn thành hoặc đã hủy của bạn.</p>
+        </div>
+        <app-report-export-buttons reportType="history"></app-report-export-buttons>
+      </div>
+
+      <div *ngIf="histories.length === 0" class="customer-state">Chưa có lịch sử giao dịch.</div>
+
+      <div class="table-wrapper" *ngIf="histories.length > 0">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Số phiếu</th>
+              <th>Chi nhánh</th>
+              <th>Dịch vụ</th>
+              <th>Nhân viên</th>
+              <th>Trạng thái</th>
+              <th>Bắt đầu phục vụ</th>
+              <th>Hoàn tất</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of histories | slice:0:8">
+              <td><strong>#{{ item.ticketNumber }}</strong></td>
+              <td>{{ item.branchName || '-' }}</td>
+              <td>{{ item.serviceName || '-' }}</td>
+              <td>{{ item.staffName || 'Chưa có nhân viên' }}</td>
+              <td>{{ statusLabel(item.status) }}</td>
+              <td>{{ formatDate(item.startedAt) }}</td>
+              <td>{{ formatDate(item.completedAt) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </div>
 </app-dashboard-layout>

@@ -59,6 +59,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     List<Ticket> findByService(Services service);
 
+    List<Ticket> findByQueueMachine(QueueMachine queueMachine);
+
     List<Ticket> findByStatus(String status);
 
     List<Ticket> findByCustomerEmailAndStatusIn(

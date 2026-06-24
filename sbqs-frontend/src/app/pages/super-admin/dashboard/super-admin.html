@@ -1,7 +1,11 @@
 <app-dashboard-layout title="Quản trị hệ thống">
   <div class="super-dashboard">
     <header class="super-header">
-      <div><span>SUPER ADMIN</span><h1>Quản trị toàn hệ thống</h1><p>Quản lý chi nhánh và cấp tài khoản quản trị theo đúng phạm vi vận hành.</p></div>
+      <div>
+        <span>SUPER ADMIN</span>
+        <h1>Quản trị toàn hệ thống</h1>
+        <p>Quản lý chi nhánh và cấp tài khoản quản trị theo đúng phạm vi vận hành.</p>
+      </div>
       <a routerLink="/super-admin/branches" class="btn btn-primary">Quản lý chi nhánh</a>
     </header>
 
@@ -12,11 +16,30 @@
     </section>
 
     <section class="report-center">
-      <div class="report-center__heading"><div><span>BÁO CÁO</span><h2>Xuất dữ liệu toàn hệ thống</h2></div><p>Template Jasper chuẩn cho PDF và Excel.</p></div>
+      <div class="report-center__heading">
+        <div>
+          <span>BÁO CÁO</span>
+          <h2>Xuất dữ liệu toàn hệ thống</h2>
+        </div>
+        <p>Template Jasper chuẩn cho PDF và Excel.</p>
+      </div>
       <div class="report-center__grid">
-        <div class="report-center__item"><div><strong>Người dùng</strong><p>Tài khoản và phạm vi chi nhánh</p></div><app-report-export-buttons reportType="users" /></div>
-        <div class="report-center__item"><div><strong>Dịch vụ</strong><p>Danh mục dịch vụ toàn hệ thống</p></div><app-report-export-buttons reportType="services" /></div>
-        <div class="report-center__item"><div><strong>Ticket</strong><p>Phiếu giao dịch và trạng thái xử lý</p></div><app-report-export-buttons reportType="tickets" /></div>
+        <div class="report-center__item">
+          <div><strong>Người dùng</strong><p>Tài khoản và phạm vi chi nhánh</p></div>
+          <app-report-export-buttons reportType="users" />
+        </div>
+        <div class="report-center__item">
+          <div><strong>Dịch vụ</strong><p>Danh mục dịch vụ toàn hệ thống</p></div>
+          <app-report-export-buttons reportType="services" />
+        </div>
+        <div class="report-center__item">
+          <div><strong>Phiếu</strong><p>Phiếu giao dịch và trạng thái xử lý</p></div>
+          <app-report-export-buttons reportType="tickets" />
+        </div>
+        <div class="report-center__item">
+          <div><strong>Lịch sử giao dịch</strong><p>Phiếu đã hoàn thành hoặc đã hủy</p></div>
+          <app-report-export-buttons reportType="history" />
+        </div>
       </div>
     </section>
 
@@ -25,14 +48,40 @@
 
     <section class="admin-account-grid">
       <div class="super-panel account-form-panel">
-        <div class="panel-heading"><div><span>CẤP TÀI KHOẢN</span><h2>Thêm quản trị chi nhánh</h2></div><p>Tài khoản được đồng bộ bảo mật với Keycloak.</p></div>
-        <form [formGroup]="adminBranchForm" (ngSubmit)="createAdminBranch()" class="account-form">
+        <div class="panel-heading">
+          <div>
+            <span>{{ isEditMode ? 'CẬP NHẬT TÀI KHOẢN' : 'CẤP TÀI KHOẢN' }}</span>
+            <h2>{{ isEditMode ? 'Sửa quản trị chi nhánh' : 'Thêm quản trị chi nhánh' }}</h2>
+          </div>
+          <p>{{ isEditMode ? 'Cập nhật thông tin và phạm vi phụ trách của tài khoản.' : 'Tài khoản được đồng bộ bảo mật với Keycloak.' }}</p>
+        </div>
+        <form [formGroup]="adminBranchForm" (ngSubmit)="submitAdminBranch()" class="account-form">
           <label>Họ và tên<input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" /></label>
           <label>Email<input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" autocomplete="email" /></label>
           <label>Số điện thoại<input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" /></label>
-          <label>Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" /></label>
-          <label class="full-row">Chi nhánh phụ trách<select formControlName="branchId"><option [ngValue]="null">Chọn chi nhánh</option><option *ngFor="let branch of branches" [ngValue]="branch.branchId">{{ branch.branchName }} · {{ branch.branchCode }}</option></select></label>
-          <div class="full-row form-actions"><button type="submit" class="btn btn-primary" [disabled]="isSubmitting">{{ isSubmitting ? 'Đang tạo...' : 'Tạo tài khoản' }}</button></div>
+          <label *ngIf="!isEditMode">Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" /></label>
+          <label *ngIf="isEditMode">
+            Trạng thái
+            <select formControlName="status">
+              <option value="ACTIVE">Hoạt động</option>
+              <option value="INACTIVE">Tạm khóa</option>
+            </select>
+          </label>
+          <label class="full-row">
+            Chi nhánh phụ trách
+            <select formControlName="branchId">
+              <option [ngValue]="null">Chọn chi nhánh</option>
+              <option *ngFor="let branch of branches" [ngValue]="branch.branchId">{{ branch.branchName }} · {{ branch.branchCode }}</option>
+            </select>
+          </label>
+          <div class="full-row form-actions">
+            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+              {{ isSubmitting ? 'Đang xử lý...' : (isEditMode ? 'Cập nhật tài khoản' : 'Tạo tài khoản') }}
+            </button>
+            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEditAdminBranch()" [disabled]="isSubmitting">
+              Hủy sửa
+            </button>
+          </div>
         </form>
       </div>
 
@@ -46,14 +95,33 @@
         <div *ngIf="!isListLoading && filteredAdmins.length === 0" class="admin-empty">Chưa có tài khoản phù hợp.</div>
         <div *ngIf="!isListLoading && filteredAdmins.length > 0" class="table-wrapper">
           <table class="admin-table">
-            <thead><tr><th>Người dùng</th><th>Chi nhánh</th><th>Liên hệ</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Người dùng</th>
+                <th>Chi nhánh</th>
+                <th>Liên hệ</th>
+                <th>Trạng thái</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
             <tbody>
               <tr *ngFor="let admin of filteredAdmins">
                 <td><strong>{{ admin.fullName }}</strong><small>{{ admin.email }}</small></td>
                 <td>{{ admin.branch?.branchName || 'Chưa gán' }}<small>{{ admin.branch?.branchCode || '-' }}</small></td>
                 <td>{{ admin.phone || '-' }}</td>
-                <td><span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">{{ admin.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}</span></td>
-                <td><button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">Xóa</button></td>
+                <td>
+                  <span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                    {{ admin.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="startEditAdminBranch(admin)">
+                    Sửa
+                  </button>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
+                    {{ admin.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>

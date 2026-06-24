@@ -14,4 +14,6 @@ public class UpdateUserRequest {
     private String phone;
 
     private String status;
+
+    private Long branchId;
 }

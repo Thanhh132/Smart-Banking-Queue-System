@@ -1,10 +1,12 @@
 package com.sbqs.service;
 
+import com.sbqs.dto.report.HistoryReportRow;
 import com.sbqs.dto.report.ReportDocument;
 import com.sbqs.dto.report.ReportFormat;
 import com.sbqs.dto.report.ServiceReportRow;
 import com.sbqs.dto.report.TicketReportRow;
 import com.sbqs.dto.report.UserReportRow;
+import com.sbqs.entity.History;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
@@ -28,23 +30,28 @@ public class ReportService {
     private final UserRepository userRepository;
     private final ServiceRepository serviceRepository;
     private final TicketRepository ticketRepository;
+    private final HistoryService historyService;
 
     public ReportService(
             JasperReportService jasperReportService,
             CurrentUserService currentUserService,
             UserRepository userRepository,
             ServiceRepository serviceRepository,
-            TicketRepository ticketRepository) {
+            TicketRepository ticketRepository,
+            HistoryService historyService) {
 
         this.jasperReportService = jasperReportService;
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
         this.serviceRepository = serviceRepository;
         this.ticketRepository = ticketRepository;
+        this.historyService = historyService;
     }
 
     public ReportDocument exportUsers(ReportFormat format) {
         User currentUser = currentUserService.requireUser();
+        requireAdminReportAccess(currentUser);
+
         List<User> users = isSuperAdmin(currentUser)
                 ? userRepository.findAll()
                 : userRepository.findByBranch(currentUser.getBranch());
@@ -70,6 +77,8 @@ public class ReportService {
 
     public ReportDocument exportServices(ReportFormat format) {
         User currentUser = currentUserService.requireUser();
+        requireAdminReportAccess(currentUser);
+
         List<Services> services = isSuperAdmin(currentUser)
                 ? serviceRepository.findAll()
                 : serviceRepository.findByBranch(currentUser.getBranch());
@@ -94,6 +103,8 @@ public class ReportService {
 
     public ReportDocument exportTickets(ReportFormat format) {
         User currentUser = currentUserService.requireUser();
+        requireAdminReportAccess(currentUser);
+
         List<Ticket> tickets = isSuperAdmin(currentUser)
                 ? ticketRepository.findAll()
                 : ticketRepository.findByBranch(currentUser.getBranch());
@@ -112,7 +123,32 @@ public class ReportService {
         return jasperReportService.export(
                 "tickets-report",
                 "sbqs-tickets-report",
-                parameters("BÁO CÁO TICKET", scopeLabel(currentUser), rows.size()),
+                parameters("BÁO CÁO PHIẾU", scopeLabel(currentUser), rows.size()),
+                rows,
+                format);
+    }
+
+    public ReportDocument exportHistory(ReportFormat format) {
+        User currentUser = currentUserService.requireUser();
+        List<HistoryReportRow> rows = historyService.findScopedHistory(currentUser)
+                .stream()
+                .sorted(Comparator.comparing(History::getCompletedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(history -> new HistoryReportRow(
+                        history.getTicketNumber(),
+                        value(history.getCustomerEmail()),
+                        value(history.getStaffName()),
+                        value(history.getServiceName()),
+                        value(history.getCounterName()),
+                        value(history.getBranchName()),
+                        ticketStatusLabel(history.getStatus()),
+                        formatDate(history.getStartedAt()),
+                        formatDate(history.getCompletedAt())))
+                .toList();
+
+        return jasperReportService.export(
+                "history-report",
+                "sbqs-history-report",
+                parameters("BÁO CÁO LỊCH SỬ GIAO DỊCH", scopeLabel(currentUser), rows.size()),
                 rows,
                 format);
     }
@@ -126,9 +162,13 @@ public class ReportService {
     }
 
     private String scopeLabel(User user) {
-        return isSuperAdmin(user)
-                ? "Phạm vi: Toàn hệ thống"
-                : "Chi nhánh: " + user.getBranch().getBranchName();
+        return switch (user.getRole()) {
+            case "SUPER_ADMIN" -> "Phạm vi: Toàn hệ thống";
+            case "BRANCH_ADMIN" -> "Chi nhánh: " + user.getBranch().getBranchName();
+            case "STAFF" -> "Nhân viên: " + user.getFullName();
+            case "CUSTOMER" -> "Khách hàng: " + user.getEmail();
+            default -> "Phạm vi: Tài khoản hiện tại";
+        };
     }
 
     private boolean isSuperAdmin(User user) {
@@ -165,5 +205,11 @@ public class ReportService {
             case "CANCELLED" -> "Đã hủy";
             default -> value(status);
         };
+    }
+
+    private void requireAdminReportAccess(User user) {
+        if (!isSuperAdmin(user) && !"BRANCH_ADMIN".equals(user.getRole())) {
+            throw new RuntimeException("Bạn không có quyền xuất báo cáo này");
+        }
     }
 }

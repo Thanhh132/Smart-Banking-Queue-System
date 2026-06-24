@@ -1,18 +1,22 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
+import { HistoryItem, HistoryService } from '../../../core/services/history.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
   selector: 'app-ticket-result',
+  standalone: true,
   imports: [
     CommonModule,
     DashboardLayout,
     RouterLink,
+    ReportExportButtons,
   ],
   templateUrl: './ticket-result.html',
   styleUrl: './ticket-result.scss',
@@ -20,10 +24,12 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 export class TicketResult implements OnInit, OnDestroy {
   private monitorService = inject(QueueMonitorService);
   private ticketService = inject(TicketService);
+  private historyService = inject(HistoryService);
   private cdr = inject(ChangeDetectorRef);
 
   ticket: any = null;
   monitor: QueueMonitor | null = null;
+  histories: HistoryItem[] = [];
   errorMessage = '';
   isCancelling = false;
   private intervalId: any;
@@ -36,6 +42,7 @@ export class TicketResult implements OnInit, OnDestroy {
     }
 
     this.loadCurrentTicket();
+    this.loadHistory();
     this.loadMonitor();
     this.intervalId = setInterval(() => this.loadMonitor(), 2000);
   }
@@ -88,6 +95,18 @@ export class TicketResult implements OnInit, OnDestroy {
     return `customer-counter--${status.toLowerCase()}`;
   }
 
+  statusLabel(status?: string): string {
+    const labels: Record<string, string> = {
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    return labels[status || ''] || status || '-';
+  }
+
+  formatDate(value?: string): string {
+    return value ? new Date(value).toLocaleString('vi-VN') : '-';
+  }
+
   cancelTicket(): void {
     if (!this.ticket?.ticketId) {
       return;
@@ -100,11 +119,25 @@ export class TicketResult implements OnInit, OnDestroy {
         this.ticket = ticket;
         localStorage.setItem('currentTicket', JSON.stringify(ticket));
         this.isCancelling = false;
+        this.loadHistory();
         this.cdr.detectChanges();
       },
       error: () => {
         this.errorMessage = 'Không hủy được phiếu này.';
         this.isCancelling = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private loadHistory(): void {
+    this.historyService.getHistory().subscribe({
+      next: (histories) => {
+        this.histories = histories || [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.histories = [];
         this.cdr.detectChanges();
       },
     });

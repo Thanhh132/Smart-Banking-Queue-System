@@ -238,20 +238,29 @@ public class TicketService {
         }
 
         requireCurrentStaffOwnsCounter(counter);
+        User currentStaff = currentUserService.requireUser();
         ticketWorkflowService.completeServing(ticket);
 
         ticket.setStatus("COMPLETED");
 
         History history = new History();
-        history.setTicket(ticket);
-        history.setBranch(ticket.getBranch());
-        history.setQueueMachine(ticket.getQueueMachine());
-        history.setCounter(counter);
-        history.setService(ticket.getService());
+        history.setTicketId(ticket.getTicketId());
+        history.setBranchId(ticket.getBranch().getBranchId());
+        history.setBranchName(ticket.getBranch().getBranchName());
+        history.setQueueMachineId(ticket.getQueueMachine() == null ? null : ticket.getQueueMachine().getQueueMachineId());
+        history.setQueueMachineName(ticket.getQueueMachine() == null ? null : ticket.getQueueMachine().getMachineName());
+        history.setCounterId(counter.getCounterId());
+        history.setCounterName(counter.getCounterName());
+        history.setServiceId(ticket.getService().getServiceId());
+        history.setServiceName(ticket.getService().getServiceName());
+        history.setStaffId(currentStaff.getUserId());
+        history.setStaffName(currentStaff.getFullName());
+        history.setCustomerEmail(ticket.getCustomerEmail());
         history.setTicketNumber(ticket.getTicketNumber());
         history.setStartedAt(ticket.getServingStartedAt());
         history.setCompletedAt(LocalDateTime.now());
-        history.setStaffNote("Hoan thanh phuc vu khach hang");
+        history.setStatus("COMPLETED");
+        history.setStaffNote("Hoàn thành phục vụ khách hàng");
 
         historyRepository.save(history);
 
@@ -294,6 +303,22 @@ public class TicketService {
         ticketWorkflowService.cancelTicket(ticket);
 
         Ticket savedTicket = ticketRepository.save(ticket);
+        History history = new History();
+        history.setTicketId(savedTicket.getTicketId());
+        history.setBranchId(savedTicket.getBranch().getBranchId());
+        history.setBranchName(savedTicket.getBranch().getBranchName());
+        history.setQueueMachineId(savedTicket.getQueueMachine() == null ? null : savedTicket.getQueueMachine().getQueueMachineId());
+        history.setQueueMachineName(savedTicket.getQueueMachine() == null ? null : savedTicket.getQueueMachine().getMachineName());
+        history.setServiceId(savedTicket.getService().getServiceId());
+        history.setServiceName(savedTicket.getService().getServiceName());
+        history.setCustomerEmail(savedTicket.getCustomerEmail());
+        history.setTicketNumber(savedTicket.getTicketNumber());
+        history.setStartedAt(savedTicket.getCreatedAt());
+        history.setCompletedAt(LocalDateTime.now());
+        history.setStatus("CANCELLED");
+        history.setStaffNote("Khách hàng hủy phiếu trước khi được phục vụ");
+        historyRepository.save(history);
+
         eventPublisher.publish(
                 "TICKET_CANCELLED",
                 "TICKET",
@@ -325,8 +350,8 @@ public class TicketService {
     private void requireCurrentStaffOwnsCounter(Counter counter) {
         User currentStaff = currentUserService.requireUser();
         counterSessionRepository
-                .findFirstByCounterAndStatusOrderByStartedAtDesc(counter, "ACTIVE")
-                .filter(session -> session.getStaff().getUserId().equals(currentStaff.getUserId()))
+                .findFirstByCounterIdAndStatusOrderByStartedAtDesc(counter.getCounterId(), "ACTIVE")
+                .filter(session -> session.getStaffId().equals(currentStaff.getUserId()))
                 .orElseThrow(() -> new RuntimeException(
                         "Ban phai assign vao quay nay truoc khi thao tac ticket"));
     }

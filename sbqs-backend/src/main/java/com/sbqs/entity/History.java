@@ -19,25 +19,41 @@ public class History {
     @Column(name = "history_id")
     private Long historyId;
 
-    @ManyToOne
-    @JoinColumn(name = "ticket_id", nullable = false)
-    private Ticket ticket;
+    @Column(name = "ticket_id")
+    private Long ticketId;
 
-    @ManyToOne
-    @JoinColumn(name = "branch_id", nullable = false)
-    private Branch branch;
+    @Column(name = "branch_id", nullable = false)
+    private Long branchId;
 
-    @ManyToOne
-    @JoinColumn(name = "queue_machine_id")
-    private QueueMachine queueMachine;
+    @Column(name = "queue_machine_id")
+    private Long queueMachineId;
 
-    @ManyToOne
-    @JoinColumn(name = "counter_id")
-    private Counter counter;
+    @Column(name = "counter_id")
+    private Long counterId;
 
-    @ManyToOne
-    @JoinColumn(name = "service_id")
-    private Services service;
+    @Column(name = "service_id")
+    private Long serviceId;
+
+    @Column(name = "staff_id")
+    private Long staffId;
+
+    @Column(name = "customer_email")
+    private String customerEmail;
+
+    @Column(name = "branch_name")
+    private String branchName;
+
+    @Column(name = "queue_machine_name")
+    private String queueMachineName;
+
+    @Column(name = "counter_name")
+    private String counterName;
+
+    @Column(name = "service_name")
+    private String serviceName;
+
+    @Column(name = "staff_name")
+    private String staffName;
 
     @Column(name = "ticket_number", nullable = false)
     private Integer ticketNumber;
@@ -50,6 +66,9 @@ public class History {
 
     @Column(name = "staff_note")
     private String staffNote;
+
+    @Column(name = "status")
+    private String status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();

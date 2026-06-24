@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-export type ReportType = 'users' | 'services' | 'tickets';
+export type ReportType = 'users' | 'services' | 'tickets' | 'history';
 export type ReportFormat = 'pdf' | 'xlsx';
 
 @Injectable({ providedIn: 'root' })

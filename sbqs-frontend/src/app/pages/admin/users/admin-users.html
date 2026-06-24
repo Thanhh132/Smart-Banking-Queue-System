@@ -128,10 +128,16 @@
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ user.phone || '-' }}</td>
                 <td><span class="admin-badge badge-info">{{ user.role || 'STAFF' }}</span></td>
-                <td><span class="admin-badge badge-success">{{ user.status || 'ACTIVE' }}</span></td>
+                <td>
+                  <span class="admin-badge" [ngClass]="user.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                    {{ user.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
+                  </span>
+                </td>
                 <td>
                   <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">Sửa</button>
-                  <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">Xóa</button>
+                  <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
+                    {{ user.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
+                  </button>
                 </td>
               </tr>
             </tbody>

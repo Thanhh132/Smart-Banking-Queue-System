@@ -133,7 +133,9 @@ export class AdminUsers implements OnInit {
   }
 
   deleteUser(user: any): void {
-    const confirmed = confirm(`Bạn có chắc muốn xóa nhân viên "${user.fullName}" không?`);
+    const isInactive = user.status === 'INACTIVE';
+    const action = isInactive ? 'xóa khỏi danh sách' : 'khóa tài khoản';
+    const confirmed = confirm(`Bạn có chắc muốn ${action} nhân viên "${user.fullName}" không?`);
 
     if (!confirmed) {
       return;
@@ -144,11 +146,16 @@ export class AdminUsers implements OnInit {
 
     this.userManagementService.deleteUser(user.userId).subscribe({
       next: () => {
-        this.successMessage = 'Xóa nhân viên thành công.';
+        this.successMessage = isInactive
+          ? 'Đã xóa nhân viên khỏi danh sách.'
+          : 'Đã khóa tài khoản nhân viên.';
         this.loadUsers();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Xóa nhân viên thất bại.');
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          isInactive ? 'Xóa nhân viên thất bại.' : 'Khóa tài khoản nhân viên thất bại.'
+        );
         this.cdr.detectChanges();
       },
     });

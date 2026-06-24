@@ -28,6 +28,7 @@ export class SuperAdmin implements OnInit {
   adminBranches: any[] = [];
   isListLoading = false;
   isSubmitting = false;
+  editingAdminId: number | null = null;
   successMessage = '';
   errorMessage = '';
   searchTerm = '';
@@ -52,7 +53,12 @@ export class SuperAdmin implements OnInit {
     phone: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.minLength(8)]],
     branchId: [null as number | null, [Validators.required]],
+    status: ['ACTIVE'],
   });
+
+  get isEditMode(): boolean {
+    return this.editingAdminId !== null;
+  }
 
   ngOnInit(): void {
     this.loadPageData();
@@ -95,6 +101,15 @@ export class SuperAdmin implements OnInit {
     });
   }
 
+  submitAdminBranch(): void {
+    if (this.isEditMode) {
+      this.updateAdminBranch();
+      return;
+    }
+
+    this.createAdminBranch();
+  }
+
   createAdminBranch(): void {
     this.successMessage = '';
     this.errorMessage = '';
@@ -107,17 +122,19 @@ export class SuperAdmin implements OnInit {
 
     this.isSubmitting = true;
 
-    this.userService.createAdminBranch(this.adminBranchForm.value).subscribe({
+    const payload = {
+      fullName: this.adminBranchForm.value.fullName,
+      email: this.adminBranchForm.value.email,
+      phone: this.adminBranchForm.value.phone,
+      password: this.adminBranchForm.value.password,
+      branchId: this.adminBranchForm.value.branchId,
+    };
+
+    this.userService.createAdminBranch(payload).subscribe({
       next: () => {
         this.successMessage = 'Đã tạo tài khoản quản trị chi nhánh.';
         this.isSubmitting = false;
-        this.adminBranchForm.reset({
-          fullName: '',
-          email: '',
-          phone: '',
-          password: '',
-          branchId: null,
-        });
+        this.resetAdminBranchForm();
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
@@ -132,8 +149,97 @@ export class SuperAdmin implements OnInit {
     });
   }
 
+  startEditAdminBranch(admin: any): void {
+    this.editingAdminId = admin.userId;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    const passwordControl = this.adminBranchForm.get('password');
+    passwordControl?.clearValidators();
+    passwordControl?.updateValueAndValidity();
+
+    this.adminBranchForm.reset({
+      fullName: admin.fullName || '',
+      email: admin.email || '',
+      phone: admin.phone || '',
+      password: '',
+      branchId: admin.branch?.branchId || null,
+      status: admin.status || 'ACTIVE',
+    });
+    this.cdr.detectChanges();
+  }
+
+  updateAdminBranch(): void {
+    if (!this.editingAdminId) {
+      return;
+    }
+
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    if (this.adminBranchForm.invalid) {
+      this.adminBranchForm.markAllAsTouched();
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    const payload = {
+      fullName: this.adminBranchForm.value.fullName,
+      email: this.adminBranchForm.value.email,
+      phone: this.adminBranchForm.value.phone,
+      branchId: this.adminBranchForm.value.branchId,
+      status: this.adminBranchForm.value.status,
+    };
+
+    this.userService.updateUser(this.editingAdminId, payload).subscribe({
+      next: () => {
+        this.successMessage = 'Đã cập nhật tài khoản quản trị chi nhánh.';
+        this.isSubmitting = false;
+        this.resetAdminBranchForm();
+        this.loadAdminBranches();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Cập nhật tài khoản quản trị chi nhánh thất bại.'
+        );
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  cancelEditAdminBranch(): void {
+    this.resetAdminBranchForm();
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  private resetAdminBranchForm(): void {
+    this.editingAdminId = null;
+
+    const passwordControl = this.adminBranchForm.get('password');
+    passwordControl?.setValidators([Validators.required, Validators.minLength(8)]);
+    passwordControl?.updateValueAndValidity();
+
+    this.adminBranchForm.reset({
+      fullName: '',
+      email: '',
+      phone: '',
+      password: '',
+      branchId: null,
+      status: 'ACTIVE',
+    });
+  }
+
   deleteAdminBranch(user: any): void {
-    if (!confirm(`Xóa vĩnh viễn tài khoản "${user.fullName}"?`)) {
+    const isInactive = user.status === 'INACTIVE';
+    const action = isInactive ? 'xóa khỏi danh sách' : 'khóa tài khoản';
+    if (!confirm(`Bạn có chắc muốn ${action} quản trị chi nhánh "${user.fullName}" không?`)) {
       return;
     }
 
@@ -142,14 +248,18 @@ export class SuperAdmin implements OnInit {
 
     this.userService.deleteUser(user.userId).subscribe({
       next: () => {
-        this.successMessage = 'Đã xóa tài khoản quản trị chi nhánh.';
+        this.successMessage = isInactive
+          ? 'Đã xóa tài khoản quản trị chi nhánh khỏi danh sách.'
+          : 'Đã khóa tài khoản quản trị chi nhánh.';
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Không xóa được tài khoản quản trị chi nhánh.'
+          isInactive
+            ? 'Không xóa được tài khoản quản trị chi nhánh.'
+            : 'Không khóa được tài khoản quản trị chi nhánh.'
         );
         this.cdr.detectChanges();
       },

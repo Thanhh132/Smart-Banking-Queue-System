@@ -55,7 +55,9 @@ public class SecurityConfig {
                         .hasAnyRole("BRANCH_ADMIN", "CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/locations/geocode")
                         .hasAnyRole("SUPER_ADMIN", "CUSTOMER")
-                        .requestMatchers(HttpMethod.GET, "/api/reports/**")
+                        .requestMatchers(HttpMethod.GET, "/api/reports/history")
+                        .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN", "STAFF", "CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/reports/users", "/api/reports/services", "/api/reports/tickets")
                         .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/workflows/tickets/pending-approval")
                         .hasRole("STAFF")
@@ -86,7 +88,7 @@ public class SecurityConfig {
                         .hasRole("BRANCH_ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/appointments").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/history", "/api/history/**")
-                        .hasAnyRole("BRANCH_ADMIN", "STAFF")
+                        .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN", "STAFF", "CUSTOMER")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));

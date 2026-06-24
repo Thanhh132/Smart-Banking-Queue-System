@@ -3,10 +3,11 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { HistoryItem, HistoryService } from '../../../core/services/history.service';
 import { StaffService } from '../../../core/services/staff.service';
-import { AppButton } from '../../../shared/components/app-button/app-button';
 import { AppCard } from '../../../shared/components/app-card/app-card';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
@@ -17,14 +18,15 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
     FormsModule,
     DashboardLayout,
     AppPageHeader,
-    AppButton,
     AppCard,
+    ReportExportButtons,
   ],
   templateUrl: './staff-dashboard.html',
   styleUrl: './staff-dashboard.scss',
 })
 export class StaffDashboard implements OnInit {
   private staffService = inject(StaffService);
+  private historyService = inject(HistoryService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
@@ -33,6 +35,7 @@ export class StaffDashboard implements OnInit {
   selectedCounter: any = null;
   selectedCounterId: number | null = null;
   pendingApprovalTasks: any[] = [];
+  histories: HistoryItem[] = [];
   errorMessage = '';
   successMessage = '';
 
@@ -40,10 +43,22 @@ export class StaffDashboard implements OnInit {
     this.loadDashboard();
   }
 
+  get availableCounters(): any[] {
+    return this.counters.filter((counter) => counter.status !== 'ACTIVE');
+  }
+
+  get todayCompletedCount(): number {
+    const today = new Date().toDateString();
+    return this.histories.filter(
+      (item) => item.status === 'COMPLETED' && item.completedAt && new Date(item.completedAt).toDateString() === today
+    ).length;
+  }
+
   loadDashboard(): void {
     this.loadCounters();
     this.loadAssignedCounter();
     this.loadPendingApprovalTasks();
+    this.loadHistory();
   }
 
   loadCounters(): void {
@@ -52,7 +67,7 @@ export class StaffDashboard implements OnInit {
         this.counters = counters || [];
         this.selectedCounterId =
           this.selectedCounter?.counterId ||
-          this.counters.find((item) => item.status !== 'ACTIVE')?.counterId ||
+          this.availableCounters[0]?.counterId ||
           null;
 
         if (this.counters.length === 0) {
@@ -187,5 +202,30 @@ export class StaffDashboard implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  loadHistory(): void {
+    this.historyService.getHistory().subscribe({
+      next: (histories) => {
+        this.histories = histories || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Không tải được lịch sử phục vụ.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  statusLabel(status?: string): string {
+    const labels: Record<string, string> = {
+      COMPLETED: 'Hoàn thành',
+      CANCELLED: 'Đã hủy',
+    };
+    return labels[status || ''] || status || '-';
+  }
+
+  formatDate(value?: string): string {
+    return value ? new Date(value).toLocaleString('vi-VN') : '-';
   }
 }

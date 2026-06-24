@@ -1,49 +1,59 @@
 <app-dashboard-layout title="Vận hành chi nhánh">
-  <div class="page-section">
+  <div class="page-section operations-page">
     <section class="page-heading">
       <span class="page-kicker">Branch Admin</span>
       <h1>Vận hành chi nhánh</h1>
-      <p>Tạo nhanh máy bốc số và quầy giao dịch. Mã và tên được hệ thống tự sinh theo chi nhánh.</p>
+      <p>Quản lý máy bốc số và quầy giao dịch theo đúng cấu trúc thực tế của chi nhánh.</p>
     </section>
 
-    <div *ngIf="successMessage" class="alert alert-success">
-      {{ successMessage }}
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger">
-      {{ errorMessage }}
-    </div>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <section class="ui-card-grid">
       <div class="ui-card metric-card">
         <span>Máy bốc số</span>
         <strong>{{ queueMachines.length }}</strong>
-        <p>Thiết bị lấy số của chi nhánh.</p>
+        <p>Thiết bị/khu vực lấy số trong chi nhánh.</p>
       </div>
 
       <div class="ui-card metric-card">
-        <span>Quầy</span>
+        <span>Quầy giao dịch</span>
         <strong>{{ counters.length }}</strong>
-        <p>Quầy giao dịch gắn với máy bốc số.</p>
+        <p>Có thể đặt theo số quầy thực tế như 101, 202, 203.</p>
       </div>
     </section>
 
     <section class="admin-panel-grid">
       <div class="ui-card">
         <div class="card-heading">
-          <h3>Thêm máy bốc số</h3>
-          <p>Bấm nút để hệ thống tạo máy tiếp theo. Ghi chú vị trí có thể bỏ trống.</p>
+          <h3>{{ machineFormTitle }}</h3>
+          <p>Đặt tên theo vị trí thực tế, ví dụ: Máy tầng 2, Máy sảnh chính, Máy khu khách VIP.</p>
         </div>
 
-        <div class="ui-form">
+        <div class="ui-form split-form">
           <label>
-            Ghi chú vị trí
-            <input type="text" [(ngModel)]="machineNote" placeholder="Ví dụ: sảnh chính, tầng 2" />
+            Mã máy
+            <input type="text" [(ngModel)]="machineCode" placeholder="Bỏ trống để tự sinh" />
           </label>
 
-          <button type="button" class="btn btn-primary" (click)="quickCreateMachine()" [disabled]="isSubmittingMachine">
-            {{ isSubmittingMachine ? 'Đang tạo...' : 'Thêm máy' }}
-          </button>
+          <label>
+            Tên máy
+            <input type="text" [(ngModel)]="machineName" placeholder="Ví dụ: Máy bốc số tầng 2" />
+          </label>
+
+          <label class="full-row">
+            Ghi chú vị trí
+            <input type="text" [(ngModel)]="machineNote" placeholder="Ví dụ: sảnh chính, tầng 2, khu ưu tiên" />
+          </label>
+
+          <div class="full-row form-actions">
+            <button type="button" class="btn btn-primary" (click)="saveMachine()" [disabled]="isSubmittingMachine">
+              {{ isSubmittingMachine ? 'Đang lưu...' : (editingMachineId ? 'Cập nhật máy' : 'Thêm máy') }}
+            </button>
+            <button *ngIf="editingMachineId" type="button" class="btn btn-secondary" (click)="resetMachineForm()">
+              Hủy sửa
+            </button>
+          </div>
         </div>
       </div>
 
@@ -78,6 +88,7 @@
                 <td>{{ machine.machineName }}</td>
                 <td>{{ machine.locationNote || '-' }}</td>
                 <td>
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="startEditMachine(machine)">Sửa</button>
                   <button type="button" class="btn btn-danger btn-sm" (click)="deleteMachine(machine)">Xóa hẳn</button>
                 </td>
               </tr>
@@ -90,16 +101,11 @@
     <section class="admin-panel-grid">
       <div class="ui-card">
         <div class="card-heading">
-          <h3>Thêm quầy hàng loạt</h3>
-          <p>Nhập số lượng, hệ thống tự sinh Quầy 1, Quầy 2... và gắn vào máy đã chọn.</p>
+          <h3>Thêm quầy linh hoạt</h3>
+          <p>Tạo nhanh theo dải số hoặc nhập danh sách quầy cụ thể. Quầy mới mặc định chưa hoạt động.</p>
         </div>
 
-        <div class="ui-form">
-          <label>
-            Số lượng quầy
-            <input type="number" min="1" max="20" [(ngModel)]="counterCount" />
-          </label>
-
+        <div class="ui-form split-form">
           <label>
             Gắn vào máy
             <select [(ngModel)]="selectedMachineForCounters">
@@ -110,49 +116,131 @@
             </select>
           </label>
 
-          <button type="button" class="btn btn-primary" (click)="quickCreateCounters()" [disabled]="isSubmittingCounter">
-            {{ isSubmittingCounter ? 'Đang tạo...' : 'Tạo quầy' }}
-          </button>
+          <label>
+            Tiền tố tên quầy
+            <input type="text" [(ngModel)]="counterNamePrefix" placeholder="Quầy" />
+          </label>
+
+          <label>
+            Số bắt đầu
+            <input type="number" min="1" [(ngModel)]="counterStartNumber" />
+          </label>
+
+          <label>
+            Số lượng
+            <input type="number" min="1" max="50" [(ngModel)]="counterCount" />
+          </label>
+
+          <label>
+            Tiền tố mã
+            <input type="text" [(ngModel)]="counterCodePrefix" placeholder="Q" />
+          </label>
+
+          <label class="full-row">
+            Danh sách quầy cụ thể
+            <textarea rows="3" [(ngModel)]="counterNumbersText" placeholder="Ví dụ: 202, 203, 204 hoặc VIP, KHDN"></textarea>
+          </label>
+
+          <div class="full-row hint-line">
+            Sẽ tạo: {{ counterNumbersPreview || '-' }}
+          </div>
+
+          <div class="full-row form-actions">
+            <button type="button" class="btn btn-primary" (click)="quickCreateCounters()" [disabled]="isSubmittingCounter">
+              {{ isSubmittingCounter ? 'Đang tạo...' : 'Tạo quầy' }}
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="ui-card">
-        <div class="table-heading">
-          <div>
-            <h3>Danh sách quầy</h3>
-            <p>Quầy sẽ được nhân viên dùng để gọi khách.</p>
+      <div class="ui-card" *ngIf="editingCounterId">
+        <div class="card-heading">
+          <h3>Sửa quầy</h3>
+          <p>Cập nhật mã, tên, máy bốc số hoặc trạng thái quầy.</p>
+        </div>
+
+        <div class="ui-form split-form">
+          <label>
+            Mã quầy
+            <input type="text" [(ngModel)]="counterForm.counterCode" />
+          </label>
+
+          <label>
+            Tên quầy
+            <input type="text" [(ngModel)]="counterForm.counterName" />
+          </label>
+
+          <label>
+            Máy bốc số
+            <select [(ngModel)]="counterForm.queueMachineId">
+              <option [ngValue]="null">Chưa gán máy</option>
+              <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
+                {{ machine.machineName }} - {{ machine.machineCode }}
+              </option>
+            </select>
+          </label>
+
+          <label>
+            Trạng thái
+            <select [(ngModel)]="counterForm.status">
+              <option value="INACTIVE">Chưa hoạt động</option>
+              <option value="ACTIVE">Đang hoạt động</option>
+            </select>
+          </label>
+
+          <div class="full-row form-actions">
+            <button type="button" class="btn btn-primary" (click)="updateCounter()" [disabled]="isSubmittingCounter">
+              {{ isSubmittingCounter ? 'Đang lưu...' : 'Cập nhật quầy' }}
+            </button>
+            <button type="button" class="btn btn-secondary" (click)="resetCounterForm()">Hủy sửa</button>
           </div>
+        </div>
+      </div>
+    </section>
 
-          <button type="button" class="btn btn-secondary" (click)="loadCounters()" [disabled]="isLoadingCounters">
-            {{ isLoadingCounters ? 'Đang tải...' : 'Tải lại' }}
-          </button>
+    <section class="ui-card">
+      <div class="table-heading">
+        <div>
+          <h3>Danh sách quầy</h3>
+          <p>Quầy sẽ được nhân viên assign khi bắt đầu ca làm.</p>
         </div>
 
-        <div *ngIf="isLoadingCounters" class="admin-empty">Đang tải quầy...</div>
-        <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">Chưa có quầy nào.</div>
+        <button type="button" class="btn btn-secondary" (click)="loadCounters()" [disabled]="isLoadingCounters">
+          {{ isLoadingCounters ? 'Đang tải...' : 'Tải lại' }}
+        </button>
+      </div>
 
-        <div *ngIf="!isLoadingCounters && counters.length > 0" class="table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Tên</th>
-                <th>Máy</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let counter of counters">
-                <td><strong>{{ counter.counterCode }}</strong></td>
-                <td>{{ counter.counterName }}</td>
-                <td>{{ counter.queueMachine?.machineName || '-' }}</td>
-                <td>
-                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteCounter(counter)">Xóa hẳn</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <div *ngIf="isLoadingCounters" class="admin-empty">Đang tải quầy...</div>
+      <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">Chưa có quầy nào.</div>
+
+      <div *ngIf="!isLoadingCounters && counters.length > 0" class="table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Tên</th>
+              <th>Máy</th>
+              <th>Trạng thái</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let counter of counters">
+              <td><strong>{{ counter.counterCode }}</strong></td>
+              <td>{{ counter.counterName }}</td>
+              <td>{{ counter.queueMachine?.machineName || '-' }}</td>
+              <td>
+                <span class="status-chip" [ngClass]="counter.status === 'ACTIVE' ? 'status-chip--active' : 'status-chip--inactive'">
+                  {{ counter.status === 'ACTIVE' ? 'Đang hoạt động' : 'Chưa hoạt động' }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="btn btn-secondary btn-sm" (click)="startEditCounter(counter)">Sửa</button>
+                <button type="button" class="btn btn-danger btn-sm" (click)="deleteCounter(counter)">Xóa hẳn</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </div>

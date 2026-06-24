@@ -37,6 +37,11 @@ public class ReportController {
         return response(reportService.exportTickets(ReportFormat.from(format)));
     }
 
+    @GetMapping("/history")
+    public ResponseEntity<byte[]> history(@RequestParam(defaultValue = "pdf") String format) {
+        return response(reportService.exportHistory(ReportFormat.from(format)));
+    }
+
     private ResponseEntity<byte[]> response(ReportDocument document) {
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(document.fileName(), StandardCharsets.UTF_8)

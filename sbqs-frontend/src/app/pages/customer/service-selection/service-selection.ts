@@ -1,9 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
-import { Service } from '../../../core/models/service.model';
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
+import { Service } from '../../../core/models/service.model';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { ServicesService } from '../../../core/services/services.service';
@@ -12,6 +12,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 
 @Component({
   selector: 'app-service-selection',
+  standalone: true,
   imports: [CommonModule, DashboardLayout],
   templateUrl: './service-selection.html',
   styleUrl: './service-selection.scss',

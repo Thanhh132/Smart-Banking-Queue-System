@@ -38,7 +38,7 @@ public class Ticket {
     private Branch branch;
 
     @ManyToOne
-    @JoinColumn(name = "service_id", nullable = false)
+    @JoinColumn(name = "service_id")
     private Services service;
 
     @Column(name = "customer_email")

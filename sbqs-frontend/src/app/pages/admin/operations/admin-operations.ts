@@ -27,9 +27,25 @@ export class AdminOperations implements OnInit {
   queueMachines: any[] = [];
   counters: any[] = [];
 
+  machineCode = '';
+  machineName = '';
   machineNote = '';
+
   counterCount = 1;
+  counterStartNumber = 1;
+  counterNamePrefix = 'Quầy';
+  counterCodePrefix = 'Q';
+  counterNumbersText = '';
   selectedMachineForCounters: number | null = null;
+
+  editingMachineId: number | null = null;
+  editingCounterId: number | null = null;
+  counterForm = {
+    counterCode: '',
+    counterName: '',
+    queueMachineId: null as number | null,
+    status: 'INACTIVE',
+  };
 
   isLoadingMachines = false;
   isLoadingCounters = false;
@@ -37,6 +53,21 @@ export class AdminOperations implements OnInit {
   isSubmittingCounter = false;
   successMessage = '';
   errorMessage = '';
+
+  get machineFormTitle(): string {
+    return this.editingMachineId ? 'Sửa máy bốc số' : 'Thêm máy bốc số';
+  }
+
+  get counterNumbersPreview(): string {
+    const explicitNumbers = this.parseCounterNumbers();
+    const numbers = explicitNumbers.length
+      ? explicitNumbers
+      : Array.from({ length: Math.max(1, Number(this.counterCount) || 1) }).map(
+          (_, index) => String((Number(this.counterStartNumber) || 1) + index)
+        );
+
+    return numbers.slice(0, 6).join(', ') + (numbers.length > 6 ? '...' : '');
+  }
 
   ngOnInit(): void {
     if (!this.ensureBranch()) {
@@ -100,16 +131,24 @@ export class AdminOperations implements OnInit {
     });
   }
 
+  saveMachine(): void {
+    if (this.editingMachineId) {
+      this.updateMachine();
+      return;
+    }
+
+    this.quickCreateMachine();
+  }
+
   quickCreateMachine(): void {
     if (!this.ensureBranch()) {
       return;
     }
 
     const nextNumber = this.queueMachines.length + 1;
-    const code = `QM-${this.branchId}-${nextNumber}`;
     const payload: QueueMachinePayload = {
-      machineCode: code,
-      machineName: `Máy bốc số ${nextNumber}`,
+      machineCode: this.machineCode.trim() || `QM-${this.branchId}-${nextNumber}`,
+      machineName: this.machineName.trim() || `Máy bốc số ${nextNumber}`,
       locationNote: this.machineNote,
       instructionNote: 'Chọn dịch vụ và nhận số thứ tự',
       status: 'ACTIVE',
@@ -123,13 +162,61 @@ export class AdminOperations implements OnInit {
     this.operationsService.createQueueMachine(payload).subscribe({
       next: (machine) => {
         this.successMessage = 'Đã tạo máy bốc số.';
-        this.machineNote = '';
+        this.resetMachineForm();
         this.selectedMachineForCounters = machine.queueMachineId;
         this.isSubmittingMachine = false;
         this.loadQueueMachines();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(err, 'Không tạo được máy bốc số.');
+        this.isSubmittingMachine = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  startEditMachine(machine: any): void {
+    this.editingMachineId = machine.queueMachineId;
+    this.machineCode = machine.machineCode || '';
+    this.machineName = machine.machineName || '';
+    this.machineNote = machine.locationNote || '';
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  updateMachine(): void {
+    if (!this.ensureBranch() || !this.editingMachineId) {
+      return;
+    }
+
+    if (!this.machineCode.trim() || !this.machineName.trim()) {
+      this.errorMessage = 'Mã máy và tên máy không được để trống.';
+      return;
+    }
+
+    const payload: QueueMachinePayload = {
+      machineCode: this.machineCode.trim(),
+      machineName: this.machineName.trim(),
+      locationNote: this.machineNote,
+      instructionNote: 'Chọn dịch vụ và nhận số thứ tự',
+      status: 'ACTIVE',
+      branch: { branchId: this.branchId },
+    };
+
+    this.isSubmittingMachine = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    this.operationsService.updateQueueMachine(this.editingMachineId, payload).subscribe({
+      next: () => {
+        this.successMessage = 'Đã cập nhật máy bốc số.';
+        this.resetMachineForm();
+        this.isSubmittingMachine = false;
+        this.loadQueueMachines();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Không cập nhật được máy bốc số.');
         this.isSubmittingMachine = false;
         this.cdr.detectChanges();
       },
@@ -146,13 +233,18 @@ export class AdminOperations implements OnInit {
       return;
     }
 
-    const count = Math.max(1, Number(this.counterCount) || 1);
-    const startNumber = this.counters.length + 1;
-    const requests = Array.from({ length: count }).map((_, index) => {
-      const number = startNumber + index;
+    const explicitNumbers = this.parseCounterNumbers();
+    const count = explicitNumbers.length || Math.max(1, Number(this.counterCount) || 1);
+    const startNumber = Number(this.counterStartNumber) || 1;
+    const numbers = explicitNumbers.length
+      ? explicitNumbers
+      : Array.from({ length: count }).map((_, index) => String(startNumber + index));
+
+    const requests = numbers.map((number) => {
+      const normalizedNumber = String(number).trim();
       const payload: CounterPayload = {
-        counterCode: `C-${this.branchId}-${number}`,
-        counterName: `Quầy ${number}`,
+        counterCode: `${this.counterCodePrefix.trim() || 'Q'}-${this.branchId}-${this.normalizeCodePart(normalizedNumber)}`,
+        counterName: `${this.counterNamePrefix.trim() || 'Quầy'} ${normalizedNumber}`,
         status: 'INACTIVE',
         branch: { branchId: this.branchId },
         queueMachine: { queueMachineId: Number(this.selectedMachineForCounters) },
@@ -168,11 +260,65 @@ export class AdminOperations implements OnInit {
     forkJoin(requests).subscribe({
       next: () => {
         this.successMessage = `Đã tạo ${count} quầy.`;
+        this.counterNumbersText = '';
+        this.counterStartNumber = startNumber + count;
         this.isSubmittingCounter = false;
         this.loadCounters();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(err, 'Không tạo được quầy.');
+        this.isSubmittingCounter = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  startEditCounter(counter: any): void {
+    this.editingCounterId = counter.counterId;
+    this.counterForm = {
+      counterCode: counter.counterCode || '',
+      counterName: counter.counterName || '',
+      queueMachineId: counter.queueMachine?.queueMachineId || null,
+      status: counter.status || 'INACTIVE',
+    };
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.cdr.detectChanges();
+  }
+
+  updateCounter(): void {
+    if (!this.ensureBranch() || !this.editingCounterId) {
+      return;
+    }
+
+    if (!this.counterForm.counterCode.trim() || !this.counterForm.counterName.trim()) {
+      this.errorMessage = 'Mã quầy và tên quầy không được để trống.';
+      return;
+    }
+
+    const payload: CounterPayload = {
+      counterCode: this.counterForm.counterCode.trim(),
+      counterName: this.counterForm.counterName.trim(),
+      status: this.counterForm.status,
+      branch: { branchId: this.branchId },
+      queueMachine: this.counterForm.queueMachineId
+        ? { queueMachineId: Number(this.counterForm.queueMachineId) }
+        : null,
+    };
+
+    this.isSubmittingCounter = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    this.operationsService.updateCounter(this.editingCounterId, payload).subscribe({
+      next: () => {
+        this.successMessage = 'Đã cập nhật quầy.';
+        this.resetCounterForm();
+        this.isSubmittingCounter = false;
+        this.loadCounters();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Không cập nhật được quầy.');
         this.isSubmittingCounter = false;
         this.cdr.detectChanges();
       },
@@ -219,6 +365,25 @@ export class AdminOperations implements OnInit {
     });
   }
 
+  resetMachineForm(): void {
+    this.editingMachineId = null;
+    this.machineCode = '';
+    this.machineName = '';
+    this.machineNote = '';
+    this.cdr.detectChanges();
+  }
+
+  resetCounterForm(): void {
+    this.editingCounterId = null;
+    this.counterForm = {
+      counterCode: '',
+      counterName: '',
+      queueMachineId: null,
+      status: 'INACTIVE',
+    };
+    this.cdr.detectChanges();
+  }
+
   private ensureBranch(): this is this & { branchId: number } {
     if (!this.branchId) {
       this.errorMessage =
@@ -228,5 +393,21 @@ export class AdminOperations implements OnInit {
     }
 
     return true;
+  }
+
+  private parseCounterNumbers(): string[] {
+    return this.counterNumbersText
+      .split(/[\n,;]+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  private normalizeCodePart(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .toUpperCase();
   }
 }

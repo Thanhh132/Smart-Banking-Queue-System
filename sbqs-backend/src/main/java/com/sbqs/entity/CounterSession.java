@@ -19,17 +19,26 @@ public class CounterSession {
     @Column(name = "counter_session_id")
     private Long counterSessionId;
 
-    @ManyToOne
-    @JoinColumn(name = "counter_id", nullable = false)
-    private Counter counter;
+    @Column(name = "counter_id", nullable = false)
+    private Long counterId;
 
-    @ManyToOne
-    @JoinColumn(name = "staff_id", nullable = false)
-    private User staff;
+    @Column(name = "staff_id", nullable = false)
+    private Long staffId;
 
-    @ManyToOne
-    @JoinColumn(name = "branch_id", nullable = false)
-    private Branch branch;
+    @Column(name = "branch_id", nullable = false)
+    private Long branchId;
+
+    @Column(name = "counter_name")
+    private String counterName;
+
+    @Column(name = "staff_name")
+    private String staffName;
+
+    @Column(name = "staff_email")
+    private String staffEmail;
+
+    @Column(name = "branch_name")
+    private String branchName;
 
     @Column(name = "started_at", nullable = false)
     private LocalDateTime startedAt = LocalDateTime.now();

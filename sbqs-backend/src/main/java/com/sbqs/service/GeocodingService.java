@@ -12,15 +12,20 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class GeocodingService {
+    private static final Pattern GOOGLE_AT_COORDINATES = Pattern.compile("@(-?\\d+(?:\\.\\d+)?),\\s*(-?\\d+(?:\\.\\d+)?)");
+    private static final Pattern GOOGLE_BANG_COORDINATES = Pattern.compile("!3d(-?\\d+(?:\\.\\d+)?)!4d(-?\\d+(?:\\.\\d+)?)");
+    private static final Pattern PLAIN_COORDINATES = Pattern.compile("(^|\\s|,)(-?\\d{1,2}(?:\\.\\d+)?),\\s*(-?\\d{1,3}(?:\\.\\d+)?)(\\s|,|$)");
+
     private final RestTemplate restTemplate;
     private final GeocodingProperties properties;
     private final Map<String, GeocodeResponse> cache = new ConcurrentHashMap<>();
@@ -39,6 +44,12 @@ public class GeocodingService {
         GeocodeResponse cached = cache.get(normalizedAddress);
         if (cached != null) {
             return cached;
+        }
+
+        GeocodeResponse coordinateResult = fromCoordinates(address);
+        if (coordinateResult != null) {
+            cache.put(normalizedAddress, coordinateResult);
+            return coordinateResult;
         }
 
         List<Map<String, Object>> results = List.of();
@@ -72,7 +83,7 @@ public class GeocodingService {
         URI uri = UriComponentsBuilder.fromUriString(properties.getNominatimUrl())
                 .queryParam("q", address)
                 .queryParam("format", "jsonv2")
-                .queryParam("limit", 1)
+                .queryParam("limit", 5)
                 .queryParam("countrycodes", "vn")
                 .queryParam("addressdetails", 1)
                 .queryParam("accept-language", "vi")
@@ -96,20 +107,63 @@ public class GeocodingService {
     private List<String> addressCandidates(String address) {
         String cleaned = address.trim()
                 .replaceAll("(?i)^address\\s*:\\s*", "")
+                .replaceAll("https?://\\S+", "")
                 .replaceAll(",\\s*\\d{5,6}(?=\\s*,|$)", "")
+                .replaceAll("(?i)\\b(tp\\.?|t\\.p\\.)\\b", "Thành phố")
+                .replaceAll("(?i)\\b(q\\.)\\b", "Quận")
+                .replaceAll("(?i)\\b(p\\.)\\b", "Phường")
                 .replaceAll("\\s+", " ");
 
         Set<String> candidates = new LinkedHashSet<>();
         candidates.add(cleaned);
 
         String[] parts = cleaned.split("\\s*,\\s*");
-        if (parts.length >= 4 && !parts[0].matches(".*\\d.*")) {
-            List<String> withoutPlaceName = new ArrayList<>(List.of(parts));
-            withoutPlaceName.remove(0);
-            candidates.add(String.join(", ", withoutPlaceName));
+        if (parts.length >= 2) {
+            for (int index = 1; index < parts.length; index++) {
+                candidates.add(String.join(", ", List.of(parts).subList(index, parts.length)));
+            }
+        }
+
+        if (!cleaned.toLowerCase().contains("việt nam")
+                && !cleaned.toLowerCase().contains("viet nam")) {
+            candidates.add(cleaned + ", Việt Nam");
         }
 
         return candidates.stream().filter(value -> !value.isBlank()).toList();
+    }
+
+    private GeocodeResponse fromCoordinates(String value) {
+        Matcher googleBangMatcher = GOOGLE_BANG_COORDINATES.matcher(value);
+        if (googleBangMatcher.find()) {
+            return coordinateResponse(googleBangMatcher.group(1), googleBangMatcher.group(2));
+        }
+
+        Matcher googleAtMatcher = GOOGLE_AT_COORDINATES.matcher(value);
+        if (googleAtMatcher.find()) {
+            return coordinateResponse(googleAtMatcher.group(1), googleAtMatcher.group(2));
+        }
+
+        Matcher plainMatcher = PLAIN_COORDINATES.matcher(value.trim());
+        if (plainMatcher.find()) {
+            return coordinateResponse(plainMatcher.group(2), plainMatcher.group(3));
+        }
+
+        return null;
+    }
+
+    private GeocodeResponse coordinateResponse(String latitudeValue, String longitudeValue) {
+        double latitude = Double.parseDouble(latitudeValue);
+        double longitude = Double.parseDouble(longitudeValue);
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            throw new RuntimeException("Toa do khong hop le");
+        }
+        return new GeocodeResponse(
+                latitude + ", " + longitude,
+                latitude,
+                longitude,
+                "",
+                "",
+                "");
     }
 
     private void pauseBeforeRetry(int index, int candidateCount) {

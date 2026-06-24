@@ -1,10 +1,15 @@
 package com.sbqs.service;
 
 import com.sbqs.event.DomainEventPublisher;
+import com.sbqs.entity.Appointment;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
+import com.sbqs.entity.Ticket;
+import com.sbqs.repository.AppointmentRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
+import com.sbqs.repository.TicketRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
@@ -18,17 +23,23 @@ public class ServicesService {
 
     private final ServiceRepository serviceRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
+    private final TicketRepository ticketRepository;
+    private final AppointmentRepository appointmentRepository;
     private final CurrentUserService currentUserService;
     private final DomainEventPublisher eventPublisher;
 
     public ServicesService(
             ServiceRepository serviceRepository,
             QueueMachineServiceMappingRepository mappingRepository,
+            TicketRepository ticketRepository,
+            AppointmentRepository appointmentRepository,
             CurrentUserService currentUserService,
             DomainEventPublisher eventPublisher) {
 
         this.serviceRepository = serviceRepository;
         this.mappingRepository = mappingRepository;
+        this.ticketRepository = ticketRepository;
+        this.appointmentRepository = appointmentRepository;
         this.currentUserService = currentUserService;
         this.eventPublisher = eventPublisher;
     }
@@ -130,26 +141,38 @@ public class ServicesService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    @Transactional
     public void deleteService(Long serviceId) {
         Services existingService = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
 
         currentUserService.requireBranch(existingService.getBranch().getBranchId());
 
-        try {
-            serviceRepository.delete(existingService);
-            eventPublisher.publish(
-                    "SERVICE_DELETED",
-                    "SERVICE",
-                    serviceId.toString(),
-                    existingService.getBranch().getBranchId(),
-                    Map.of(
-                            "serviceCode", existingService.getServiceCode(),
-                            "serviceName", existingService.getServiceName()));
-        } catch (Exception e) {
-            throw new RuntimeException(
-                    "Dich vu dang duoc gan voi may boc so. Vui long go mapping truoc khi xoa.");
+        List<Ticket> tickets = ticketRepository.findByService(existingService);
+        boolean hasOpenTicket = tickets.stream()
+                .anyMatch(ticket -> List.of("WAITING", "SERVING").contains(ticket.getStatus()));
+        if (hasOpenTicket) {
+            throw new RuntimeException("Khong the xoa dich vu vi con phieu dang cho hoac dang phuc vu");
         }
+
+        List<Appointment> appointments = appointmentRepository.findByService(existingService);
+        if (!appointments.isEmpty()) {
+            throw new RuntimeException("Khong the xoa dich vu vi con lich hen dang gan voi dich vu nay");
+        }
+
+        mappingRepository.deleteAll(mappingRepository.findByService(existingService));
+        tickets.forEach(ticket -> ticket.setService(null));
+        ticketRepository.saveAll(tickets);
+
+        serviceRepository.delete(existingService);
+        eventPublisher.publish(
+                "SERVICE_DELETED",
+                "SERVICE",
+                serviceId.toString(),
+                existingService.getBranch().getBranchId(),
+                Map.of(
+                        "serviceCode", existingService.getServiceCode(),
+                        "serviceName", existingService.getServiceName()));
     }
 
     private void requireOperationalBranchAccess(Long branchId) {

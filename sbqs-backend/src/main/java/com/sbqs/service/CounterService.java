@@ -55,8 +55,8 @@ public class CounterService {
         User staff = getCurrentUser();
 
         return sessionRepository
-                .findFirstByStaffAndStatusOrderByStartedAtDesc(staff, "ACTIVE")
-                .map(CounterSession::getCounter)
+                .findFirstByStaffIdAndStatusOrderByStartedAtDesc(staff.getUserId(), "ACTIVE")
+                .flatMap(session -> counterRepository.findById(session.getCounterId()))
                 .orElse(null);
     }
 
@@ -133,20 +133,24 @@ public class CounterService {
             throw new RuntimeException("Nhan vien khong thuoc chi nhanh cua quay nay");
         }
 
-        sessionRepository.findFirstByStaffAndStatusOrderByStartedAtDesc(staff, "ACTIVE")
+        sessionRepository.findFirstByStaffIdAndStatusOrderByStartedAtDesc(staff.getUserId(), "ACTIVE")
                 .ifPresent(session -> {
                     throw new RuntimeException("Nhan vien dang assign vao quay khac. Hay unassign truoc.");
                 });
 
-        sessionRepository.findFirstByCounterAndStatusOrderByStartedAtDesc(counter, "ACTIVE")
+        sessionRepository.findFirstByCounterIdAndStatusOrderByStartedAtDesc(counter.getCounterId(), "ACTIVE")
                 .ifPresent(session -> {
                     throw new RuntimeException("Quay nay dang co nhan vien phuc vu.");
                 });
 
         CounterSession session = new CounterSession();
-        session.setCounter(counter);
-        session.setStaff(staff);
-        session.setBranch(counter.getBranch());
+        session.setCounterId(counter.getCounterId());
+        session.setCounterName(counter.getCounterName());
+        session.setStaffId(staff.getUserId());
+        session.setStaffName(staff.getFullName());
+        session.setStaffEmail(staff.getEmail());
+        session.setBranchId(counter.getBranch().getBranchId());
+        session.setBranchName(counter.getBranch().getBranchName());
         session.setStartedAt(LocalDateTime.now());
         session.setStatus("ACTIVE");
         sessionRepository.save(session);
@@ -173,10 +177,10 @@ public class CounterService {
         User staff = getCurrentUser();
 
         CounterSession session = sessionRepository
-                .findFirstByCounterAndStatusOrderByStartedAtDesc(counter, "ACTIVE")
+                .findFirstByCounterIdAndStatusOrderByStartedAtDesc(counter.getCounterId(), "ACTIVE")
                 .orElseThrow(() -> new RuntimeException("Quay nay chua duoc assign"));
 
-        if (!session.getStaff().getUserId().equals(staff.getUserId())) {
+        if (!session.getStaffId().equals(staff.getUserId())) {
             throw new RuntimeException("Chi nhan vien dang assign moi duoc unassign quay nay");
         }
 
@@ -212,6 +216,15 @@ public class CounterService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
 
         currentUserService.requireBranch(counter.getBranch().getBranchId());
+
+        if (counter.getCurrentTicket() != null) {
+            throw new RuntimeException("Khong the xoa quay vi dang phuc vu ticket hien tai");
+        }
+
+        sessionRepository.findFirstByCounterIdAndStatusOrderByStartedAtDesc(counterId, "ACTIVE")
+                .ifPresent(session -> {
+                    throw new RuntimeException("Khong the xoa quay vi dang co nhan vien trong ca lam");
+                });
 
         counterRepository.delete(counter);
         eventPublisher.publish(

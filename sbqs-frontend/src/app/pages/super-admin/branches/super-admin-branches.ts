@@ -55,9 +55,9 @@ export class SuperAdminBranches implements OnInit {
     bankName: ['BIDV', [Validators.required]],
     branchCode: [{ value: '', disabled: true }],
     branchName: ['', [Validators.required]],
-    province: ['', [Validators.required]],
-    district: ['', [Validators.required]],
-    ward: ['', [Validators.required]],
+    province: [''],
+    district: [''],
+    ward: [''],
     address: ['', [Validators.required]],
     phone: ['', [Validators.required, Validators.pattern(/^[0-9+\s.-]{8,15}$/)]],
     latitude: this.fb.control<number | null>(null, [Validators.required]),
@@ -77,6 +77,15 @@ export class SuperAdminBranches implements OnInit {
 
   get activeBranchCount(): number {
     return this.branches.filter((branch) => branch.status === 'ACTIVE').length;
+  }
+
+  get googleMapsUrl(): string {
+    return this.locationService.googleMapsUrl({
+      latitude: this.branchForm.get('latitude')?.value ?? undefined,
+      longitude: this.branchForm.get('longitude')?.value ?? undefined,
+      address: this.fullAddress,
+      branchName: this.branchForm.get('branchName')?.value || '',
+    });
   }
 
   ngOnInit(): void {
@@ -126,30 +135,6 @@ export class SuperAdminBranches implements OnInit {
     this.persistBranch();
   }
 
-  private persistBranch(): void {
-    const payload = this.branchForm.getRawValue();
-    this.isSubmitting = true;
-    this.successMessage = '';
-    this.errorMessage = '';
-    const request$ = this.isEditMode && this.editingBranchId
-      ? this.branchService.updateBranch(this.editingBranchId, payload)
-      : this.branchService.createBranch(payload);
-
-    request$.subscribe({
-      next: () => {
-        this.successMessage = this.isEditMode ? 'Đã cập nhật chi nhánh.' : 'Đã tạo chi nhánh mới.';
-        this.isSubmitting = false;
-        this.cancelEdit();
-        this.loadBranches();
-      },
-      error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Không lưu được chi nhánh.');
-        this.isSubmitting = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
   startEdit(branch: Branch): void {
     this.isEditMode = true;
     this.editingBranchId = branch.branchId;
@@ -169,7 +154,7 @@ export class SuperAdminBranches implements OnInit {
       status: branch.status || 'ACTIVE',
     });
     this.isHydratingForm = false;
-    this.locationConfirmed = true;
+    this.locationConfirmed = branch.latitude != null && branch.longitude != null;
     this.updateMapPreview();
     this.cdr.detectChanges();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -196,9 +181,17 @@ export class SuperAdminBranches implements OnInit {
     this.editingBranchId = null;
     this.isHydratingForm = true;
     this.branchForm.reset({
-      bankName: 'BIDV', branchCode: '', branchName: '', province: '',
-      district: '', ward: '', address: '', phone: '',
-      latitude: null, longitude: null, status: 'ACTIVE',
+      bankName: 'BIDV',
+      branchCode: '',
+      branchName: '',
+      province: '',
+      district: '',
+      ward: '',
+      address: '',
+      phone: '',
+      latitude: null,
+      longitude: null,
+      status: 'ACTIVE',
     });
     this.isHydratingForm = false;
     this.locationConfirmed = false;
@@ -214,21 +207,54 @@ export class SuperAdminBranches implements OnInit {
       ? `${latitude},${longitude}`
       : this.addressQuery || 'Việt Nam';
     this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`
+      `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`
     );
   }
 
   markLocationUnconfirmed(): void {
     this.locationConfirmed = false;
     this.branchForm.patchValue({
-      province: '', district: '', ward: '', latitude: null, longitude: null,
+      province: '',
+      district: '',
+      ward: '',
+      latitude: null,
+      longitude: null,
     }, { emitEvent: false });
     this.successMessage = '';
+    this.updateMapPreview();
   }
 
   confirmMapLocation(): void {
     if (!this.branchForm.get('address')?.value?.trim()) return;
     this.resolveLocation(false);
+  }
+
+  branchMapUrl(branch: Branch): string {
+    return this.locationService.googleMapsUrl(branch);
+  }
+
+  private persistBranch(): void {
+    const payload = this.branchForm.getRawValue();
+    this.isSubmitting = true;
+    this.successMessage = '';
+    this.errorMessage = '';
+    const request$ = this.isEditMode && this.editingBranchId
+      ? this.branchService.updateBranch(this.editingBranchId, payload)
+      : this.branchService.createBranch(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.successMessage = this.isEditMode ? 'Đã cập nhật chi nhánh.' : 'Đã tạo chi nhánh mới.';
+        this.isSubmitting = false;
+        this.cancelEdit();
+        this.loadBranches();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Không lưu được chi nhánh.');
+        this.isSubmitting = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   private resolveLocation(saveAfterResolved: boolean): void {
@@ -254,12 +280,10 @@ export class SuperAdminBranches implements OnInit {
         this.syncGeneratedFields();
         this.locationConfirmed = true;
         this.isGeocoding = false;
-        this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-          `https://www.google.com/maps?q=${result.latitude},${result.longitude}&output=embed`
-        );
+        this.updateMapPreview();
         this.successMessage = saveAfterResolved
-          ? 'Đã xác định địa chỉ. Đang lưu chi nhánh...'
-          : 'Đã xác định địa chỉ chi nhánh.';
+          ? 'Đã xác định vị trí. Đang lưu chi nhánh...'
+          : 'Đã xác định vị trí chi nhánh.';
         this.cdr.detectChanges();
         if (saveAfterResolved) {
           this.persistBranch();
@@ -268,21 +292,13 @@ export class SuperAdminBranches implements OnInit {
       error: (err) => {
         this.isGeocoding = false;
         this.locationConfirmed = false;
-        this.errorMessage = this.apiError.getMessage(err, 'Không tìm thấy địa chỉ này. Hãy nhập thêm phường, quận và tỉnh/thành phố.');
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Không tìm thấy địa chỉ này. Hãy nhập chi tiết hơn hoặc dán link Google Maps/toạ độ.'
+        );
         this.cdr.detectChanges();
       },
     });
-  }
-
-  get googleMapsUrl(): string {
-    return this.locationService.googleMapsUrl({
-      address: this.fullAddress,
-      branchName: this.branchForm.get('branchName')?.value || '',
-    });
-  }
-
-  branchMapUrl(branch: Branch): string {
-    return this.locationService.googleMapsUrl(branch);
   }
 
   private get fullAddress(): string {
@@ -292,6 +308,7 @@ export class SuperAdminBranches implements OnInit {
   private get addressQuery(): string {
     const address = this.fullAddress;
     if (!address) return '';
+    if (this.looksLikeMapUrlOrCoordinates(address)) return address;
     return this.normalizeText(address).includes('viet nam') ? address : `${address}, Việt Nam`;
   }
 
@@ -361,6 +378,10 @@ export class SuperAdminBranches implements OnInit {
     if (!words.length) return 'BR';
     return (words.length === 1 ? words[0].slice(0, 3) : words.map((word) => word[0]).join(''))
       .toUpperCase();
+  }
+
+  private looksLikeMapUrlOrCoordinates(value: string): boolean {
+    return /https?:\/\/|@-?\d|!3d-?\d|-?\d{1,2}(\.\d+)?,\s*-?\d{1,3}(\.\d+)?/.test(value);
   }
 
   private normalizeText(value: string): string {
