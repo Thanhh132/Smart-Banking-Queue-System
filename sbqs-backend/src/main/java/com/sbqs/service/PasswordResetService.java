@@ -5,11 +5,14 @@ import com.sbqs.entity.PasswordResetToken;
 import com.sbqs.entity.User;
 import com.sbqs.repository.PasswordResetTokenRepository;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.util.PasswordPolicy;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,9 +58,14 @@ public class PasswordResetService {
         }
 
         boolean requestedRecently = tokenRepository.findFirstByUserOrderByCreatedAtDesc(user)
-                .map(token -> token.getCreatedAt().isAfter(LocalDateTime.now().minusMinutes(1)))
+                .map(token -> token.getCreatedAt().isAfter(
+                        LocalDateTime.now().minusMinutes(properties.getCooldownMinutes())))
                 .orElse(false);
         if (requestedRecently) {
+            log.info(
+                    "Password reset request skipped because email={} requested within {} minutes",
+                    user.getEmail(),
+                    properties.getCooldownMinutes());
             return;
         }
 
@@ -76,18 +84,74 @@ public class PasswordResetService {
             return;
         }
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(properties.getFromEmail());
-        message.setTo(user.getEmail());
-        message.setSubject("SBQS - Dat lai mat khau");
-        message.setText("Mo lien ket sau de dat lai mat khau. Lien ket het han sau "
-                + properties.getExpiryMinutes() + " phut:\n\n"
-                + properties.getFrontendUrl() + "?token=" + rawToken);
+        String resetUrl = properties.getFrontendUrl() + "?token=" + rawToken;
+
         try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
+            helper.setFrom(properties.getFromEmail());
+            helper.setTo(user.getEmail());
+            helper.setSubject("SBQS - Đặt lại mật khẩu");
+            helper.setText(buildPasswordResetEmail(user, resetUrl), true);
             mailSender.send(message);
-        } catch (RuntimeException ex) {
+        } catch (MessagingException | RuntimeException ex) {
             log.error("Password reset email could not be sent", ex);
         }
+    }
+
+    private String buildPasswordResetEmail(User user, String resetUrl) {
+        String escapedName = escapeHtml(user.getFullName() == null ? "khách hàng" : user.getFullName());
+        String escapedResetUrl = escapeHtml(resetUrl);
+
+        return """
+                <!doctype html>
+                <html>
+                <body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+                  <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:28px 0;">
+                    <tr>
+                      <td align="center">
+                        <table role="presentation" width="100%%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #d8e2ef;border-radius:10px;overflow:hidden;">
+                          <tr>
+                            <td style="padding:24px 28px;background:#005baa;color:#ffffff;">
+                              <div style="font-size:22px;font-weight:800;letter-spacing:.3px;">SBQS</div>
+                              <div style="font-size:13px;opacity:.9;margin-top:4px;">Smart Banking Queue System</div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="padding:28px;">
+                              <h1 style="margin:0 0 12px;font-size:24px;line-height:1.25;color:#0f172a;">Đặt lại mật khẩu</h1>
+                              <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#475569;">Xin chào %s,</p>
+                              <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:#475569;">
+                                SBQS nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn. Bấm nút bên dưới để tạo mật khẩu mới.
+                              </p>
+                              <p style="margin:0 0 24px;">
+                                <a href="%s" style="display:inline-block;background:#005baa;color:#ffffff;text-decoration:none;padding:13px 20px;border-radius:8px;font-size:15px;font-weight:800;">
+                                  Đặt lại mật khẩu
+                                </a>
+                              </p>
+                              <p style="margin:0 0 18px;font-size:14px;line-height:1.6;color:#64748b;">
+                                Liên kết này hết hạn sau %d phút. Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </body>
+                </html>
+                """.formatted(
+                escapedName,
+                escapedResetUrl,
+                properties.getExpiryMinutes());
+    }
+
+    private String escapeHtml(String value) {
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
     }
 
     @Transactional
@@ -107,12 +171,7 @@ public class PasswordResetService {
     }
 
     private void validatePassword(String password) {
-        if (password == null || password.length() < 8
-                || password.chars().noneMatch(Character::isUpperCase)
-                || password.chars().noneMatch(Character::isLowerCase)
-                || password.chars().noneMatch(Character::isDigit)) {
-            throw new RuntimeException("Mat khau phai co it nhat 8 ky tu, gom chu hoa, chu thuong va chu so");
-        }
+        PasswordPolicy.validate(password);
     }
 
     private String hash(String value) {

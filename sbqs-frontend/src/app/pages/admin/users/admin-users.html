@@ -75,7 +75,7 @@
 
           <div class="admin-field" *ngIf="!isEditMode">
             <label>Mật khẩu</label>
-            <input type="password" formControlName="password" placeholder="Tối thiểu 6 ký tự" />
+            <input type="password" formControlName="password" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" />
             <div class="validation-error" *ngIf="isInvalid('password')">
               {{ getErrorMessage('password', 'Mật khẩu') }}
             </div>
@@ -135,6 +135,14 @@
                 </td>
                 <td>
                   <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">Sửa</button>
+                  <button
+                    *ngIf="user.status === 'INACTIVE'"
+                    class="btn-secondary btn-sm"
+                    type="button"
+                    (click)="unlockUser(user)"
+                  >
+                    Mở khóa
+                  </button>
                   <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
                     {{ user.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
                   </button>

@@ -12,5 +12,6 @@ import org.springframework.stereotype.Component;
 public class PasswordResetProperties {
     private String frontendUrl = "http://localhost:4200/reset-password";
     private int expiryMinutes = 15;
+    private int cooldownMinutes = 5;
     private String fromEmail = "no-reply@sbqs.local";
 }

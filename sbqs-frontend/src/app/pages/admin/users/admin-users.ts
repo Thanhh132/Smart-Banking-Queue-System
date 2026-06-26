@@ -11,6 +11,10 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 import { AppCard } from '../../../shared/components/app-card/app-card';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import {
+  PASSWORD_POLICY_MESSAGE,
+  PASSWORD_POLICY_PATTERN,
+} from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-admin-users',
@@ -28,6 +32,7 @@ export class AdminUsers implements OnInit {
   isEditMode = false;
 
   editingUserId: number | null = null;
+  editingUserStatus = 'ACTIVE';
   successMessage = '';
   errorMessage = '';
 
@@ -48,7 +53,7 @@ export class AdminUsers implements OnInit {
       fullName: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10,11}$/)]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
     });
   }
 
@@ -164,12 +169,16 @@ export class AdminUsers implements OnInit {
   startEdit(user: any): void {
     this.isEditMode = true;
     this.editingUserId = user.userId;
+    this.editingUserStatus = user.status || 'ACTIVE';
+    const passwordControl = this.staffForm.get('password');
+    passwordControl?.clearValidators();
+    passwordControl?.updateValueAndValidity();
 
     this.staffForm.patchValue({
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
-      password: '123456',
+      password: '',
     });
 
     this.cdr.detectChanges();
@@ -178,6 +187,10 @@ export class AdminUsers implements OnInit {
   cancelEdit(): void {
     this.isEditMode = false;
     this.editingUserId = null;
+    this.editingUserStatus = 'ACTIVE';
+    const passwordControl = this.staffForm.get('password');
+    passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+    passwordControl?.updateValueAndValidity();
     this.staffForm.reset();
     this.successMessage = '';
     this.errorMessage = '';
@@ -197,7 +210,7 @@ export class AdminUsers implements OnInit {
       fullName: this.staffForm.value.fullName,
       email: this.staffForm.value.email,
       phone: this.staffForm.value.phone,
-      status: 'ACTIVE',
+      status: this.editingUserStatus,
     };
 
     this.isSubmitting = true;
@@ -208,12 +221,43 @@ export class AdminUsers implements OnInit {
         this.isSubmitting = false;
         this.isEditMode = false;
         this.editingUserId = null;
+        this.editingUserStatus = 'ACTIVE';
+        const passwordControl = this.staffForm.get('password');
+        passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+        passwordControl?.updateValueAndValidity();
         this.staffForm.reset();
         this.loadUsers();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(err, 'Cập nhật thất bại.');
         this.isSubmitting = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  unlockUser(user: any): void {
+    if (!confirm(`Mở khóa tài khoản nhân viên "${user.fullName}"?`)) {
+      return;
+    }
+
+    this.successMessage = '';
+    this.errorMessage = '';
+
+    const payload = {
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      status: 'ACTIVE',
+    };
+
+    this.userManagementService.updateUser(user.userId, payload).subscribe({
+      next: () => {
+        this.successMessage = 'Đã mở khóa tài khoản nhân viên.';
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Mở khóa tài khoản nhân viên thất bại.');
         this.cdr.detectChanges();
       },
     });
@@ -246,6 +290,10 @@ export class AdminUsers implements OnInit {
     if (control.errors['pattern']) {
       if (controlName === 'phone') {
         return `${label} chỉ gồm số và phải có 10-11 chữ số.`;
+      }
+
+      if (controlName === 'password') {
+        return PASSWORD_POLICY_MESSAGE;
       }
 
       return `${label} không đúng định dạng.`;

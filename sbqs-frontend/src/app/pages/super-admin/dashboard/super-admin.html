@@ -59,7 +59,7 @@
           <label>Họ và tên<input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" /></label>
           <label>Email<input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" autocomplete="email" /></label>
           <label>Số điện thoại<input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" /></label>
-          <label *ngIf="!isEditMode">Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Tối thiểu 8 ký tự" autocomplete="new-password" /></label>
+          <label *ngIf="!isEditMode">Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="new-password" /></label>
           <label *ngIf="isEditMode">
             Trạng thái
             <select formControlName="status">

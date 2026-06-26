@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbqs.entity.User;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.util.PasswordPolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,8 @@ public class AuthService {
                 if (userRepository.existsByPhone(request.getPhone())) {
                         throw new RuntimeException("So dien thoai da ton tai");
                 }
+
+                PasswordPolicy.validate(request.getPassword());
 
                 String keycloakUserId = keycloakService.createUser(
                                 request.getFullName(),

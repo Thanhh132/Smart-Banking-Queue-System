@@ -9,6 +9,7 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
+import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-super-admin',
@@ -51,7 +52,7 @@ export class SuperAdmin implements OnInit {
     fullName: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
     branchId: [null as number | null, [Validators.required]],
     status: ['ACTIVE'],
   });
@@ -223,7 +224,7 @@ export class SuperAdmin implements OnInit {
     this.editingAdminId = null;
 
     const passwordControl = this.adminBranchForm.get('password');
-    passwordControl?.setValidators([Validators.required, Validators.minLength(8)]);
+    passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
     passwordControl?.updateValueAndValidity();
 
     this.adminBranchForm.reset({

@@ -6,6 +6,7 @@ import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-register',
@@ -28,7 +29,7 @@ export class Register {
     fullName: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
   });
 
   submit(): void {

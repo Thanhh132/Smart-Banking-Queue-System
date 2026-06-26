@@ -20,6 +20,8 @@ keycloak_data/
 
 # Environment
 .env
+application-local.properties
+sbqs-backend/src/main/resources/application-local.properties
 
 # OS
 .DS_Store

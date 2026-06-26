@@ -6,6 +6,7 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.util.PasswordPolicy;
 import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -79,6 +80,8 @@ public class UserService {
                 if (userRepository.existsByPhone(request.getPhone())) {
                         throw new RuntimeException("So dien thoai da ton tai");
                 }
+
+                PasswordPolicy.validate(request.getPassword());
 
                 Branch branch = branchRepository.findById(request.getBranchId())
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));

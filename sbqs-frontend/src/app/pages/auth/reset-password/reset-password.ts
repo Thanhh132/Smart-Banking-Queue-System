@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-reset-password',
@@ -26,7 +27,7 @@ export class ResetPassword {
   isCompleted = false;
   errorMessage = this.token ? '' : 'Liên kết đặt lại mật khẩu không hợp lệ.';
   form = this.fb.group({
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
     confirmPassword: ['', [Validators.required]],
   });
 
