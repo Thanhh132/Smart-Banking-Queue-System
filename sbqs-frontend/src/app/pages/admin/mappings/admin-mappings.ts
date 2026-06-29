@@ -8,6 +8,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AdminMappingsService } from '../../../core/services/admin-mappings.service';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-admin-mappings',
@@ -17,6 +18,7 @@ import { AdminMappingsService } from '../../../core/services/admin-mappings.serv
     AppCard,
     DashboardLayout,
     AppPageHeader,
+    AppIcon,
   ],
   templateUrl: './admin-mappings.html',
   styleUrl: './admin-mappings.scss',

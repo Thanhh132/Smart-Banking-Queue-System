@@ -20,9 +20,11 @@
             (keyup.enter)="findNearbyByAddress()"
           />
           <button type="button" class="btn btn-primary" (click)="findNearbyByAddress()" [disabled]="isLocating">
+            <app-icon *ngIf="!isLocating" name="search" [size]="16" />
             Tìm gần tôi
           </button>
           <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()" [disabled]="isLocating">
+            <app-icon *ngIf="!isLocating" name="locate" [size]="16" />
             Vị trí hiện tại
           </button>
         </div>
@@ -68,8 +70,14 @@
           <p>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</p>
           <small>{{ branch.ward || '' }}{{ branch.ward ? ', ' : '' }}{{ branch.district || '-' }}, {{ branch.province || '-' }}</small>
           <div class="branch-result__actions">
-            <button type="button" class="btn btn-primary" (click)="selectBranch(branch.branchId)">Chọn chi nhánh</button>
-            <a class="btn btn-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">Google Maps</a>
+            <button type="button" class="btn btn-primary" (click)="selectBranch(branch.branchId)">
+              <app-icon name="arrow-right" [size]="16" />
+              Chọn chi nhánh
+            </button>
+            <a class="btn btn-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">
+              <app-icon name="external-link" [size]="16" />
+              Google Maps
+            </a>
           </div>
         </article>
       </div>

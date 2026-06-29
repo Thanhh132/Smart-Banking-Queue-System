@@ -15,6 +15,7 @@
           <strong>{{ ticket.ticketNumber }}</strong>
           <p>{{ ticketStatusLabel }}</p>
           <button *ngIf="ticket.status === 'WAITING'" type="button" class="btn btn-danger" (click)="cancelTicket()" [disabled]="isCancelling">
+            <app-icon *ngIf="!isCancelling" name="x" [size]="16" />
             {{ isCancelling ? 'Đang hủy...' : 'Hủy phiếu' }}
           </button>
         </div>
@@ -67,7 +68,10 @@
         <span class="customer-kicker">Chưa có phiếu đang hoạt động</span>
         <h2>Bạn chưa lấy số giao dịch</h2>
         <p>Chọn chi nhánh và dịch vụ để bắt đầu.</p>
-        <a routerLink="/branches" class="btn btn-primary">Lấy số ngay</a>
+        <a routerLink="/branches" class="btn btn-primary">
+          <app-icon name="ticket" [size]="16" />
+          Lấy số ngay
+        </a>
       </section>
     </ng-template>
 

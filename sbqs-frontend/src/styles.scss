@@ -119,6 +119,7 @@ button,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 11px 18px;
   border: 0;
   border-radius: 6px;
@@ -240,6 +241,17 @@ button[type="submit"]:hover {
   gap: 10px;
   text-decoration: none;
   color: inherit;
+}
+
+.ui-action-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #e8f7f4;
+  color: #0f766e;
 }
 
 .ui-action-card span {
@@ -367,6 +379,7 @@ button[type="submit"]:hover {
 .auth-form button {
   height: 48px;
   width: 100%;
+  gap: 8px;
   border: 0;
   border-radius: 6px;
   background: var(--primary-color);
@@ -505,6 +518,9 @@ button[type="submit"]:hover {
 
 .customer-text-link,
 .customer-option__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--primary-color);
   font-size: 14px;
   font-weight: 800;

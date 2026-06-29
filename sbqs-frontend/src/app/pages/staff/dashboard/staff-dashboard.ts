@@ -8,6 +8,7 @@ import { StaffService } from '../../../core/services/staff.service';
 import { AppCard } from '../../../shared/components/app-card/app-card';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
@@ -20,6 +21,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
     AppPageHeader,
     AppCard,
     ReportExportButtons,
+    AppIcon,
   ],
   templateUrl: './staff-dashboard.html',
   styleUrl: './staff-dashboard.scss',

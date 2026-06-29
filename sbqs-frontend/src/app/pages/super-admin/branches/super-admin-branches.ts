@@ -9,11 +9,12 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { GeocodeResult, LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-super-admin-branches',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, DashboardLayout, AppIcon],
   templateUrl: './super-admin-branches.html',
   styleUrl: './super-admin-branches.scss',
 })

@@ -32,6 +32,7 @@
       </div>
 
       <button type="submit" [disabled]="isSubmitting">
+        <app-icon *ngIf="!isSubmitting" name="user-plus" [size]="18" />
         {{ isSubmitting ? 'Đang tạo tài khoản...' : 'Đăng ký' }}
       </button>
     </form>

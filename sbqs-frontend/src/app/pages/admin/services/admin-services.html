@@ -8,6 +8,7 @@
       </div>
 
       <button class="btn-secondary" type="button" (click)="loadServices()" [disabled]="isListLoading">
+        <app-icon *ngIf="!isListLoading" name="refresh" [size]="16" />
         {{ isListLoading ? 'Đang tải...' : 'Tải lại' }}
       </button>
     </header>
@@ -83,8 +84,14 @@
                   </span>
                 </td>
                 <td>
-                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(service)">Sửa</button>
-                  <button class="btn-danger btn-sm" type="button" (click)="deleteService(service)">Xóa</button>
+                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(service)">
+                    <app-icon name="pencil" [size]="14" />
+                    Sửa
+                  </button>
+                  <button class="btn-danger btn-sm" type="button" (click)="deleteService(service)">
+                    <app-icon name="trash" [size]="14" />
+                    Xóa
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -115,6 +122,7 @@
 
           <div class="admin-actions catalog-actions">
             <button class="btn-primary" type="button" (click)="createSelectedServices()" [disabled]="isSubmitting">
+              <app-icon *ngIf="!isSubmitting" name="plus" [size]="16" />
               {{ isSubmitting ? 'Đang tạo...' : 'Tạo dịch vụ đã chọn' }}
             </button>
           </div>
@@ -170,9 +178,13 @@
 
             <div class="admin-actions">
               <button class="btn-primary" type="submit" [disabled]="isSubmitting">
+                <app-icon *ngIf="!isSubmitting" name="save" [size]="16" />
                 {{ isSubmitting ? 'Đang lưu...' : 'Cập nhật' }}
               </button>
-              <button class="btn-secondary" type="button" (click)="cancelEdit()">Hủy</button>
+              <button class="btn-secondary" type="button" (click)="cancelEdit()">
+                <app-icon name="x" [size]="16" />
+                Hủy
+              </button>
             </div>
           </form>
 

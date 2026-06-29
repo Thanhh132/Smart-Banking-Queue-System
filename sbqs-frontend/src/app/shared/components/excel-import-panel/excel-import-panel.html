@@ -2,20 +2,23 @@
   <div class="excel-import__heading">
     <div>
       <span class="excel-import__kicker">Excel</span>
-      <h3 id="excel-import-title">{{ title }}</h3>
+      <h3 id="excel-import-title"><app-icon name="file-spreadsheet" [size]="20" />{{ title }}</h3>
     </div>
     <button class="btn-secondary" type="button" (click)="downloadTemplate()" [disabled]="isDownloading">
+      <app-icon name="download" [size]="17" />
       {{ isDownloading ? 'Đang tải...' : 'Tải file mẫu' }}
     </button>
   </div>
 
-  <div class="excel-import__controls">
+  <div class="excel-import__controls d-flex flex-wrap align-items-center gap-3">
     <label class="file-picker">
+      <app-icon name="upload" [size]="16" />
       <span>Chọn file .xlsx</span>
       <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="selectFile($event)" />
     </label>
     <span class="file-name" [class.file-name--selected]="selectedFile">{{ selectedFileName }}</span>
     <button class="btn-primary" type="button" (click)="submit()" [disabled]="isImporting || !selectedFile">
+      <app-icon name="upload" [size]="17" />
       {{ isImporting ? 'Đang nhập...' : 'Nhập dữ liệu' }}
     </button>
   </div>

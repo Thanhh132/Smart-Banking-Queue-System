@@ -7,11 +7,12 @@ import { finalize, timeout } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon],
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })

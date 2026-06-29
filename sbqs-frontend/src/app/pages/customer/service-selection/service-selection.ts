@@ -9,11 +9,12 @@ import { QueueMonitorService } from '../../../core/services/queue-monitor.servic
 import { ServicesService } from '../../../core/services/services.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-service-selection',
   standalone: true,
-  imports: [CommonModule, DashboardLayout],
+  imports: [CommonModule, DashboardLayout, AppIcon],
   templateUrl: './service-selection.html',
   styleUrl: './service-selection.scss',
 })

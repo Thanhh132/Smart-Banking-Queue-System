@@ -21,8 +21,15 @@
 }
 
 .excel-import__heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 4px 0 0;
   font-size: 20px;
+}
+
+.excel-import button {
+  gap: 8px;
 }
 
 .excel-import__kicker {
@@ -41,6 +48,9 @@
   position: relative;
   overflow: hidden;
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   padding: 11px 15px;
   border: 1px solid #b8c8dc;
   border-radius: 6px;

@@ -46,7 +46,10 @@
           <strong>{{ service.serviceName }}</strong>
           <p>{{ service.description || 'Dịch vụ giao dịch tại quầy' }}</p>
           <small>Thời gian dự kiến: {{ service.estimatedTime || 10 }} phút</small>
-          <span class="customer-option__action">Lấy số dịch vụ này</span>
+          <span class="customer-option__action">
+            <app-icon name="ticket" [size]="16" />
+            Lấy số dịch vụ này
+          </span>
         </button>
       </div>
     </section>

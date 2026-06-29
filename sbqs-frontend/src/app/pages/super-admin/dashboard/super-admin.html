@@ -6,7 +6,10 @@
         <h1>Quản trị toàn hệ thống</h1>
         <p>Quản lý chi nhánh và cấp tài khoản quản trị theo đúng phạm vi vận hành.</p>
       </div>
-      <a routerLink="/super-admin/branches" class="btn btn-primary">Quản lý chi nhánh</a>
+      <a routerLink="/super-admin/branches" class="btn btn-primary">
+        <app-icon name="building" [size]="16" />
+        Quản lý chi nhánh
+      </a>
     </header>
 
     <section class="super-summary">
@@ -76,9 +79,11 @@
           </label>
           <div class="full-row form-actions">
             <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
+              <app-icon *ngIf="!isSubmitting" [name]="isEditMode ? 'save' : 'user-plus'" [size]="16" />
               {{ isSubmitting ? 'Đang xử lý...' : (isEditMode ? 'Cập nhật tài khoản' : 'Tạo tài khoản') }}
             </button>
             <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEditAdminBranch()" [disabled]="isSubmitting">
+              <app-icon name="x" [size]="16" />
               Hủy sửa
             </button>
           </div>
@@ -116,9 +121,11 @@
                 </td>
                 <td>
                   <button type="button" class="btn btn-secondary btn-sm" (click)="startEditAdminBranch(admin)">
+                    <app-icon name="pencil" [size]="14" />
                     Sửa
                   </button>
                   <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
+                    <app-icon [name]="admin.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
                     {{ admin.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
                   </button>
                 </td>

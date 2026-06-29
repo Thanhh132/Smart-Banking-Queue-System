@@ -7,6 +7,7 @@ import { HistoryItem, HistoryService } from '../../../core/services/history.serv
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
@@ -17,6 +18,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
     DashboardLayout,
     RouterLink,
     ReportExportButtons,
+    AppIcon,
   ],
   templateUrl: './ticket-result.html',
   styleUrl: './ticket-result.scss',

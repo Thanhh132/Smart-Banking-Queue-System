@@ -10,11 +10,12 @@ import {
   QueueMachinePayload,
 } from '../../../core/services/admin-operations.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-admin-operations',
   standalone: true,
-  imports: [CommonModule, FormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, DashboardLayout, AppIcon],
   templateUrl: './admin-operations.html',
   styleUrl: './admin-operations.scss',
 })

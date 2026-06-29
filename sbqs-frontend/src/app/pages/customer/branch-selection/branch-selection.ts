@@ -8,10 +8,11 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-branch-selection',
-  imports: [CommonModule, FormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, DashboardLayout, AppIcon],
   templateUrl: './branch-selection.html',
   styleUrl: './branch-selection.scss',
 })

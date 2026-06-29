@@ -9,12 +9,13 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-super-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DashboardLayout, ReportExportButtons],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DashboardLayout, ReportExportButtons, AppIcon],
   templateUrl: './super-admin.html',
   styleUrl: './super-admin.scss',
 })

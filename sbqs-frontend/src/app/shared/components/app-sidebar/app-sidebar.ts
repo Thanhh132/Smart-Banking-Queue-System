@@ -3,17 +3,18 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
+import { AppIcon, AppIconName } from '../app-icon/app-icon';
 
 interface SidebarItem {
   label: string;
-  icon: string;
+  icon: AppIconName;
   route: string;
 }
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgFor],
+  imports: [RouterLink, RouterLinkActive, NgFor, AppIcon],
   templateUrl: './app-sidebar.html',
   styleUrl: './app-sidebar.scss',
 })
@@ -23,25 +24,25 @@ export class AppSidebar {
 
   private menusByRole: Record<string, SidebarItem[]> = {
     SUPER_ADMIN: [
-      { label: 'Tổng quan', icon: 'SA', route: '/super-admin' },
-      { label: 'Chi nhánh', icon: 'BR', route: '/super-admin/branches' },
+      { label: 'Tổng quan', icon: 'dashboard', route: '/super-admin' },
+      { label: 'Chi nhánh', icon: 'building', route: '/super-admin/branches' },
     ],
     BRANCH_ADMIN: [
-      { label: 'Tổng quan', icon: 'DB', route: '/admin' },
-      { label: 'Vận hành', icon: 'OP', route: '/admin/operations' },
-      { label: 'Dịch vụ', icon: 'SV', route: '/admin/services' },
-      { label: 'Gán dịch vụ', icon: 'MP', route: '/admin/mappings' },
-      { label: 'Nhân viên', icon: 'ST', route: '/admin/users' },
-      { label: 'Màn hình hàng đợi', icon: 'QM', route: '/monitor' },
+      { label: 'Tổng quan', icon: 'dashboard', route: '/admin' },
+      { label: 'Vận hành', icon: 'settings', route: '/admin/operations' },
+      { label: 'Dịch vụ', icon: 'briefcase', route: '/admin/services' },
+      { label: 'Gán dịch vụ', icon: 'list-checks', route: '/admin/mappings' },
+      { label: 'Nhân viên', icon: 'users', route: '/admin/users' },
+      { label: 'Màn hình hàng đợi', icon: 'monitor', route: '/monitor' },
     ],
     STAFF: [
-      { label: 'Quầy phục vụ', icon: 'SD', route: '/staff' },
-      { label: 'Màn hình hàng đợi', icon: 'QM', route: '/monitor' },
+      { label: 'Quầy phục vụ', icon: 'briefcase', route: '/staff' },
+      { label: 'Màn hình hàng đợi', icon: 'monitor', route: '/monitor' },
     ],
     CUSTOMER: [
-      { label: 'Tổng quan', icon: 'CU', route: '/customer' },
-      { label: 'Lấy số', icon: 'BR', route: '/branches' },
-      { label: 'Phiếu của tôi', icon: 'TK', route: '/ticket' },
+      { label: 'Tổng quan', icon: 'dashboard', route: '/customer' },
+      { label: 'Lấy số', icon: 'building', route: '/branches' },
+      { label: 'Phiếu của tôi', icon: 'ticket', route: '/ticket' },
     ],
   };
 

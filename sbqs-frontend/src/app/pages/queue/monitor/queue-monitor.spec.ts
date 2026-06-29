@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { QueueMonitor } from './queue-monitor';
+import { QueueMonitorComponent } from './queue-monitor';
 
 describe('QueueMonitor', () => {
-  let component: QueueMonitor;
-  let fixture: ComponentFixture<QueueMonitor>;
+  let component: QueueMonitorComponent;
+  let fixture: ComponentFixture<QueueMonitorComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [QueueMonitor],
+      imports: [QueueMonitorComponent],
     }).compileComponents();
 
-    fixture = TestBed.createComponent(QueueMonitor);
+    fixture = TestBed.createComponent(QueueMonitorComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

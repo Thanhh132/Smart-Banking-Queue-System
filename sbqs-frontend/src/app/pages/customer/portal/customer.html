@@ -12,7 +12,10 @@
         <h2>Bắt đầu giao dịch mới</h2>
         <p>Hệ thống chỉ hiển thị hàng đợi và các quầy thuộc đúng máy bốc số của dịch vụ bạn chọn.</p>
       </div>
-      <a routerLink="/branches" class="btn btn-primary">Chọn chi nhánh</a>
+      <a routerLink="/branches" class="btn btn-primary">
+        <app-icon name="building" [size]="16" />
+        Chọn chi nhánh
+      </a>
     </section>
 
     <section class="customer-section">
@@ -21,7 +24,10 @@
           <h2>Tiến trình lấy số</h2>
           <p>Ba bước để nhận và theo dõi số thứ tự.</p>
         </div>
-        <a routerLink="/ticket" class="customer-text-link">Xem phiếu hiện tại</a>
+        <a routerLink="/ticket" class="customer-text-link">
+          <app-icon name="ticket" [size]="16" />
+          Xem phiếu hiện tại
+        </a>
       </div>
 
       <div class="customer-steps">

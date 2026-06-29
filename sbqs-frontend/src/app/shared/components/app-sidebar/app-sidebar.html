@@ -15,12 +15,13 @@
       routerLinkActive="active"
       class="sidebar__link"
     >
-      <span class="sidebar__icon">{{ item.icon }}</span>
+      <span class="sidebar__icon"><app-icon [name]="item.icon" [size]="18" /></span>
       <span>{{ item.label }}</span>
     </a>
   </nav>
 
   <button type="button" class="sidebar__logout" (click)="logout()">
+    <app-icon name="logout" [size]="18" />
     Đăng xuất
   </button>
 </aside>

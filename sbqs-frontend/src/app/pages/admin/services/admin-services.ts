@@ -14,6 +14,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AdminServicesService } from '../../../core/services/admin-services.service';
 import { ExcelImportPanel } from '../../../shared/components/excel-import-panel/excel-import-panel';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 interface ServiceTemplate {
   key: string;
@@ -26,7 +27,7 @@ interface ServiceTemplate {
 @Component({
   selector: 'app-admin-services',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, AppCard, DashboardLayout, ExcelImportPanel],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, AppCard, DashboardLayout, ExcelImportPanel, AppIcon],
   templateUrl: './admin-services.html',
   styleUrl: './admin-services.scss',
 })

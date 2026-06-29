@@ -8,6 +8,7 @@
       </div>
 
       <button class="btn-secondary" type="button" (click)="loadUsers()" [disabled]="isListLoading">
+        <app-icon *ngIf="!isListLoading" name="refresh" [size]="16" />
         {{ isListLoading ? 'Đang tải...' : 'Tải lại' }}
       </button>
     </div>
@@ -95,9 +96,11 @@
 
           <div class="admin-actions">
             <button class="btn-primary" type="submit" [disabled]="isSubmitting">
+              <app-icon *ngIf="!isSubmitting" [name]="isEditMode ? 'save' : 'user-plus'" [size]="16" />
               {{ isEditMode ? 'Cập nhật nhân viên' : 'Tạo nhân viên' }}
             </button>
             <button *ngIf="isEditMode" class="btn-secondary" type="button" (click)="cancelEdit()">
+              <app-icon name="x" [size]="16" />
               Hủy
             </button>
           </div>
@@ -140,16 +143,21 @@
                   </span>
                 </td>
                 <td>
-                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">Sửa</button>
+                  <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">
+                    <app-icon name="pencil" [size]="14" />
+                    Sửa
+                  </button>
                   <button
                     *ngIf="user.status === 'INACTIVE'"
                     class="btn-secondary btn-sm"
                     type="button"
                     (click)="unlockUser(user)"
                   >
+                    <app-icon name="unlock" [size]="14" />
                     Mở khóa
                   </button>
                   <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
+                    <app-icon [name]="user.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
                     {{ user.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
                   </button>
                 </td>

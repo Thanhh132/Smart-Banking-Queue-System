@@ -7,6 +7,7 @@
         <p>Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị.</p>
       </div>
       <button type="button" class="btn btn-secondary" (click)="loadBranches()" [disabled]="isLoading">
+        <app-icon *ngIf="!isLoading" name="refresh" [size]="16" />
         {{ isLoading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
       </button>
     </header>
@@ -49,6 +50,7 @@
                 (blur)="confirmMapLocation()"
               />
               <button type="button" class="btn btn-primary" (click)="confirmMapLocation()" [disabled]="isGeocoding">
+                <app-icon *ngIf="!isGeocoding" name="map-pin" [size]="16" />
                 {{ isGeocoding ? 'Đang tìm...' : 'Xác định vị trí' }}
               </button>
             </div>
@@ -58,7 +60,10 @@
           <div class="branch-map full-width">
             <iframe title="Vị trí chi nhánh trên Google Maps" [src]="mapPreviewUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
             <div class="branch-map__actions">
-              <a class="btn btn-secondary" [href]="googleMapsUrl" target="_blank" rel="noopener">Mở Google Maps</a>
+              <a class="btn btn-secondary" [href]="googleMapsUrl" target="_blank" rel="noopener">
+                <app-icon name="external-link" [size]="16" />
+                Mở Google Maps
+              </a>
               <span class="location-status" [class.location-status--confirmed]="locationConfirmed">
                 {{ locationConfirmed ? 'Đã xác định vị trí' : 'Chưa xác định vị trí' }}
               </span>
@@ -84,9 +89,13 @@
 
           <div class="form-actions full-width">
             <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || isGeocoding">
+              <app-icon *ngIf="!isSubmitting && !isGeocoding" [name]="isEditMode ? 'save' : 'plus'" [size]="16" />
               {{ (isSubmitting || isGeocoding) ? 'Đang xử lý...' : isEditMode ? 'Lưu thay đổi' : 'Tạo chi nhánh' }}
             </button>
-            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">Hủy chỉnh sửa</button>
+            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">
+              <app-icon name="x" [size]="16" />
+              Hủy chỉnh sửa
+            </button>
           </div>
         </form>
       </div>
@@ -129,8 +138,14 @@
                 </td>
                 <td>
                   <div class="row-actions">
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">Sửa</button>
-                    <button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">Xóa</button>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">
+                      <app-icon name="pencil" [size]="14" />
+                      Sửa
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">
+                      <app-icon name="trash" [size]="14" />
+                      Xóa
+                    </button>
                   </div>
                 </td>
               </tr>

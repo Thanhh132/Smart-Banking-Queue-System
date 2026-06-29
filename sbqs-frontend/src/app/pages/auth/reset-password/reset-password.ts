@@ -7,11 +7,12 @@ import { finalize } from 'rxjs';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 
 @Component({
   selector: 'app-reset-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon],
   templateUrl: './reset-password.html',
   styleUrl: './reset-password.scss',
 })

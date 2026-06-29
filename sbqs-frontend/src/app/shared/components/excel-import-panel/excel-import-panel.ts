@@ -7,11 +7,12 @@ import {
   ImportType,
 } from '../../../core/services/bulk-import.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { AppIcon } from '../app-icon/app-icon';
 
 @Component({
   selector: 'app-excel-import-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, AppIcon],
   templateUrl: './excel-import-panel.html',
   styleUrl: './excel-import-panel.scss',
 })
