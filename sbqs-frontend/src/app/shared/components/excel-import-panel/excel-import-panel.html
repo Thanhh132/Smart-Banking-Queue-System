@@ -1,0 +1,41 @@
+<section class="excel-import" aria-labelledby="excel-import-title">
+  <div class="excel-import__heading">
+    <div>
+      <span class="excel-import__kicker">Excel</span>
+      <h3 id="excel-import-title">{{ title }}</h3>
+    </div>
+    <button class="btn-secondary" type="button" (click)="downloadTemplate()" [disabled]="isDownloading">
+      {{ isDownloading ? 'Đang tải...' : 'Tải file mẫu' }}
+    </button>
+  </div>
+
+  <div class="excel-import__controls">
+    <label class="file-picker">
+      <span>Chọn file .xlsx</span>
+      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="selectFile($event)" />
+    </label>
+    <span class="file-name" [class.file-name--selected]="selectedFile">{{ selectedFileName }}</span>
+    <button class="btn-primary" type="button" (click)="submit()" [disabled]="isImporting || !selectedFile">
+      {{ isImporting ? 'Đang nhập...' : 'Nhập dữ liệu' }}
+    </button>
+  </div>
+
+  <div *ngIf="errorMessage" class="import-message import-message--error">{{ errorMessage }}</div>
+
+  <div *ngIf="result" class="import-result" [class.import-result--warning]="result.failureCount > 0">
+    <strong>{{ result.successCount }}/{{ result.totalRows }} dòng thành công</strong>
+    <span *ngIf="result.failureCount > 0 && result.errors.length > 0">
+      {{ result.failureCount }} dòng lỗi: {{ result.errors[0].message }}
+    </span>
+  </div>
+
+  <div *ngIf="visibleErrors.length > 0" class="import-errors">
+    <div *ngFor="let error of visibleErrors">
+      <strong>Dòng {{ error.row }}</strong>
+      <span>{{ error.identifier || 'Không có mã' }}: {{ error.message }}</span>
+    </div>
+    <p *ngIf="result && result.errors.length > visibleErrors.length">
+      Còn {{ result.errors.length - visibleErrors.length }} lỗi khác trong file.
+    </p>
+  </div>
+</section>

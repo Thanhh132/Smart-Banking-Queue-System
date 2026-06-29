@@ -74,11 +74,11 @@ public class UserService {
 
         private User createBranchUser(CreateStaffRequest request, String role) {
                 if (userRepository.existsByEmail(request.getEmail())) {
-                        throw new RuntimeException("Email da ton tai");
+                        throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
                 if (userRepository.existsByPhone(request.getPhone())) {
-                        throw new RuntimeException("So dien thoai da ton tai");
+                        throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
                 }
 
                 PasswordPolicy.validate(request.getPassword());
@@ -136,11 +136,11 @@ public class UserService {
                 requireUserManagementAccess(user);
 
                 if (userRepository.existsByEmailAndUserIdNot(request.getEmail(), userId)) {
-                        throw new RuntimeException("Email da ton tai");
+                        throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
                 if (userRepository.existsByPhoneAndUserIdNot(request.getPhone(), userId)) {
-                        throw new RuntimeException("So dien thoai da ton tai");
+                        throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
                 }
 
                 user.setFullName(request.getFullName());

@@ -48,11 +48,11 @@ public class AuthService {
                         RegisterRequest request) {
 
                 if (userRepository.existsByEmail(request.getEmail())) {
-                        throw new RuntimeException("Email da ton tai");
+                        throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
                 if (userRepository.existsByPhone(request.getPhone())) {
-                        throw new RuntimeException("So dien thoai da ton tai");
+                        throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
                 }
 
                 PasswordPolicy.validate(request.getPassword());

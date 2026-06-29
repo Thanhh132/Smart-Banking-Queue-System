@@ -34,6 +34,12 @@
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+    <app-excel-import-panel
+      type="services"
+      title="Nhập danh mục dịch vụ"
+      (imported)="loadServices()"
+    />
+
     <section class="service-workspace">
       <app-card>
         <div class="list-toolbar">

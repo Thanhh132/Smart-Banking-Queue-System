@@ -41,6 +41,12 @@
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+    <app-excel-import-panel
+      type="staff"
+      title="Nhập danh sách nhân viên"
+      (imported)="loadUsers()"
+    />
+
     <div class="admin-panel-grid">
       <app-card>
         <div class="card-heading">

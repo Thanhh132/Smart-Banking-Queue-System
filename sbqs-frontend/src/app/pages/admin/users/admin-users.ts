@@ -11,6 +11,7 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 import { AppCard } from '../../../shared/components/app-card/app-card';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { ExcelImportPanel } from '../../../shared/components/excel-import-panel/excel-import-panel';
 import {
   PASSWORD_POLICY_MESSAGE,
   PASSWORD_POLICY_PATTERN,
@@ -19,7 +20,7 @@ import {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DashboardLayout, AppCard],
+  imports: [CommonModule, ReactiveFormsModule, DashboardLayout, AppCard, ExcelImportPanel],
   templateUrl: './admin-users.html',
   styleUrl: './admin-users.scss',
 })
