@@ -7,12 +7,8 @@ import com.sbqs.dto.report.ServiceReportRow;
 import com.sbqs.dto.report.TicketReportRow;
 import com.sbqs.dto.report.UserReportRow;
 import com.sbqs.entity.History;
-import com.sbqs.entity.Services;
-import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
-import com.sbqs.repository.ServiceRepository;
-import com.sbqs.repository.TicketRepository;
-import com.sbqs.repository.UserRepository;
+import com.sbqs.mapper.ReportQueryMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,24 +23,18 @@ public class ReportService {
 
     private final JasperReportService jasperReportService;
     private final CurrentUserService currentUserService;
-    private final UserRepository userRepository;
-    private final ServiceRepository serviceRepository;
-    private final TicketRepository ticketRepository;
+    private final ReportQueryMapper reportQueryMapper;
     private final HistoryService historyService;
 
     public ReportService(
             JasperReportService jasperReportService,
             CurrentUserService currentUserService,
-            UserRepository userRepository,
-            ServiceRepository serviceRepository,
-            TicketRepository ticketRepository,
+            ReportQueryMapper reportQueryMapper,
             HistoryService historyService) {
 
         this.jasperReportService = jasperReportService;
         this.currentUserService = currentUserService;
-        this.userRepository = userRepository;
-        this.serviceRepository = serviceRepository;
-        this.ticketRepository = ticketRepository;
+        this.reportQueryMapper = reportQueryMapper;
         this.historyService = historyService;
     }
 
@@ -52,17 +42,14 @@ public class ReportService {
         User currentUser = currentUserService.requireUser();
         requireAdminReportAccess(currentUser);
 
-        List<User> users = isSuperAdmin(currentUser)
-                ? userRepository.findAll()
-                : userRepository.findByBranch(currentUser.getBranch());
-        List<UserReportRow> rows = users.stream()
-                .sorted(Comparator.comparing(User::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+        List<UserReportRow> rows = reportQueryMapper.findUsersForReport(reportBranchId(currentUser))
+                .stream()
                 .map(user -> new UserReportRow(
                         value(user.getFullName()),
                         value(user.getEmail()),
                         value(user.getPhone()),
                         roleLabel(user.getRole()),
-                        user.getBranch() == null ? "Toàn hệ thống" : value(user.getBranch().getBranchName()),
+                        user.getBranchName() == null ? "Toàn hệ thống" : value(user.getBranchName()),
                         statusLabel(user.getStatus()),
                         formatDate(user.getCreatedAt())))
                 .toList();
@@ -79,17 +66,14 @@ public class ReportService {
         User currentUser = currentUserService.requireUser();
         requireAdminReportAccess(currentUser);
 
-        List<Services> services = isSuperAdmin(currentUser)
-                ? serviceRepository.findAll()
-                : serviceRepository.findByBranch(currentUser.getBranch());
-        List<ServiceReportRow> rows = services.stream()
-                .sorted(Comparator.comparing(Services::getServiceCode))
+        List<ServiceReportRow> rows = reportQueryMapper.findServicesForReport(reportBranchId(currentUser))
+                .stream()
                 .map(service -> new ServiceReportRow(
                         value(service.getServiceCode()),
                         value(service.getServiceName()),
                         value(service.getServiceType()),
                         service.getEstimatedTime(),
-                        value(service.getBranch().getBranchName()),
+                        value(service.getBranchName()),
                         statusLabel(service.getStatus())))
                 .toList();
 
@@ -105,17 +89,14 @@ public class ReportService {
         User currentUser = currentUserService.requireUser();
         requireAdminReportAccess(currentUser);
 
-        List<Ticket> tickets = isSuperAdmin(currentUser)
-                ? ticketRepository.findAll()
-                : ticketRepository.findByBranch(currentUser.getBranch());
-        List<TicketReportRow> rows = tickets.stream()
-                .sorted(Comparator.comparing(Ticket::getCreatedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+        List<TicketReportRow> rows = reportQueryMapper.findTicketsForReport(reportBranchId(currentUser))
+                .stream()
                 .map(ticket -> new TicketReportRow(
                         ticket.getTicketNumber(),
                         value(ticket.getCustomerEmail()),
-                        ticket.getService() == null ? "-" : value(ticket.getService().getServiceName()),
-                        ticket.getQueueMachine() == null ? "-" : value(ticket.getQueueMachine().getMachineName()),
-                        ticket.getBranch() == null ? "-" : value(ticket.getBranch().getBranchName()),
+                        value(ticket.getServiceName()),
+                        value(ticket.getQueueMachineName()),
+                        value(ticket.getBranchName()),
                         ticketStatusLabel(ticket.getStatus()),
                         formatDate(ticket.getCreatedAt())))
                 .toList();
@@ -132,7 +113,9 @@ public class ReportService {
         User currentUser = currentUserService.requireUser();
         List<HistoryReportRow> rows = historyService.findScopedHistory(currentUser)
                 .stream()
-                .sorted(Comparator.comparing(History::getCompletedAt, Comparator.nullsLast(Comparator.reverseOrder())))
+                .sorted(Comparator.comparing(
+                        History::getCompletedAt,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(history -> new HistoryReportRow(
                         history.getTicketNumber(),
                         value(history.getCustomerEmail()),
@@ -173,6 +156,10 @@ public class ReportService {
 
     private boolean isSuperAdmin(User user) {
         return "SUPER_ADMIN".equals(user.getRole());
+    }
+
+    private Long reportBranchId(User user) {
+        return isSuperAdmin(user) ? null : user.getBranch().getBranchId();
     }
 
     private String formatDate(LocalDateTime value) {

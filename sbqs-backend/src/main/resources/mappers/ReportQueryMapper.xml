@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sbqs.mapper.ReportQueryMapper">
+
+    <select id="findUsersForReport" resultType="com.sbqs.dto.report.query.UserReportQueryRow">
+        SELECT u.full_name,
+               u.email,
+               u.phone,
+               u.role,
+               b.branch_name,
+               u.status,
+               u.created_at
+        FROM users u
+        LEFT JOIN branches b ON b.branch_id = u.branch_id
+        <where>
+            <if test="branchId != null">
+                u.branch_id = #{branchId}
+            </if>
+        </where>
+        ORDER BY u.created_at DESC NULLS LAST
+    </select>
+
+    <select id="findServicesForReport" resultType="com.sbqs.dto.report.query.ServiceReportQueryRow">
+        SELECT s.service_code,
+               s.service_name,
+               s.service_type,
+               s.estimated_time,
+               b.branch_name,
+               s.status
+        FROM services s
+        JOIN branches b ON b.branch_id = s.branch_id
+        <where>
+            <if test="branchId != null">
+                s.branch_id = #{branchId}
+            </if>
+        </where>
+        ORDER BY s.service_code
+    </select>
+
+    <select id="findTicketsForReport" resultType="com.sbqs.dto.report.query.TicketReportQueryRow">
+        SELECT t.ticket_number,
+               t.customer_email,
+               s.service_name,
+               qm.machine_name AS queue_machine_name,
+               b.branch_name,
+               t.status,
+               t.created_at
+        FROM tickets t
+        LEFT JOIN services s ON s.service_id = t.service_id
+        LEFT JOIN queue_machines qm ON qm.queue_machine_id = t.queue_machine_id
+        LEFT JOIN branches b ON b.branch_id = t.branch_id
+        <where>
+            <if test="branchId != null">
+                t.branch_id = #{branchId}
+            </if>
+        </where>
+        ORDER BY t.created_at DESC NULLS LAST
+    </select>
+
+</mapper>
