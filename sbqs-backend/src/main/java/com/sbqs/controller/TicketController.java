@@ -1,6 +1,7 @@
 package com.sbqs.controller;
 
 import com.sbqs.entity.Ticket;
+import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.service.TicketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,11 @@ public class TicketController {
     @GetMapping("/current")
     public ResponseEntity<Ticket> getCurrentCustomerTicket() {
         return ResponseEntity.ok(ticketService.getCurrentCustomerTicket());
+    }
+
+    @GetMapping("/{ticketId}/tracking")
+    public ResponseEntity<TicketTrackingResponse> trackCustomerTicket(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.trackCustomerTicket(ticketId));
     }
 
     @PostMapping

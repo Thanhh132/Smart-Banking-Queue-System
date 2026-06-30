@@ -1,0 +1,16 @@
+<aside
+  *ngIf="isCustomer && liveTracking.notice() as notice"
+  class="live-notice"
+  [ngClass]="'live-notice--' + notice.level"
+  aria-live="assertive"
+  role="status"
+>
+  <span class="live-notice__icon"><app-icon name="megaphone" [size]="20" /></span>
+  <div>
+    <strong>{{ notice.title }}</strong>
+    <p>{{ notice.message }}</p>
+  </div>
+  <button type="button" title="Đóng thông báo" aria-label="Đóng thông báo" (click)="liveTracking.dismissNotice()">
+    <app-icon name="x" [size]="18" />
+  </button>
+</aside>

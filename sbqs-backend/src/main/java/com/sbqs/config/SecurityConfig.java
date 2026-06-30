@@ -82,6 +82,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tickets/{ticketId}/cancel").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.POST, "/api/tickets").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/current").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.GET, "/api/tickets/*/tracking").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/status/**")
                         .hasAnyRole("BRANCH_ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.GET, "/api/tickets").hasRole("BRANCH_ADMIN")

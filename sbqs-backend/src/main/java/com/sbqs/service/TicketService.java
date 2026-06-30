@@ -8,12 +8,14 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
+import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.CounterSessionRepository;
 import com.sbqs.repository.HistoryRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
+import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
 import org.springframework.cache.annotation.CacheEvict;
@@ -33,6 +35,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
+    private final QueueMachineRepository queueMachineRepository;
     private final CounterRepository counterRepository;
     private final HistoryRepository historyRepository;
     private final BranchRepository branchRepository;
@@ -45,6 +48,7 @@ public class TicketService {
     public TicketService(
             TicketRepository ticketRepository,
             QueueMachineServiceMappingRepository mappingRepository,
+            QueueMachineRepository queueMachineRepository,
             CounterRepository counterRepository,
             HistoryRepository historyRepository,
             BranchRepository branchRepository,
@@ -56,6 +60,7 @@ public class TicketService {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
+        this.queueMachineRepository = queueMachineRepository;
         this.counterRepository = counterRepository;
         this.historyRepository = historyRepository;
         this.branchRepository = branchRepository;
@@ -114,21 +119,14 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException(
                         "Dich vu nay chua duoc cau hinh cho may boc so cua chi nhanh"));
 
-        QueueMachine queueMachine = mapping.getQueueMachine();
+        QueueMachine queueMachine = queueMachineRepository
+                .findByIdForTicketIssuing(mapping.getQueueMachine().getQueueMachineId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
         ticket.setQueueMachine(queueMachine);
 
-        LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime startOfNextDay = today.plusDays(1).atStartOfDay();
-
-        ticketRepository.lockQueueMachineTicketSequence(queueMachine.getQueueMachineId());
-        Integer lastTicketNumber = ticketRepository
-                .findMaxTicketNumberByQueueMachineAndCreatedAtBetween(
-                        queueMachine.getQueueMachineId(),
-                        startOfDay,
-                        startOfNextDay);
-
-        int nextTicketNumber = lastTicketNumber + 1;
+        int nextTicketNumber = queueMachine.getLastTicketNumber() + 1;
+        queueMachine.setLastTicketNumber(nextTicketNumber);
+        queueMachineRepository.save(queueMachine);
 
         ticket.setTicketNumber(nextTicketNumber);
         ticket.setStatus("WAITING");
@@ -167,9 +165,46 @@ public class TicketService {
                 .orElse(null);
     }
 
+    public TicketTrackingResponse trackCustomerTicket(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu"));
+        String customerEmail = getCurrentEmail();
+
+        if (customerEmail == null
+                || ticket.getCustomerEmail() == null
+                || !ticket.getCustomerEmail().equalsIgnoreCase(customerEmail)) {
+            throw new RuntimeException("Bạn không có quyền theo dõi phiếu này");
+        }
+
+        LocalDate today = LocalDate.now();
+        long peopleAhead = "WAITING".equals(ticket.getStatus())
+                ? ticketRepository.countWaitingAhead(
+                        ticket.getQueueMachine(),
+                        ticket.getTicketNumber(),
+                        today.atStartOfDay(),
+                        today.plusDays(1).atStartOfDay())
+                : 0;
+        String counterName = counterRepository.findFirstByCurrentTicketTicketId(ticketId)
+                .map(Counter::getCounterName)
+                .orElse(null);
+
+        return new TicketTrackingResponse(
+                ticket.getTicketId(),
+                ticket.getTicketNumber(),
+                ticket.getStatus(),
+                peopleAhead,
+                counterName,
+                ticket.getBranch() == null ? null : ticket.getBranch().getBranchName(),
+                ticket.getService() == null ? null : ticket.getService().getServiceName(),
+                ticket.getQueueMachine() == null ? null : ticket.getQueueMachine().getQueueMachineId(),
+                ticket.getQueueMachine() == null ? null : ticket.getQueueMachine().getLocationNote(),
+                ticket.getServingStartedAt());
+    }
+
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    @Transactional
     public Ticket callNextTicket(Long counterId) {
-        Counter counter = counterRepository.findById(counterId)
+        Counter counter = counterRepository.findByIdForUpdate(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
 
         requireCurrentStaffOwnsCounter(counter);
@@ -190,11 +225,8 @@ public class TicketService {
         Ticket nextTicket = ticketRepository
                 .findFirstByQueueMachineAndStatusOrderByTicketNumberAsc(
                         counter.getQueueMachine(),
-                        "WAITING");
-
-        if (nextTicket == null) {
-            throw new RuntimeException("Khong con khach dang cho");
-        }
+                        "WAITING")
+                .orElseThrow(() -> new RuntimeException("Không còn khách đang chờ"));
 
         ticketWorkflowService.approveForServing(nextTicket, counter);
 

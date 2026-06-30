@@ -20,6 +20,18 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("alter table branches add column if not exists ward varchar(255)");
         jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
         jdbcTemplate.execute("alter table tickets alter column service_id drop not null");
+        jdbcTemplate.execute("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
+        jdbcTemplate.execute("""
+                update queue_machines qm
+                set last_ticket_number = greatest(
+                    qm.last_ticket_number,
+                    coalesce((
+                        select max(t.ticket_number)
+                        from tickets t
+                        where t.queue_machine_id = qm.queue_machine_id
+                    ), 0)
+                )
+                """);
         jdbcTemplate.execute("alter table tickets drop constraint if exists tickets_ticket_number_key");
         jdbcTemplate.execute("alter table tickets drop constraint if exists uk_tickets_ticket_number");
         jdbcTemplate.execute("alter table tickets drop constraint if exists unique_ticket_per_machine");

@@ -14,7 +14,7 @@
           <span>Số thứ tự của bạn</span>
           <strong>{{ ticket.ticketNumber }}</strong>
           <p>{{ ticketStatusLabel }}</p>
-          <button *ngIf="ticket.status === 'WAITING'" type="button" class="btn btn-danger" (click)="cancelTicket()" [disabled]="isCancelling">
+          <button *ngIf="effectiveStatus === 'WAITING'" type="button" class="btn btn-danger" (click)="cancelTicket()" [disabled]="isCancelling">
             <app-icon *ngIf="!isCancelling" name="x" [size]="16" />
             {{ isCancelling ? 'Đang hủy...' : 'Hủy phiếu' }}
           </button>
@@ -23,7 +23,8 @@
         <dl class="ticket-details">
           <div><dt>Dịch vụ</dt><dd>{{ serviceName }}</dd></div>
           <div><dt>Chi nhánh</dt><dd>{{ branchName }}</dd></div>
-          <div><dt>Máy bốc số</dt><dd>{{ queueMachineName }}</dd></div>
+          <div *ngIf="queueMachineLocationNote"><dt>Ghi chú vị trí</dt><dd>{{ queueMachineLocationNote }}</dd></div>
+          <div *ngIf="tracking?.counterName"><dt>Quầy phục vụ</dt><dd>{{ tracking?.counterName }}</dd></div>
         </dl>
       </section>
 
@@ -32,6 +33,16 @@
           <span>Khách đang chờ</span>
           <strong>{{ monitor.waitingCount }}</strong>
           <p>Trong hàng đợi của máy này</p>
+        </div>
+        <div class="customer-summary-item">
+          <span>Phiếu chờ trước bạn</span>
+          <strong>{{ tracking?.peopleAhead ?? '-' }}</strong>
+          <p>{{ effectiveStatus === 'WAITING' ? 'Cập nhật trực tiếp mỗi giây' : ticketStatusLabel }}</p>
+        </div>
+        <div class="customer-summary-item">
+          <span>Cập nhật gần nhất</span>
+          <strong class="live-time">{{ liveTracking.lastUpdatedAt() | date:'HH:mm:ss' }}</strong>
+          <p>Kết nối theo dõi đang hoạt động</p>
         </div>
         <div class="customer-summary-item">
           <span>Quầy đang phục vụ</span>

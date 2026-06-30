@@ -42,6 +42,9 @@ public class QueueMachine {
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE";
 
+    @Column(name = "last_ticket_number", nullable = false)
+    private Integer lastTicketNumber = 0;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 }

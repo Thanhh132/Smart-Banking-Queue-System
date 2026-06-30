@@ -55,7 +55,7 @@
           <p>Nhập thông tin để cấp tài khoản cho nhân viên thuộc chi nhánh hiện tại.</p>
         </div>
 
-        <form class="admin-form" [formGroup]="staffForm" (ngSubmit)="createStaff()">
+        <form class="admin-form" [formGroup]="staffForm" (ngSubmit)="createStaff()" autocomplete="off" data-form-type="other">
           <div class="admin-field">
             <label>Họ tên</label>
             <input type="text" formControlName="fullName" placeholder="Ví dụ: Nguyễn Văn A" />
@@ -66,7 +66,7 @@
 
           <div class="admin-field">
             <label>Email</label>
-            <input type="email" formControlName="email" placeholder="Ví dụ: staff01@sbqs.com" />
+            <input type="email" formControlName="email" name="sbqs-staff-identity" placeholder="Ví dụ: staff01@sbqs.com" autocomplete="off" data-1p-ignore data-lpignore="true" />
             <div class="validation-error" *ngIf="isInvalid('email')">
               {{ getErrorMessage('email', 'Email') }}
             </div>
@@ -82,7 +82,7 @@
 
           <div class="admin-field" *ngIf="!isEditMode">
             <label>Mật khẩu</label>
-            <input type="password" formControlName="password" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" />
+            <input type="password" formControlName="password" name="sbqs-staff-secret" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="off" data-1p-ignore data-lpignore="true" />
             <div class="validation-error" *ngIf="isInvalid('password')">
               {{ getErrorMessage('password', 'Mật khẩu') }}
             </div>

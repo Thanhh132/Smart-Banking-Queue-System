@@ -58,11 +58,11 @@
           </div>
           <p>{{ isEditMode ? 'Cập nhật thông tin và phạm vi phụ trách của tài khoản.' : 'Tài khoản được đồng bộ bảo mật với Keycloak.' }}</p>
         </div>
-        <form [formGroup]="adminBranchForm" (ngSubmit)="submitAdminBranch()" class="account-form">
+        <form [formGroup]="adminBranchForm" (ngSubmit)="submitAdminBranch()" class="account-form" autocomplete="off" data-form-type="other">
           <label>Họ và tên<input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" /></label>
-          <label>Email<input type="email" formControlName="email" placeholder="admin.branch@sbqs.com" autocomplete="email" /></label>
+          <label>Email<input type="email" formControlName="email" name="sbqs-branch-admin-identity" placeholder="admin.branch@sbqs.com" autocomplete="off" data-1p-ignore data-lpignore="true" /></label>
           <label>Số điện thoại<input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" /></label>
-          <label *ngIf="!isEditMode">Mật khẩu khởi tạo<input type="password" formControlName="password" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="new-password" /></label>
+          <label *ngIf="!isEditMode">Mật khẩu khởi tạo<input type="password" formControlName="password" name="sbqs-branch-admin-secret" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="off" data-1p-ignore data-lpignore="true" /></label>
           <label *ngIf="isEditMode">
             Trạng thái
             <select formControlName="status">

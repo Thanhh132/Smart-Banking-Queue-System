@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
@@ -16,20 +16,52 @@ import { AppIcon } from '../../../shared/components/app-icon/app-icon';
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private host: ElementRef<HTMLElement> = inject(ElementRef);
 
   isSubmitting = false;
   errorMessage = '';
+  autofillLocked = true;
+  private autofillCleanupTimers: ReturnType<typeof setTimeout>[] = [];
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
+
+  ngAfterViewInit(): void {
+    for (const delay of [0, 250, 750]) {
+      this.autofillCleanupTimers.push(setTimeout(() => this.clearForcedAutofill(), delay));
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.autofillCleanupTimers.forEach((timer) => clearTimeout(timer));
+  }
+
+  unlockAutofill(): void {
+    this.autofillLocked = false;
+  }
+
+  private clearForcedAutofill(): void {
+    if (!this.autofillLocked) {
+      return;
+    }
+
+    this.loginForm.reset({ email: '', password: '' }, { emitEvent: false });
+    const loginInputs = this.host.nativeElement.querySelectorAll(
+      'input[data-sbqs-login-field]'
+    ) as NodeListOf<HTMLInputElement>;
+
+    loginInputs.forEach((input: HTMLInputElement) => {
+        input.value = '';
+    });
+  }
 
   submit(): void {
     this.errorMessage = '';

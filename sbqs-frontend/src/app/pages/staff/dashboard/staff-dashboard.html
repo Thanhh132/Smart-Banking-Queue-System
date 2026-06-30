@@ -9,6 +9,12 @@
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+    <div class="staff-live-status">
+      <span></span>
+      Đang đồng bộ trực tiếp
+      <time>{{ lastUpdatedAt | date:'HH:mm:ss' }}</time>
+    </div>
+
     <div class="staff-summary">
       <div class="summary-item summary-item--primary">
         <span>Ca hiện tại</span>
@@ -92,9 +98,9 @@
         <div *ngIf="!currentTicket" class="next-ticket-panel">
           <strong>-</strong>
           <p>Chưa có phiếu tại quầy.</p>
-          <button type="button" class="btn btn-primary" (click)="callNext()" [disabled]="!selectedCounter">
+          <button type="button" class="btn btn-primary" (click)="callNext()" [disabled]="!selectedCounter || isCallingNext">
             <app-icon name="megaphone" [size]="16" />
-            Gọi khách tiếp theo
+            {{ isCallingNext ? 'Đang gọi số...' : 'Gọi khách tiếp theo' }}
           </button>
         </div>
 
@@ -108,9 +114,9 @@
             <span>Trạng thái</span>
             <strong>{{ currentTicket.status }}</strong>
           </div>
-          <button type="button" class="btn btn-success" (click)="complete()">
+          <button type="button" class="btn btn-success" (click)="complete()" [disabled]="isCompleting">
             <app-icon name="check-circle" [size]="16" />
-            Hoàn thành phục vụ
+            {{ isCompleting ? 'Đang hoàn tất...' : 'Hoàn thành phục vụ' }}
           </button>
         </div>
       </app-card>

@@ -51,17 +51,19 @@ public class TicketWorkflowService {
         runtimeService.startProcessInstanceByKey(
                 PROCESS_KEY,
                 ticket.getTicketId().toString(),
-                Map.of(
-                        "ticketId", ticket.getTicketId(),
-                        "ticketNumber", ticket.getTicketNumber(),
-                        "customerEmail", Objects.toString(ticket.getCustomerEmail(), ""),
-                        "branchId", ticket.getBranch().getBranchId(),
-                        "branchName", ticket.getBranch().getBranchName(),
-                        "serviceId", ticket.getService().getServiceId(),
-                        "serviceName", ticket.getService().getServiceName(),
-                        "queueMachineId", ticket.getQueueMachine().getQueueMachineId(),
-                        "queueMachineName", ticket.getQueueMachine().getMachineName(),
-                        "status", ticket.getStatus()));
+                Map.ofEntries(
+                        Map.entry("ticketId", ticket.getTicketId()),
+                        Map.entry("ticketNumber", ticket.getTicketNumber()),
+                        Map.entry("customerEmail", Objects.toString(ticket.getCustomerEmail(), "")),
+                        Map.entry("branchId", ticket.getBranch().getBranchId()),
+                        Map.entry("branchName", ticket.getBranch().getBranchName()),
+                        Map.entry("serviceId", ticket.getService().getServiceId()),
+                        Map.entry("serviceName", ticket.getService().getServiceName()),
+                        Map.entry("queueMachineId", ticket.getQueueMachine().getQueueMachineId()),
+                        Map.entry("queueMachineName", ticket.getQueueMachine().getMachineName()),
+                        Map.entry("queueMachineLocationNote", Objects.toString(ticket.getQueueMachine().getLocationNote(), "")),
+                        Map.entry("queueMachineInstructionNote", Objects.toString(ticket.getQueueMachine().getInstructionNote(), "")),
+                        Map.entry("status", ticket.getStatus())));
     }
 
     public void approveForServing(Ticket ticket, Counter counter) {
@@ -83,13 +85,16 @@ public class TicketWorkflowService {
 
         taskService.complete(
                 approveTask.getId(),
-                Map.of(
-                        "staffId", staff.getUserId(),
-                        "staffEmail", staffEmail,
-                        "staffName", staff.getFullName(),
-                        "counterId", counter.getCounterId(),
-                        "counterName", counter.getCounterName(),
-                        "status", "SERVING"));
+                Map.ofEntries(
+                        Map.entry("staffId", staff.getUserId()),
+                        Map.entry("staffEmail", staffEmail),
+                        Map.entry("staffName", staff.getFullName()),
+                        Map.entry("counterId", counter.getCounterId()),
+                        Map.entry("counterName", counter.getCounterName()),
+                        Map.entry("queueMachineName", ticket.getQueueMachine().getMachineName()),
+                        Map.entry("queueMachineLocationNote", Objects.toString(ticket.getQueueMachine().getLocationNote(), "")),
+                        Map.entry("queueMachineInstructionNote", Objects.toString(ticket.getQueueMachine().getInstructionNote(), "")),
+                        Map.entry("status", "SERVING")));
     }
 
     public void completeServing(Ticket ticket) {

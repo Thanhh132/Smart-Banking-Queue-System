@@ -6,10 +6,10 @@
       <p>Truy cập hệ thống quản lý hàng đợi ngân hàng.</p>
     </div>
 
-    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="auth-form">
+    <form [formGroup]="loginForm" (ngSubmit)="submit()" class="auth-form" autocomplete="off" data-form-type="other">
       <label>
         Email
-        <input type="email" formControlName="email" placeholder="name@sbqs.com" autocomplete="email" />
+        <input type="email" formControlName="email" name="sbqs-login-identity" placeholder="name@sbqs.com" autocomplete="one-time-code" data-sbqs-login-field data-1p-ignore data-lpignore="true" [readOnly]="autofillLocked" (pointerdown)="unlockAutofill()" (focus)="unlockAutofill()" />
         <small *ngIf="loginForm.controls.email.touched && loginForm.controls.email.invalid">
           Vui lòng nhập email hợp lệ.
         </small>
@@ -17,7 +17,7 @@
 
       <label>
         Mật khẩu
-        <input type="password" formControlName="password" placeholder="Nhập mật khẩu" autocomplete="current-password" />
+        <input type="password" formControlName="password" name="sbqs-login-secret" placeholder="Nhập mật khẩu" autocomplete="one-time-code" data-sbqs-login-field data-1p-ignore data-lpignore="true" [readOnly]="autofillLocked" (pointerdown)="unlockAutofill()" (focus)="unlockAutofill()" />
         <small *ngIf="loginForm.controls.password.touched && loginForm.controls.password.invalid">
           Vui lòng nhập mật khẩu.
         </small>

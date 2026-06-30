@@ -1,6 +1,19 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+export interface TicketTracking {
+  ticketId: number;
+  ticketNumber: number;
+  status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED';
+  peopleAhead: number;
+  counterName: string | null;
+  branchName: string | null;
+  serviceName: string | null;
+  queueMachineId: number | null;
+  queueMachineLocationNote: string | null;
+  servingStartedAt: string | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -37,5 +50,9 @@ export class TicketService {
 
   getCurrentTicket() {
     return this.http.get<any>(`${this.apiUrl}/current`);
+  }
+
+  getTracking(ticketId: number) {
+    return this.http.get<TicketTracking>(`${this.apiUrl}/${ticketId}/tracking`);
   }
 }

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, effect, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
 import { HistoryItem, HistoryService } from '../../../core/services/history.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
+import { CustomerLiveTrackingService } from '../../../core/services/customer-live-tracking.service';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
@@ -28,13 +29,50 @@ export class TicketResult implements OnInit, OnDestroy {
   private ticketService = inject(TicketService);
   private historyService = inject(HistoryService);
   private cdr = inject(ChangeDetectorRef);
+  readonly liveTracking = inject(CustomerLiveTrackingService);
 
   ticket: any = null;
   monitor: QueueMonitor | null = null;
   histories: HistoryItem[] = [];
   errorMessage = '';
   isCancelling = false;
+  private isMonitorLoading = false;
   private intervalId: any;
+  private lastTerminalStatus = '';
+  private trackingEffect = effect(() => {
+    const tracking = this.liveTracking.tracking();
+    if (!tracking) {
+      return;
+    }
+
+    this.ticket = {
+      ...(this.ticket || {}),
+      ticketId: tracking.ticketId,
+      ticketNumber: tracking.ticketNumber,
+      status: tracking.status,
+      counterName: tracking.counterName,
+      servingStartedAt: tracking.servingStartedAt,
+      branchName: tracking.branchName,
+      serviceName: tracking.serviceName,
+      queueMachineLocationNote: tracking.queueMachineLocationNote,
+    };
+
+    if (
+      ['COMPLETED', 'CANCELLED'].includes(tracking.status)
+      && this.lastTerminalStatus !== tracking.status
+    ) {
+      this.lastTerminalStatus = tracking.status;
+      this.loadHistory();
+    }
+  });
+
+  get tracking() {
+    return this.liveTracking.tracking();
+  }
+
+  get effectiveStatus(): string {
+    return this.tracking?.status || this.ticket?.status || '';
+  }
 
   ngOnInit(): void {
     const data = localStorage.getItem('currentTicket');
@@ -46,7 +84,7 @@ export class TicketResult implements OnInit, OnDestroy {
     this.loadCurrentTicket();
     this.loadHistory();
     this.loadMonitor();
-    this.intervalId = setInterval(() => this.loadMonitor(), 2000);
+    this.intervalId = setInterval(() => this.loadMonitor(), 1000);
   }
 
   ngOnDestroy(): void {
@@ -63,8 +101,8 @@ export class TicketResult implements OnInit, OnDestroy {
     return this.ticket?.branch?.branchName || this.ticket?.branchName || this.monitor?.branchName || 'Chưa xác định';
   }
 
-  get queueMachineName(): string {
-    return this.ticket?.queueMachine?.machineName || 'Máy bốc số';
+  get queueMachineLocationNote(): string {
+    return this.ticket?.queueMachine?.locationNote || this.ticket?.queueMachineLocationNote || '';
   }
 
   get ticketStatusLabel(): string {
@@ -74,7 +112,7 @@ export class TicketResult implements OnInit, OnDestroy {
       COMPLETED: 'Đã hoàn thành',
       CANCELLED: 'Đã hủy',
     };
-    return labels[this.ticket?.status] || 'Đang xử lý';
+    return labels[this.effectiveStatus] || 'Đang xử lý';
   }
 
   get servingCounterCount(): number {
@@ -146,6 +184,10 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   private loadMonitor(): void {
+    if (this.isMonitorLoading) {
+      return;
+    }
+
     const branchId = Number(
       this.ticket?.branch?.branchId ||
         this.ticket?.branchId ||
@@ -156,15 +198,20 @@ export class TicketResult implements OnInit, OnDestroy {
       return;
     }
 
-    const queueMachineId = Number(this.ticket?.queueMachine?.queueMachineId);
+    const queueMachineId = Number(
+      this.tracking?.queueMachineId || this.ticket?.queueMachine?.queueMachineId
+    );
 
+    this.isMonitorLoading = true;
     this.monitorService.getMonitor(branchId, queueMachineId || null).subscribe({
       next: (data) => {
         this.monitor = data;
         this.errorMessage = '';
+        this.isMonitorLoading = false;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.isMonitorLoading = false;
         this.errorMessage = 'Không tải được bảng gọi số.';
         this.cdr.detectChanges();
       },

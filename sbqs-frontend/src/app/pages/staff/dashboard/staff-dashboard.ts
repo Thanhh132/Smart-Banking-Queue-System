@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { HistoryItem, HistoryService } from '../../../core/services/history.service';
@@ -26,7 +27,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   templateUrl: './staff-dashboard.html',
   styleUrl: './staff-dashboard.scss',
 })
-export class StaffDashboard implements OnInit {
+export class StaffDashboard implements OnInit, OnDestroy {
   private staffService = inject(StaffService);
   private historyService = inject(HistoryService);
   private apiError = inject(ApiErrorService);
@@ -40,9 +41,21 @@ export class StaffDashboard implements OnInit {
   histories: HistoryItem[] = [];
   errorMessage = '';
   successMessage = '';
+  isCallingNext = false;
+  isCompleting = false;
+  isLiveRefreshing = false;
+  lastUpdatedAt: Date | null = null;
+  private liveIntervalId: any;
 
   ngOnInit(): void {
     this.loadDashboard();
+    this.liveIntervalId = setInterval(() => this.refreshLiveState(), 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.liveIntervalId) {
+      clearInterval(this.liveIntervalId);
+    }
   }
 
   get availableCounters(): any[] {
@@ -167,6 +180,9 @@ export class StaffDashboard implements OnInit {
   }
 
   callNext(): void {
+    if (this.isCallingNext || this.currentTicket) {
+      return;
+    }
     this.errorMessage = '';
 
     if (!this.selectedCounter?.counterId) {
@@ -175,10 +191,17 @@ export class StaffDashboard implements OnInit {
       return;
     }
 
-    this.staffService.callNext(this.selectedCounter.counterId).subscribe({
+    this.isCallingNext = true;
+    this.staffService.callNext(this.selectedCounter.counterId)
+      .pipe(finalize(() => {
+        this.isCallingNext = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
       next: (ticket: any) => {
         this.currentTicket = ticket;
-        this.loadDashboard();
+        this.successMessage = `Đã gọi phiếu #${ticket.ticketNumber}.`;
+        this.refreshLiveState();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(err, 'Không gọi được khách tiếp theo.');
@@ -188,13 +211,19 @@ export class StaffDashboard implements OnInit {
   }
 
   complete(): void {
-    if (!this.currentTicket) {
+    if (!this.currentTicket || this.isCompleting) {
       return;
     }
 
     this.errorMessage = '';
 
-    this.staffService.complete(this.currentTicket.ticketId).subscribe({
+    this.isCompleting = true;
+    this.staffService.complete(this.currentTicket.ticketId)
+      .pipe(finalize(() => {
+        this.isCompleting = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
       next: () => {
         this.currentTicket = null;
         this.loadDashboard();
@@ -203,6 +232,26 @@ export class StaffDashboard implements OnInit {
         this.errorMessage = this.apiError.getMessage(err, 'Không hoàn thành được phiếu.');
         this.cdr.detectChanges();
       },
+    });
+  }
+
+  private refreshLiveState(): void {
+    if (this.isLiveRefreshing || this.isCallingNext || this.isCompleting) {
+      return;
+    }
+
+    this.isLiveRefreshing = true;
+    forkJoin({
+      counter: this.staffService.getAssignedCounter().pipe(catchError(() => of(null))),
+      tasks: this.staffService.getPendingApprovalTasks().pipe(catchError(() => of([]))),
+    }).pipe(finalize(() => {
+      this.isLiveRefreshing = false;
+      this.cdr.detectChanges();
+    })).subscribe(({ counter, tasks }) => {
+      this.selectedCounter = counter || null;
+      this.currentTicket = counter?.currentTicket || null;
+      this.pendingApprovalTasks = tasks || [];
+      this.lastUpdatedAt = new Date();
     });
   }
 

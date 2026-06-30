@@ -7,7 +7,7 @@
                   id="Definitions_TicketApproval"
                   targetNamespace="http://sbqs.com/workflow/ticket">
   <bpmn:process id="ticketApprovalProcess"
-                name="SBQS Ticket Approval Flow"
+                name="Quy trình duyệt phiếu SBQS"
                 isExecutable="true"
                 camunda:historyTimeToLive="180">
     <bpmn:startEvent id="StartEvent_TicketCreated" name="Khách tạo phiếu">
@@ -15,11 +15,18 @@
     </bpmn:startEvent>
 
     <bpmn:userTask id="Task_ApproveTicket"
-                   name="Duyệt phiếu chờ"
+                   name="Nhân viên duyệt phiếu"
                    camunda:candidateGroups="STAFF">
       <bpmn:incoming>Flow_ToApprove</bpmn:incoming>
-      <bpmn:outgoing>Flow_ToServe</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToNotify</bpmn:outgoing>
     </bpmn:userTask>
+
+    <bpmn:serviceTask id="Task_SendCalledEmail"
+                      name="Gửi email thông báo gọi số"
+                      camunda:delegateExpression="${ticketNotificationDelegate}">
+      <bpmn:incoming>Flow_ToNotify</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToServe</bpmn:outgoing>
+    </bpmn:serviceTask>
 
     <bpmn:userTask id="Task_ServeTicket"
                    name="Phục vụ khách hàng"
@@ -33,35 +40,43 @@
     </bpmn:endEvent>
 
     <bpmn:sequenceFlow id="Flow_ToApprove" sourceRef="StartEvent_TicketCreated" targetRef="Task_ApproveTicket" />
-    <bpmn:sequenceFlow id="Flow_ToServe" sourceRef="Task_ApproveTicket" targetRef="Task_ServeTicket" />
+    <bpmn:sequenceFlow id="Flow_ToNotify" sourceRef="Task_ApproveTicket" targetRef="Task_SendCalledEmail" />
+    <bpmn:sequenceFlow id="Flow_ToServe" sourceRef="Task_SendCalledEmail" targetRef="Task_ServeTicket" />
     <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="Task_ServeTicket" targetRef="EndEvent_TicketCompleted" />
   </bpmn:process>
 
   <bpmndi:BPMNDiagram id="BPMNDiagram_TicketApproval">
     <bpmndi:BPMNPlane id="BPMNPlane_TicketApproval" bpmnElement="ticketApprovalProcess">
       <bpmndi:BPMNShape id="StartEvent_TicketCreated_di" bpmnElement="StartEvent_TicketCreated">
-        <dc:Bounds x="160" y="100" width="36" height="36" />
+        <dc:Bounds x="120" y="100" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ApproveTicket_di" bpmnElement="Task_ApproveTicket">
-        <dc:Bounds x="260" y="78" width="150" height="80" />
+        <dc:Bounds x="220" y="78" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_SendCalledEmail_di" bpmnElement="Task_SendCalledEmail">
+        <dc:Bounds x="440" y="78" width="170" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Task_ServeTicket_di" bpmnElement="Task_ServeTicket">
-        <dc:Bounds x="480" y="78" width="150" height="80" />
+        <dc:Bounds x="680" y="78" width="150" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_TicketCompleted_di" bpmnElement="EndEvent_TicketCompleted">
-        <dc:Bounds x="700" y="100" width="36" height="36" />
+        <dc:Bounds x="900" y="100" width="36" height="36" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_ToApprove_di" bpmnElement="Flow_ToApprove">
-        <di:waypoint x="196" y="118" />
-        <di:waypoint x="260" y="118" />
+        <di:waypoint x="156" y="118" />
+        <di:waypoint x="220" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToNotify_di" bpmnElement="Flow_ToNotify">
+        <di:waypoint x="370" y="118" />
+        <di:waypoint x="440" y="118" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_ToServe_di" bpmnElement="Flow_ToServe">
-        <di:waypoint x="410" y="118" />
-        <di:waypoint x="480" y="118" />
+        <di:waypoint x="610" y="118" />
+        <di:waypoint x="680" y="118" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
-        <di:waypoint x="630" y="118" />
-        <di:waypoint x="700" y="118" />
+        <di:waypoint x="830" y="118" />
+        <di:waypoint x="900" y="118" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
