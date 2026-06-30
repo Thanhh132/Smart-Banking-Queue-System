@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs';
+import { Observable, catchError, of, tap } from 'rxjs';
 
 export interface LoginResponse {
   accessToken: string;
@@ -60,8 +60,17 @@ export class AuthService {
     });
   }
 
-  logout(): void {
+  logout(): Observable<void> {
+    const refreshToken = localStorage.getItem('refreshToken');
     this.clearSession();
+
+    if (!refreshToken) {
+      return of(void 0);
+    }
+
+    return this.http.post<void>(`${this.apiUrl}/logout`, { refreshToken }).pipe(
+      catchError(() => of(void 0))
+    );
   }
 
   getAccessToken(): string {

@@ -51,7 +51,7 @@ export class AppSidebar {
   }
 
   logout(): void {
-    this.authService.logout();
+    this.authService.logout().subscribe();
     this.router.navigateByUrl('/login');
   }
 }

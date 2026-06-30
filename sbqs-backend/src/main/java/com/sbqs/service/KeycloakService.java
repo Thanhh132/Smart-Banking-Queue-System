@@ -73,6 +73,23 @@ public class KeycloakService {
         return postFormForMap(tokenUrl(), body);
     }
 
+    public void logout(String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new RuntimeException("Refresh token khong hop le");
+        }
+
+        MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("client_id", keycloakProperties.getClientId());
+        body.add("refresh_token", refreshToken);
+
+        if (keycloakProperties.getClientSecret() != null
+                && !keycloakProperties.getClientSecret().isBlank()) {
+            body.add("client_secret", keycloakProperties.getClientSecret());
+        }
+
+        postFormForVoid(logoutUrl(), body);
+    }
+
     public String createUser(
             String fullName,
             String email,
@@ -448,11 +465,36 @@ public class KeycloakService {
         }
     }
 
+    private void postFormForVoid(
+            String url,
+            MultiValueMap<String, String> body) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
+
+        try {
+            restTemplate.postForEntity(url, request, Void.class);
+        } catch (HttpClientErrorException ex) {
+            throw new RuntimeException("Keycloak tu choi logout: " + ex.getResponseBodyAsString());
+        } catch (ResourceAccessException ex) {
+            log.warn("Cannot connect to Keycloak logout endpoint url={}", url, ex);
+            throw new RuntimeException("Khong ket noi duoc Keycloak de dang xuat");
+        }
+    }
+
     private String tokenUrl() {
         return keycloakProperties.getServerUrl()
                 + "/realms/"
                 + keycloakProperties.getRealm()
                 + "/protocol/openid-connect/token";
+    }
+
+    private String logoutUrl() {
+        return keycloakProperties.getServerUrl()
+                + "/realms/"
+                + keycloakProperties.getRealm()
+                + "/protocol/openid-connect/logout";
     }
 
     private String masterTokenUrl() {

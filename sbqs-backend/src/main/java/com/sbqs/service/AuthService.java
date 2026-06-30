@@ -117,6 +117,10 @@ public class AuthService {
                 return buildLoginResponse(token, null);
         }
 
+        public void logout(String refreshToken) {
+                keycloakService.logout(refreshToken);
+        }
+
         private LoginResponse buildLoginResponse(
                         Map<String, Object> token,
                         String fallbackEmail) {

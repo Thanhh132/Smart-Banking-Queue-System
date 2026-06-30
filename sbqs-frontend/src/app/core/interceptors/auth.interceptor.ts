@@ -30,7 +30,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       return authService.refresh().pipe(
         switchMap(() => next(addAuthHeader(request, authService.getAccessToken()))),
         catchError((refreshError) => {
-          authService.logout();
+          authService.logout().subscribe();
           router.navigateByUrl('/login');
           return throwError(() => refreshError);
         })
