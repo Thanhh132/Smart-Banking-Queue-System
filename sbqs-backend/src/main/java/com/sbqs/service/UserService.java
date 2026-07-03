@@ -11,9 +11,11 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class UserService {
@@ -22,17 +24,20 @@ public class UserService {
         private final BranchRepository branchRepository;
         private final KeycloakService keycloakService;
         private final CurrentUserService currentUserService;
+        private final PasswordEncoder passwordEncoder;
 
         public UserService(
                         UserRepository userRepository,
                         BranchRepository branchRepository,
                         KeycloakService keycloakService,
-                        CurrentUserService currentUserService) {
+                        CurrentUserService currentUserService,
+                        PasswordEncoder passwordEncoder) {
 
                 this.userRepository = userRepository;
                 this.branchRepository = branchRepository;
                 this.keycloakService = keycloakService;
                 this.currentUserService = currentUserService;
+                this.passwordEncoder = passwordEncoder;
         }
 
         public List<User> getUsersByBranch(Long branchId) {
@@ -73,7 +78,8 @@ public class UserService {
         }
 
         private User createBranchUser(CreateStaffRequest request, String role) {
-                if (userRepository.existsByEmail(request.getEmail())) {
+                String email = normalizeEmail(request.getEmail());
+                if (userRepository.existsByEmailIgnoreCase(email)) {
                         throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
@@ -88,19 +94,19 @@ public class UserService {
 
                 String keycloakUserId = keycloakService.createUser(
                                 request.getFullName(),
-                                request.getEmail(),
+                                email,
                                 request.getPassword(),
                                 role);
 
                 User user = new User();
 
                 user.setFullName(request.getFullName());
-                user.setEmail(request.getEmail());
+                user.setEmail(email);
                 user.setPhone(request.getPhone());
                 user.setRole(role);
                 user.setStatus("ACTIVE");
                 user.setBranch(branch);
-                user.setPasswordHash("KEYCLOAK_MANAGED");
+                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
                 user.setKeycloakUserId(keycloakUserId);
 
                 return userRepository.save(user);
@@ -118,7 +124,7 @@ public class UserService {
                         email = jwt.getClaimAsString("preferred_username");
                 }
 
-                User currentUser = userRepository.findByEmail(email)
+                User currentUser = userRepository.findByEmailIgnoreCase(email)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay tai khoan admin chi nhanh"));
 
                 if (currentUser.getBranch() == null) {
@@ -128,6 +134,7 @@ public class UserService {
                 return currentUser.getBranch().getBranchId();
         }
 
+        @Transactional
         public User updateUser(Long userId, UpdateUserRequest request) {
 
                 User user = userRepository.findById(userId)
@@ -135,7 +142,8 @@ public class UserService {
 
                 requireUserManagementAccess(user);
 
-                if (userRepository.existsByEmailAndUserIdNot(request.getEmail(), userId)) {
+                String email = normalizeEmail(request.getEmail());
+                if (userRepository.existsByEmailIgnoreCaseAndUserIdNot(email, userId)) {
                         throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
@@ -144,11 +152,11 @@ public class UserService {
                 }
 
                 user.setFullName(request.getFullName());
-                user.setEmail(request.getEmail());
+                user.setEmail(email);
                 user.setPhone(request.getPhone());
 
                 if (request.getStatus() != null && !request.getStatus().isBlank()) {
-                        user.setStatus(request.getStatus());
+                        user.setStatus(request.getStatus().toUpperCase(Locale.ROOT));
                 }
 
                 if (request.getBranchId() != null) {
@@ -182,12 +190,8 @@ public class UserService {
 
                 requireUserManagementAccess(user);
 
-                if ("INACTIVE".equalsIgnoreCase(user.getStatus())) {
-                        keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
-                        userRepository.delete(user);
-                        return;
-                }
-
+                // Banking identities are never hard-deleted: history and audit references
+                // must remain intact. Repeated delete requests are therefore idempotent.
                 user.setStatus("INACTIVE");
                 userRepository.save(user);
                 keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
@@ -218,5 +222,9 @@ public class UserService {
                                                 .equals(targetUser.getBranch().getBranchId())) {
                         throw new RuntimeException("Ban khong co quyen quan ly tai khoan nay");
                 }
+        }
+
+        private String normalizeEmail(String email) {
+                return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
         }
 }

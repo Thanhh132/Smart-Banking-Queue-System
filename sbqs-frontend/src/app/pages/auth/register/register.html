@@ -6,25 +6,57 @@
       <p>Tạo tài khoản để đặt lịch và lấy số tại chi nhánh ngân hàng.</p>
     </div>
 
-    <form [formGroup]="registerForm" (ngSubmit)="submit()" class="auth-form" autocomplete="off" data-form-type="other">
+    <form
+      [formGroup]="registerForm"
+      (ngSubmit)="submit()"
+      class="auth-form"
+      autocomplete="off"
+      data-form-type="other"
+    >
       <label>
         Họ và tên
-        <input type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="name" />
+        <input
+          appPreventAutofill
+          type="text"
+          formControlName="fullName"
+          placeholder="Nguyễn Văn A"
+          autocomplete="off"
+        />
       </label>
 
       <label>
         Email
-        <input type="email" formControlName="email" name="sbqs-register-identity" placeholder="customer@email.com" autocomplete="off" data-1p-ignore data-lpignore="true" />
+        <input
+          appPreventAutofill
+          type="email"
+          formControlName="email"
+          name="sbqs-register-identity"
+          placeholder="customer@email.com"
+          autocomplete="off"
+        />
       </label>
 
       <label>
         Số điện thoại
-        <input type="tel" formControlName="phone" placeholder="0900000000" autocomplete="tel" />
+        <input
+          appPreventAutofill
+          type="tel"
+          formControlName="phone"
+          placeholder="0900000000"
+          autocomplete="off"
+        />
       </label>
 
       <label>
         Mật khẩu
-        <input type="password" formControlName="password" name="sbqs-register-secret" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="off" data-1p-ignore data-lpignore="true" />
+        <input
+          appPreventAutofill
+          type="password"
+          formControlName="password"
+          name="sbqs-register-secret"
+          placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
+          autocomplete="new-password"
+        />
       </label>
 
       <div *ngIf="errorMessage" class="auth-error">

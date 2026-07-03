@@ -5,6 +5,7 @@ import com.sbqs.entity.User;
 import com.sbqs.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import com.sbqs.dto.UpdateUserRequest;
 
 import java.util.List;
@@ -43,7 +44,7 @@ public class UserController {
 
     @PostMapping("/staff")
     public ResponseEntity<User> createStaff(
-            @RequestBody CreateStaffRequest request) {
+            @Valid @RequestBody CreateStaffRequest request) {
 
         return ResponseEntity.ok(
                 userService.createStaff(request));
@@ -51,7 +52,7 @@ public class UserController {
 
     @PostMapping("/admin-branch")
     public ResponseEntity<User> createAdminBranch(
-            @RequestBody CreateStaffRequest request) {
+            @Valid @RequestBody CreateStaffRequest request) {
 
         return ResponseEntity.ok(
                 userService.createAdminBranch(request));
@@ -60,7 +61,7 @@ public class UserController {
     @PutMapping("/{userId}")
     public ResponseEntity<User> updateUser(
             @PathVariable Long userId,
-            @RequestBody UpdateUserRequest request) {
+            @Valid @RequestBody UpdateUserRequest request) {
 
         return ResponseEntity.ok(
                 userService.updateUser(userId, request));

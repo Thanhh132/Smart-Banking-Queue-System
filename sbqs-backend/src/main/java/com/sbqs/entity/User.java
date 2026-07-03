@@ -1,5 +1,6 @@
 package com.sbqs.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,8 +24,10 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @JsonIgnore
     private String passwordHash;
 
+    @JsonIgnore
     @Column(name = "keycloak_user_id")
     private String keycloakUserId;
 

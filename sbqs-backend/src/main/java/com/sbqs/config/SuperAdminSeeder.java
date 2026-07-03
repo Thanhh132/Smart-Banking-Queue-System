@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Component
 public class SuperAdminSeeder implements ApplicationRunner {
@@ -16,15 +17,18 @@ public class SuperAdminSeeder implements ApplicationRunner {
     private final SuperAdminSeedProperties properties;
     private final UserRepository userRepository;
     private final KeycloakService keycloakService;
+    private final PasswordEncoder passwordEncoder;
 
     public SuperAdminSeeder(
             SuperAdminSeedProperties properties,
             UserRepository userRepository,
-            KeycloakService keycloakService) {
+            KeycloakService keycloakService,
+            PasswordEncoder passwordEncoder) {
 
         this.properties = properties;
         this.userRepository = userRepository;
         this.keycloakService = keycloakService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -55,7 +59,7 @@ public class SuperAdminSeeder implements ApplicationRunner {
         user.setPhone(properties.getPhone());
         user.setRole("SUPER_ADMIN");
         user.setStatus("ACTIVE");
-        user.setPasswordHash("KEYCLOAK_MANAGED");
+        user.setPasswordHash(passwordEncoder.encode(properties.getPassword()));
         user.setKeycloakUserId(keycloakUserId);
         userRepository.save(user);
 

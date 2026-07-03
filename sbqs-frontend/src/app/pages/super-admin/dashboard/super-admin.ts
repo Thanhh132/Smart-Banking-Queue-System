@@ -11,11 +11,21 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
+import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
 @Component({
   selector: 'app-super-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterLink, DashboardLayout, ReportExportButtons, AppIcon],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    DashboardLayout,
+    ReportExportButtons,
+    AppIcon,
+    PreventAutofillDirective,
+  ],
   templateUrl: './super-admin.html',
   styleUrl: './super-admin.scss',
 })
@@ -45,7 +55,7 @@ export class SuperAdmin implements OnInit {
     return this.adminBranches.filter((admin) =>
       [admin.fullName, admin.email, admin.phone, admin.branch?.branchName]
         .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword))
+        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword)),
     );
   }
 
@@ -95,7 +105,7 @@ export class SuperAdmin implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Không tải được danh sách quản trị chi nhánh.'
+          'Không tải được danh sách quản trị chi nhánh.',
         );
         this.isListLoading = false;
         this.cdr.detectChanges();
@@ -143,7 +153,7 @@ export class SuperAdmin implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Tạo tài khoản quản trị chi nhánh thất bại.'
+          'Tạo tài khoản quản trị chi nhánh thất bại.',
         );
         this.isSubmitting = false;
         this.cdr.detectChanges();
@@ -206,7 +216,7 @@ export class SuperAdmin implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Cập nhật tài khoản quản trị chi nhánh thất bại.'
+          'Cập nhật tài khoản quản trị chi nhánh thất bại.',
         );
         this.isSubmitting = false;
         this.cdr.detectChanges();
@@ -225,7 +235,10 @@ export class SuperAdmin implements OnInit {
     this.editingAdminId = null;
 
     const passwordControl = this.adminBranchForm.get('password');
-    passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+    passwordControl?.setValidators([
+      Validators.required,
+      Validators.pattern(PASSWORD_POLICY_PATTERN),
+    ]);
     passwordControl?.updateValueAndValidity();
 
     this.adminBranchForm.reset({
@@ -261,7 +274,7 @@ export class SuperAdmin implements OnInit {
           err,
           isInactive
             ? 'Không xóa được tài khoản quản trị chi nhánh.'
-            : 'Không khóa được tài khoản quản trị chi nhánh.'
+            : 'Không khóa được tài khoản quản trị chi nhánh.',
         );
         this.cdr.detectChanges();
       },

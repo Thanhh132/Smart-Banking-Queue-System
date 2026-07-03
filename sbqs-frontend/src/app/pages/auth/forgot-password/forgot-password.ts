@@ -6,11 +6,12 @@ import { timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
 @Component({
   selector: 'app-forgot-password',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon, PreventAutofillDirective],
   templateUrl: './forgot-password.html',
   styleUrl: './forgot-password.scss',
 })
@@ -40,8 +41,7 @@ export class ForgotPassword {
     const remainingMs = this.getRemainingCooldown(email);
 
     if (remainingMs > 0) {
-      this.noticeMessage =
-        `Bạn vừa yêu cầu đặt lại mật khẩu cho email này. Vui lòng kiểm tra hộp thư hoặc thử lại sau ${this.formatRemainingTime(remainingMs)}.`;
+      this.noticeMessage = `Bạn vừa yêu cầu đặt lại mật khẩu cho email này. Vui lòng kiểm tra hộp thư hoặc thử lại sau ${this.formatRemainingTime(remainingMs)}.`;
       this.cdr.detectChanges();
       return;
     }
@@ -51,7 +51,8 @@ export class ForgotPassword {
     this.isSubmitted = true;
     this.cdr.detectChanges();
 
-    this.authService.forgotPassword(email)
+    this.authService
+      .forgotPassword(email)
       .pipe(timeout(15000))
       .subscribe({
         next: () => {},

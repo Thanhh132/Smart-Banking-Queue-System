@@ -26,7 +26,7 @@ public class CurrentUserService {
             email = jwt.getClaimAsString("preferred_username");
         }
 
-        return userRepository.findByEmail(email)
+        return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay tai khoan dang dang nhap"));
     }
 

@@ -24,7 +24,11 @@ public interface UserRepository
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailIgnoreCase(String email);
+
     boolean existsByEmailAndUserIdNot(String email, Long userId);
+
+    boolean existsByEmailIgnoreCaseAndUserIdNot(String email, Long userId);
 
     boolean existsByPhoneAndUserIdNot(String phone, Long userId);
 }

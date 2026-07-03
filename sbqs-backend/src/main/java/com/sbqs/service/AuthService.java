@@ -7,7 +7,10 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbqs.entity.User;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.config.FallbackAuthProperties;
+import com.sbqs.exception.KeycloakUnavailableException;
 import com.sbqs.util.PasswordPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Locale;
 
 @Service
 public class AuthService {
@@ -31,23 +35,33 @@ public class AuthService {
         private final KeycloakService keycloakService;
         private final ObjectMapper objectMapper;
         private final PasswordResetService passwordResetService;
+        private final PasswordEncoder passwordEncoder;
+        private final FallbackTokenService fallbackTokenService;
+        private final FallbackAuthProperties fallbackProperties;
 
         public AuthService(
                         UserRepository userRepository,
                         KeycloakService keycloakService,
                         ObjectMapper objectMapper,
-                        PasswordResetService passwordResetService) {
+                        PasswordResetService passwordResetService,
+                        PasswordEncoder passwordEncoder,
+                        FallbackTokenService fallbackTokenService,
+                        FallbackAuthProperties fallbackProperties) {
 
                 this.userRepository = userRepository;
                 this.keycloakService = keycloakService;
                 this.objectMapper = objectMapper;
                 this.passwordResetService = passwordResetService;
+                this.passwordEncoder = passwordEncoder;
+                this.fallbackTokenService = fallbackTokenService;
+                this.fallbackProperties = fallbackProperties;
         }
 
         public User register(
                         RegisterRequest request) {
 
-                if (userRepository.existsByEmail(request.getEmail())) {
+                String email = normalizeEmail(request.getEmail());
+                if (userRepository.existsByEmailIgnoreCase(email)) {
                         throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
                 }
 
@@ -59,17 +73,17 @@ public class AuthService {
 
                 String keycloakUserId = keycloakService.createUser(
                                 request.getFullName(),
-                                request.getEmail(),
+                                email,
                                 request.getPassword(),
                                 "CUSTOMER");
 
                 User user = new User();
 
                 user.setFullName(request.getFullName());
-                user.setEmail(request.getEmail());
+                user.setEmail(email);
                 user.setPhone(request.getPhone());
                 user.setRole("CUSTOMER");
-                user.setPasswordHash("KEYCLOAK_MANAGED");
+                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
                 user.setKeycloakUserId(keycloakUserId);
 
                 return userRepository.save(user);
@@ -78,23 +92,26 @@ public class AuthService {
         public LoginResponse login(
                         LoginRequest request) {
 
-                log.info("Requesting Keycloak token for email={}", request.getEmail());
+                String email = normalizeEmail(request.getEmail());
+                log.info("Requesting Keycloak token for email={}", email);
 
                 Map<String, Object> token;
 
                 try {
                         token = keycloakService.login(
-                                        request.getEmail(),
+                                        email,
                                         request.getPassword());
+                } catch (KeycloakUnavailableException ex) {
+                        return fallbackLogin(email, request.getPassword(), ex);
                 } catch (RuntimeException ex) {
                         Optional<User> existingUser =
-                                        userRepository.findByEmail(request.getEmail());
+                                        userRepository.findByEmailIgnoreCase(email);
 
                         if (isAccountNotFullySetUp(ex)
                                         && existingUser.isPresent()
                                         && existingUser.get().getKeycloakUserId() != null) {
                                 User user = existingUser.get();
-                                log.info("Clearing Keycloak required actions for email={}", request.getEmail());
+                                log.info("Clearing Keycloak required actions for email={}", email);
                                 keycloakService.repairUserPasswordLogin(
                                                 user.getKeycloakUserId(),
                                                 user.getFullName(),
@@ -102,14 +119,53 @@ public class AuthService {
                                                 request.getPassword(),
                                                 user.getRole());
                                 token = keycloakService.login(
-                                                request.getEmail(),
+                                                email,
                                                 request.getPassword());
                         } else {
                                 throw ex;
                         }
                 }
 
-                return buildLoginResponse(token, request.getEmail());
+                LoginResponse response = buildLoginResponse(token, email);
+                userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
+                        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+                        userRepository.save(user);
+                });
+                return response;
+        }
+
+        private LoginResponse fallbackLogin(String email, String password, KeycloakUnavailableException cause) {
+                if (!fallbackProperties.isEnabled()) {
+                        throw cause;
+                }
+
+                User user = userRepository.findByEmailIgnoreCase(email)
+                                .orElseThrow(() -> new RuntimeException("Email hoac mat khau khong dung"));
+
+                if (!"ACTIVE".equalsIgnoreCase(user.getStatus())
+                                || user.getPasswordHash() == null
+                                || "KEYCLOAK_MANAGED".equals(user.getPasswordHash())
+                                || !passwordEncoder.matches(password, user.getPasswordHash())) {
+                        log.warn("Fallback authentication rejected for email={}", email);
+                        throw new RuntimeException("Email hoac mat khau khong dung");
+                }
+
+                if (!fallbackProperties.getAllowedRoles().contains(user.getRole())) {
+                        log.warn("Fallback authentication denied by role policy email={} role={}", user.getEmail(), user.getRole());
+                        throw new RuntimeException("Dich vu dang nhap dang gian doan. Tai khoan nay khong duoc phep dang nhap du phong");
+                }
+
+                log.warn("KEYCLOAK_UNAVAILABLE: issuing short-lived fallback token email={} role={} expiresIn={}s",
+                                user.getEmail(), user.getRole(), fallbackTokenService.expiresInSeconds());
+                return new LoginResponse(
+                                fallbackTokenService.issue(user),
+                                null,
+                                "Bearer",
+                                fallbackTokenService.expiresInSeconds(),
+                                user.getRole(),
+                                user.getFullName(),
+                                user.getEmail(),
+                                user.getBranch() == null ? null : user.getBranch().getBranchId());
         }
 
         public LoginResponse refresh(String refreshToken) {
@@ -137,7 +193,7 @@ public class AuthService {
                         throw new RuntimeException("Tai khoan Keycloak chua duoc gan role SBQS");
                 }
 
-                User user = userRepository.findByEmail(tokenEmail)
+                User user = userRepository.findByEmailIgnoreCase(tokenEmail)
                                 .orElseGet(() -> createLocalUserFromToken(
                                                 tokenPayload,
                                                 tokenEmail,
@@ -259,6 +315,10 @@ public class AuthService {
                 }
 
                 return second;
+        }
+
+        private String normalizeEmail(String email) {
+                return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
         }
 
         private Map<String, Object> decodeTokenPayload(String accessToken) {

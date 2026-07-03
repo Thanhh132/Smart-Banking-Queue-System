@@ -8,11 +8,12 @@ import { AuthService } from '../../../core/services/auth.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon, PreventAutofillDirective],
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })
@@ -51,23 +52,26 @@ export class Register {
 
     this.isSubmitting = true;
 
-    this.authService.register(payload).pipe(
-      timeout(15000),
-      finalize(() => {
-        this.isSubmitting = false;
-        this.cdr.detectChanges();
-      })
-    ).subscribe({
-      next: () => {
-        this.router.navigateByUrl('/login');
-      },
-      error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.'
-        );
-        this.cdr.detectChanges();
-      },
-    });
+    this.authService
+      .register(payload)
+      .pipe(
+        timeout(15000),
+        finalize(() => {
+          this.isSubmitting = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.router.navigateByUrl('/login');
+        },
+        error: (err) => {
+          this.errorMessage = this.apiError.getMessage(
+            err,
+            'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.',
+          );
+          this.cdr.detectChanges();
+        },
+      });
   }
 }

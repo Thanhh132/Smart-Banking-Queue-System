@@ -4,7 +4,7 @@ import { Observable, catchError, of, tap } from 'rxjs';
 
 export interface LoginResponse {
   accessToken: string;
-  refreshToken: string;
+  refreshToken: string | null;
   tokenType: string;
   expiresIn: number;
   role: string;
@@ -85,7 +85,11 @@ export class AuthService {
     }
 
     localStorage.setItem('accessToken', response.accessToken);
-    localStorage.setItem('refreshToken', response.refreshToken);
+    if (response.refreshToken) {
+      localStorage.setItem('refreshToken', response.refreshToken);
+    } else {
+      localStorage.removeItem('refreshToken');
+    }
     localStorage.setItem('userRole', response.role);
     localStorage.setItem('fullName', response.fullName);
     localStorage.setItem('email', response.email);

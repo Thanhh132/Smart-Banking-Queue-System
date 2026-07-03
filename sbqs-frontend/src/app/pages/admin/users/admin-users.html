@@ -4,7 +4,10 @@
       <div>
         <p class="page-kicker">Admin chi nhánh</p>
         <h2>Quản lý nhân viên</h2>
-        <p>Tạo tài khoản nhân viên, quản lý thông tin liên hệ và theo dõi danh sách người dùng của chi nhánh.</p>
+        <p>
+          Tạo tài khoản nhân viên, quản lý thông tin liên hệ và theo dõi danh sách người dùng của
+          chi nhánh.
+        </p>
       </div>
 
       <button class="btn-secondary" type="button" (click)="loadUsers()" [disabled]="isListLoading">
@@ -55,10 +58,22 @@
           <p>Nhập thông tin để cấp tài khoản cho nhân viên thuộc chi nhánh hiện tại.</p>
         </div>
 
-        <form class="admin-form" [formGroup]="staffForm" (ngSubmit)="createStaff()" autocomplete="off" data-form-type="other">
+        <form
+          class="admin-form"
+          [formGroup]="staffForm"
+          (ngSubmit)="createStaff()"
+          autocomplete="off"
+          data-form-type="other"
+        >
           <div class="admin-field">
             <label>Họ tên</label>
-            <input type="text" formControlName="fullName" placeholder="Ví dụ: Nguyễn Văn A" />
+            <input
+              appPreventAutofill
+              type="text"
+              formControlName="fullName"
+              placeholder="Ví dụ: Nguyễn Văn A"
+              autocomplete="off"
+            />
             <div class="validation-error" *ngIf="isInvalid('fullName')">
               {{ getErrorMessage('fullName', 'Họ tên') }}
             </div>
@@ -66,7 +81,14 @@
 
           <div class="admin-field">
             <label>Email</label>
-            <input type="email" formControlName="email" name="sbqs-staff-identity" placeholder="Ví dụ: staff01@sbqs.com" autocomplete="off" data-1p-ignore data-lpignore="true" />
+            <input
+              appPreventAutofill
+              type="email"
+              formControlName="email"
+              name="sbqs-staff-identity"
+              placeholder="Ví dụ: staff01@sbqs.com"
+              autocomplete="off"
+            />
             <div class="validation-error" *ngIf="isInvalid('email')">
               {{ getErrorMessage('email', 'Email') }}
             </div>
@@ -74,7 +96,13 @@
 
           <div class="admin-field">
             <label>Số điện thoại</label>
-            <input type="text" formControlName="phone" placeholder="Ví dụ: 0901234567" />
+            <input
+              appPreventAutofill
+              type="tel"
+              formControlName="phone"
+              placeholder="Ví dụ: 0901234567"
+              autocomplete="off"
+            />
             <div class="validation-error" *ngIf="isInvalid('phone')">
               {{ getErrorMessage('phone', 'Số điện thoại') }}
             </div>
@@ -82,7 +110,14 @@
 
           <div class="admin-field" *ngIf="!isEditMode">
             <label>Mật khẩu</label>
-            <input type="password" formControlName="password" name="sbqs-staff-secret" placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt" autocomplete="off" data-1p-ignore data-lpignore="true" />
+            <input
+              appPreventAutofill
+              type="password"
+              formControlName="password"
+              name="sbqs-staff-secret"
+              placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
+              autocomplete="new-password"
+            />
             <div class="validation-error" *ngIf="isInvalid('password')">
               {{ getErrorMessage('password', 'Mật khẩu') }}
             </div>
@@ -96,7 +131,11 @@
 
           <div class="admin-actions">
             <button class="btn-primary" type="submit" [disabled]="isSubmitting">
-              <app-icon *ngIf="!isSubmitting" [name]="isEditMode ? 'save' : 'user-plus'" [size]="16" />
+              <app-icon
+                *ngIf="!isSubmitting"
+                [name]="isEditMode ? 'save' : 'user-plus'"
+                [size]="16"
+              />
               {{ isEditMode ? 'Cập nhật nhân viên' : 'Tạo nhân viên' }}
             </button>
             <button *ngIf="isEditMode" class="btn-secondary" type="button" (click)="cancelEdit()">
@@ -116,7 +155,9 @@
         </div>
 
         <div *ngIf="isListLoading" class="admin-empty">Đang tải danh sách nhân viên...</div>
-        <div *ngIf="!isListLoading && users.length === 0" class="admin-empty">Chưa có nhân viên nào.</div>
+        <div *ngIf="!isListLoading && users.length === 0" class="admin-empty">
+          Chưa có nhân viên nào.
+        </div>
 
         <div *ngIf="!isListLoading && users.length > 0" class="table-wrapper">
           <table class="admin-table">
@@ -133,12 +174,19 @@
 
             <tbody>
               <tr *ngFor="let user of users">
-                <td><strong>{{ user.fullName || '-' }}</strong></td>
+                <td>
+                  <strong>{{ user.fullName || '-' }}</strong>
+                </td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ user.phone || '-' }}</td>
-                <td><span class="admin-badge badge-info">{{ user.role || 'STAFF' }}</span></td>
                 <td>
-                  <span class="admin-badge" [ngClass]="user.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                  <span class="admin-badge badge-info">{{ user.role || 'STAFF' }}</span>
+                </td>
+                <td>
+                  <span
+                    class="admin-badge"
+                    [ngClass]="user.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'"
+                  >
                     {{ user.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
                   </span>
                 </td>

@@ -15,6 +15,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -31,19 +32,22 @@ public class PasswordResetService {
     private final KeycloakService keycloakService;
     private final PasswordResetProperties properties;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
+    private final PasswordEncoder passwordEncoder;
 
     public PasswordResetService(
             UserRepository userRepository,
             PasswordResetTokenRepository tokenRepository,
             KeycloakService keycloakService,
             PasswordResetProperties properties,
-            ObjectProvider<JavaMailSender> mailSenderProvider) {
+            ObjectProvider<JavaMailSender> mailSenderProvider,
+            PasswordEncoder passwordEncoder) {
 
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.keycloakService = keycloakService;
         this.properties = properties;
         this.mailSenderProvider = mailSenderProvider;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
@@ -166,6 +170,8 @@ public class PasswordResetService {
         }
 
         keycloakService.resetUserPassword(token.getUser().getKeycloakUserId(), newPassword);
+        token.getUser().setPasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(token.getUser());
         token.setUsedAt(LocalDateTime.now());
         tokenRepository.save(token);
     }

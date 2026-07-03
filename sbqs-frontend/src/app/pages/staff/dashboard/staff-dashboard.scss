@@ -1,17 +1,10 @@
 $primary-color: #005baa;
-$success-color: #0f9f6e;
 $warning-color: #b45309;
-$danger-color: #b91c1c;
 $surface-color: #ffffff;
 $soft-bg: #f4f7fb;
 $border-color: #d8e2ef;
 $text-primary: #0f172a;
 $text-secondary: #64748b;
-
-.staff-workspace {
-  display: grid;
-  gap: 20px;
-}
 
 .staff-live-status {
   display: flex;
@@ -33,25 +26,6 @@ $text-secondary: #64748b;
 .staff-live-status time {
   margin-left: auto;
   color: $text-secondary;
-}
-
-.alert {
-  padding: 14px 16px;
-  border-radius: 8px;
-  font-weight: 700;
-  border: 1px solid transparent;
-
-  &.alert-success {
-    color: #065f46;
-    background: #ecfdf5;
-    border-color: #a7f3d0;
-  }
-
-  &.alert-danger {
-    color: $danger-color;
-    background: #fef2f2;
-    border-color: #fecaca;
-  }
 }
 
 .staff-summary {
@@ -86,7 +60,6 @@ $text-secondary: #64748b;
   strong {
     color: $text-primary;
     font-size: 28px;
-    line-height: 1.15;
     word-break: break-word;
   }
 
@@ -340,75 +313,4 @@ $text-secondary: #64748b;
     font-style: normal;
     font-weight: 900;
   }
-}
-
-.empty-note {
-  padding: 16px;
-  border-radius: 8px;
-  background: $soft-bg;
-  color: $text-secondary;
-  font-weight: 700;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-.admin-table {
-  width: 100%;
-  min-width: 860px;
-  border-collapse: collapse;
-
-  th,
-  td {
-    padding: 14px 12px;
-    text-align: left;
-    border-bottom: 1px solid $border-color;
-    vertical-align: middle;
-  }
-
-  th {
-    color: $text-primary;
-    background: #f8fafc;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  td {
-    color: $text-secondary;
-    font-weight: 650;
-  }
-
-  strong {
-    color: $primary-color;
-  }
-}
-
-.btn {
-  min-height: 42px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 8px;
-  font-weight: 900;
-  cursor: pointer;
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-  }
-}
-
-.btn-primary {
-  background: $primary-color;
-  color: #fff;
-}
-
-.btn-secondary {
-  background: #e2e8f0;
-  color: $text-primary;
-}
-
-.btn-success {
-  background: $success-color;
-  color: #fff;
 }

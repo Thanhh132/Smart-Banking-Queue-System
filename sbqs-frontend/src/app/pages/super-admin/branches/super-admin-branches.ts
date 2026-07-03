@@ -3,18 +3,30 @@ import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
-import { DistrictOption, ProvinceOption, VIETNAM_LOCATIONS } from '../../../core/data/vietnam-locations';
+import {
+  DistrictOption,
+  ProvinceOption,
+  VIETNAM_LOCATIONS,
+} from '../../../core/data/vietnam-locations';
 import { Branch } from '../../../core/models/branch.model';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { GeocodeResult, LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
 @Component({
   selector: 'app-super-admin-branches',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, DashboardLayout, AppIcon],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    DashboardLayout,
+    AppIcon,
+    PreventAutofillDirective,
+  ],
   templateUrl: './super-admin-branches.html',
   styleUrl: './super-admin-branches.scss',
 })
@@ -70,9 +82,16 @@ export class SuperAdminBranches implements OnInit {
     const keyword = this.searchTerm.trim().toLocaleLowerCase('vi');
     if (!keyword) return this.branches;
     return this.branches.filter((branch) =>
-      [branch.bankName, branch.branchCode, branch.branchName, branch.province, branch.district, branch.ward]
+      [
+        branch.bankName,
+        branch.branchCode,
+        branch.branchName,
+        branch.province,
+        branch.district,
+        branch.ward,
+      ]
         .filter(Boolean)
-        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword))
+        .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword)),
     );
   }
 
@@ -117,7 +136,9 @@ export class SuperAdminBranches implements OnInit {
   submitBranch(): void {
     if (!this.locationConfirmed) {
       const requiredSourceControls = ['bankName', 'address', 'phone', 'status'];
-      const sourceInvalid = requiredSourceControls.some((name) => this.branchForm.get(name)?.invalid);
+      const sourceInvalid = requiredSourceControls.some(
+        (name) => this.branchForm.get(name)?.invalid,
+      );
       if (sourceInvalid) {
         this.branchForm.markAllAsTouched();
         this.cdr.detectChanges();
@@ -171,7 +192,10 @@ export class SuperAdminBranches implements OnInit {
         this.loadBranches();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Không xóa được chi nhánh đang được sử dụng.');
+        this.errorMessage = this.apiError.getMessage(
+          err,
+          'Không xóa được chi nhánh đang được sử dụng.',
+        );
         this.cdr.detectChanges();
       },
     });
@@ -204,23 +228,27 @@ export class SuperAdminBranches implements OnInit {
   updateMapPreview(): void {
     const latitude = this.branchForm.get('latitude')?.value;
     const longitude = this.branchForm.get('longitude')?.value;
-    const query = latitude != null && longitude != null
-      ? `${latitude},${longitude}`
-      : this.addressQuery || 'Việt Nam';
+    const query =
+      latitude != null && longitude != null
+        ? `${latitude},${longitude}`
+        : this.addressQuery || 'Việt Nam';
     this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
-      `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`
+      `https://www.google.com/maps?q=${encodeURIComponent(query)}&z=17&output=embed`,
     );
   }
 
   markLocationUnconfirmed(): void {
     this.locationConfirmed = false;
-    this.branchForm.patchValue({
-      province: '',
-      district: '',
-      ward: '',
-      latitude: null,
-      longitude: null,
-    }, { emitEvent: false });
+    this.branchForm.patchValue(
+      {
+        province: '',
+        district: '',
+        ward: '',
+        latitude: null,
+        longitude: null,
+      },
+      { emitEvent: false },
+    );
     this.successMessage = '';
     this.updateMapPreview();
   }
@@ -239,9 +267,10 @@ export class SuperAdminBranches implements OnInit {
     this.isSubmitting = true;
     this.successMessage = '';
     this.errorMessage = '';
-    const request$ = this.isEditMode && this.editingBranchId
-      ? this.branchService.updateBranch(this.editingBranchId, payload)
-      : this.branchService.createBranch(payload);
+    const request$ =
+      this.isEditMode && this.editingBranchId
+        ? this.branchService.updateBranch(this.editingBranchId, payload)
+        : this.branchService.createBranch(payload);
 
     request$.subscribe({
       next: () => {
@@ -270,13 +299,16 @@ export class SuperAdminBranches implements OnInit {
       next: (result) => {
         const administrative = this.resolveAdministrativeFields(result);
         this.isHydratingForm = true;
-        this.branchForm.patchValue({
-          province: administrative.province,
-          district: administrative.district,
-          ward: administrative.ward,
-          latitude: result.latitude,
-          longitude: result.longitude,
-        }, { emitEvent: false });
+        this.branchForm.patchValue(
+          {
+            province: administrative.province,
+            district: administrative.district,
+            ward: administrative.ward,
+            latitude: result.latitude,
+            longitude: result.longitude,
+          },
+          { emitEvent: false },
+        );
         this.isHydratingForm = false;
         this.syncGeneratedFields();
         this.locationConfirmed = true;
@@ -295,7 +327,7 @@ export class SuperAdminBranches implements OnInit {
         this.locationConfirmed = false;
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Không tìm thấy địa chỉ này. Hãy nhập chi tiết hơn hoặc dán link Google Maps/toạ độ.'
+          'Không tìm thấy địa chỉ này. Hãy nhập chi tiết hơn hoặc dán link Google Maps/toạ độ.',
         );
         this.cdr.detectChanges();
       },
@@ -321,21 +353,25 @@ export class SuperAdminBranches implements OnInit {
     const bankCode = this.bankOptions.find((item) => item.value === bank)?.code || 'BANK';
     const districtCode = this.findDistrictOption()?.code || this.createAreaCode(districtName);
     const prefix = `${bankCode}-${districtCode}-`;
-    const sequence = this.branches.filter((branch) => branch.branchCode?.startsWith(prefix)).length + 1;
-    this.branchForm.patchValue({
-      branchCode: `${prefix}${String(sequence).padStart(2, '0')}`,
-      branchName: [bank, districtName, ward ? `- ${ward}` : ''].filter(Boolean).join(' '),
-    }, { emitEvent: false });
+    const sequence =
+      this.branches.filter((branch) => branch.branchCode?.startsWith(prefix)).length + 1;
+    this.branchForm.patchValue(
+      {
+        branchCode: `${prefix}${String(sequence).padStart(2, '0')}`,
+        branchName: [bank, districtName, ward ? `- ${ward}` : ''].filter(Boolean).join(' '),
+      },
+      { emitEvent: false },
+    );
   }
 
   private findDistrictOption(): DistrictOption | undefined {
     const province = this.branchForm.get('province')?.value || '';
     const district = this.branchForm.get('district')?.value || '';
     const provinceOption = this.provinceOptions.find((item) =>
-      this.sameAdministrativeName(item.label, province)
+      this.sameAdministrativeName(item.label, province),
     );
     return provinceOption?.districts.find((item) =>
-      this.sameAdministrativeName(item.label, district)
+      this.sameAdministrativeName(item.label, district),
     );
   }
 
@@ -345,14 +381,18 @@ export class SuperAdminBranches implements OnInit {
     ward: string;
   } {
     const typedAddress = this.normalizeText(this.fullAddress);
-    const provinceOption = this.provinceOptions.find((item) =>
-      typedAddress.includes(this.normalizeText(item.label))
-    ) || this.provinceOptions.find((item) => this.sameAdministrativeName(item.label, result.province));
-    const districtOption = provinceOption?.districts.find((item) =>
-      typedAddress.includes(this.normalizeText(item.label))
-    ) || provinceOption?.districts.find((item) => this.sameAdministrativeName(item.label, result.district));
+    const provinceOption =
+      this.provinceOptions.find((item) => typedAddress.includes(this.normalizeText(item.label))) ||
+      this.provinceOptions.find((item) => this.sameAdministrativeName(item.label, result.province));
+    const districtOption =
+      provinceOption?.districts.find((item) =>
+        typedAddress.includes(this.normalizeText(item.label)),
+      ) ||
+      provinceOption?.districts.find((item) =>
+        this.sameAdministrativeName(item.label, result.district),
+      );
     const wardOption = districtOption?.wards.find((item) =>
-      typedAddress.includes(this.normalizeText(item.label))
+      typedAddress.includes(this.normalizeText(item.label)),
     );
 
     return {
@@ -363,10 +403,11 @@ export class SuperAdminBranches implements OnInit {
   }
 
   private sameAdministrativeName(left: string, right: string): boolean {
-    const clean = (value: string) => this.normalizeText(value)
-      .replace(/\b(thanh pho|tinh|quan|huyen|thi xa|phuong|xa)\b/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
+    const clean = (value: string) =>
+      this.normalizeText(value)
+        .replace(/\b(thanh pho|tinh|quan|huyen|thi xa|phuong|xa)\b/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     return clean(left) === clean(right);
   }
 
@@ -377,8 +418,9 @@ export class SuperAdminBranches implements OnInit {
       .split(/\s+/)
       .filter(Boolean);
     if (!words.length) return 'BR';
-    return (words.length === 1 ? words[0].slice(0, 3) : words.map((word) => word[0]).join(''))
-      .toUpperCase();
+    return (
+      words.length === 1 ? words[0].slice(0, 3) : words.map((word) => word[0]).join('')
+    ).toUpperCase();
   }
 
   private looksLikeMapUrlOrCoordinates(value: string): boolean {
@@ -386,6 +428,9 @@ export class SuperAdminBranches implements OnInit {
   }
 
   private normalizeText(value: string): string {
-    return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   }
 }

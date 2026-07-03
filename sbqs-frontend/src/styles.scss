@@ -29,7 +29,7 @@ html,
 body {
   margin: 0;
   min-height: 100%;
-  font-family: "Segoe UI", Arial, sans-serif;
+  font-family: 'Segoe UI', Arial, sans-serif;
   font-size: 16px;
   background: var(--bg-main);
   color: var(--text-primary);
@@ -145,13 +145,13 @@ button:disabled,
 }
 
 .btn-primary,
-button[type="submit"] {
+button[type='submit'] {
   background: var(--primary-color);
   color: #ffffff;
 }
 
 .btn-primary:hover,
-button[type="submit"]:hover {
+button[type='submit']:hover {
   background: var(--primary-dark);
 }
 
@@ -361,7 +361,9 @@ button[type="submit"]:hover {
   padding: 0 14px;
   color: var(--text-primary);
   font-size: 16px;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .auth-form input:focus {
@@ -598,7 +600,9 @@ button[type="submit"]:hover {
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .customer-option:hover:not(:disabled) {
@@ -682,9 +686,16 @@ button[type="submit"]:hover {
   border-radius: 7px;
 }
 
-.customer-counter--serving { border-top-color: #08756d; }
-.customer-counter--idle { border-top-color: #d68b12; }
-.customer-counter--inactive { border-top-color: #94a3b8; background: #f7f9fb; }
+.customer-counter--serving {
+  border-top-color: #08756d;
+}
+.customer-counter--idle {
+  border-top-color: #d68b12;
+}
+.customer-counter--inactive {
+  border-top-color: #94a3b8;
+  background: #f7f9fb;
+}
 
 .customer-counter span,
 .customer-counter small {
@@ -763,13 +774,27 @@ button[type="submit"]:hover {
 }
 
 @media (max-width: 760px) {
-  .customer-page__intro h1 { font-size: 29px; }
+  .customer-page__intro h1 {
+    font-size: 29px;
+  }
   .customer-primary-action,
-  .customer-section__header { align-items: stretch; flex-direction: column; }
-  .customer-steps { grid-template-columns: 1fr; }
-  .customer-section { padding: 20px; }
-  .report-center__heading { align-items: stretch; flex-direction: column; }
-  .report-center__grid { grid-template-columns: 1fr; }
+  .customer-section__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .customer-steps {
+    grid-template-columns: 1fr;
+  }
+  .customer-section {
+    padding: 20px;
+  }
+  .report-center__heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .report-center__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -840,9 +865,14 @@ button[type="submit"]:hover {
 
 .admin-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   background: #ffffff;
   font-size: 15px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
 }
 
 .admin-table th {
@@ -863,6 +893,10 @@ button[type="submit"]:hover {
 
 .admin-table tr:hover td {
   background: #f9fbff;
+}
+
+.admin-table strong {
+  color: var(--primary-color);
 }
 
 .admin-badge {

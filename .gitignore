@@ -1,6 +1,7 @@
 # IDE
 .idea/
 .vscode/
+.cursor/
 *.iml
 
 # Angular
@@ -12,6 +13,7 @@ dist/
 target/
 *.jar
 *.war
+hs_err_pid*.log
 
 # Docker volumes
 postgres_data/
@@ -26,3 +28,8 @@ sbqs-backend/src/main/resources/application-local.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime and test output
+*.log
+coverage/
+test-results/

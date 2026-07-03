@@ -6,16 +6,27 @@
         <h1>Hệ thống chi nhánh</h1>
         <p>Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị.</p>
       </div>
-      <button type="button" class="btn btn-secondary" (click)="loadBranches()" [disabled]="isLoading">
+      <button
+        type="button"
+        class="btn btn-secondary"
+        (click)="loadBranches()"
+        [disabled]="isLoading"
+      >
         <app-icon *ngIf="!isLoading" name="refresh" [size]="16" />
         {{ isLoading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
       </button>
     </header>
 
     <section class="super-stats">
-      <div><span>Tổng chi nhánh</span><strong>{{ branches.length }}</strong></div>
-      <div><span>Đang hoạt động</span><strong>{{ activeBranchCount }}</strong></div>
-      <div><span>Ngừng hoạt động</span><strong>{{ branches.length - activeBranchCount }}</strong></div>
+      <div>
+        <span>Tổng chi nhánh</span><strong>{{ branches.length }}</strong>
+      </div>
+      <div>
+        <span>Đang hoạt động</span><strong>{{ activeBranchCount }}</strong>
+      </div>
+      <div>
+        <span>Ngừng hoạt động</span><strong>{{ branches.length - activeBranchCount }}</strong>
+      </div>
     </section>
 
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
@@ -34,7 +45,9 @@
           <div class="form-group full-width">
             <label>Ngân hàng</label>
             <select formControlName="bankName">
-              <option *ngFor="let bank of bankOptions" [value]="bank.value">{{ bank.label }}</option>
+              <option *ngFor="let bank of bankOptions" [value]="bank.value">
+                {{ bank.label }}
+              </option>
             </select>
           </div>
 
@@ -42,6 +55,7 @@
             <label>Địa chỉ chi nhánh</label>
             <div class="address-search">
               <input
+                appPreventAutofill
                 type="text"
                 formControlName="address"
                 placeholder="Nhập địa chỉ, tọa độ hoặc dán link Google Maps"
@@ -49,16 +63,29 @@
                 (input)="markLocationUnconfirmed()"
                 (blur)="confirmMapLocation()"
               />
-              <button type="button" class="btn btn-primary" (click)="confirmMapLocation()" [disabled]="isGeocoding">
+              <button
+                type="button"
+                class="btn btn-primary"
+                (click)="confirmMapLocation()"
+                [disabled]="isGeocoding"
+              >
                 <app-icon *ngIf="!isGeocoding" name="map-pin" [size]="16" />
                 {{ isGeocoding ? 'Đang tìm...' : 'Xác định vị trí' }}
               </button>
             </div>
-            <small>Dán link Google Maps hoặc tọa độ dạng 10.7769, 106.7009 để lấy đúng vị trí hơn.</small>
+            <small
+              >Dán link Google Maps hoặc tọa độ dạng 10.7769, 106.7009 để lấy đúng vị trí
+              hơn.</small
+            >
           </div>
 
           <div class="branch-map full-width">
-            <iframe title="Vị trí chi nhánh trên Google Maps" [src]="mapPreviewUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            <iframe
+              title="Vị trí chi nhánh trên Google Maps"
+              [src]="mapPreviewUrl"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+            ></iframe>
             <div class="branch-map__actions">
               <a class="btn btn-secondary" [href]="googleMapsUrl" target="_blank" rel="noopener">
                 <app-icon name="external-link" [size]="16" />
@@ -71,14 +98,40 @@
           </div>
 
           <div class="address-grid full-width">
-            <div class="form-group"><label>Tỉnh/Thành phố</label><input type="text" formControlName="province" readonly /></div>
-            <div class="form-group"><label>Quận/Huyện/Thành phố</label><input type="text" formControlName="district" readonly /></div>
-            <div class="form-group"><label>Phường/Xã</label><input type="text" formControlName="ward" readonly /></div>
+            <div class="form-group">
+              <label>Tỉnh/Thành phố</label><input type="text" formControlName="province" readonly />
+            </div>
+            <div class="form-group">
+              <label>Quận/Huyện/Thành phố</label
+              ><input type="text" formControlName="district" readonly />
+            </div>
+            <div class="form-group">
+              <label>Phường/Xã</label><input type="text" formControlName="ward" readonly />
+            </div>
           </div>
 
-          <div class="form-group code-field"><label>Mã chi nhánh</label><input type="text" formControlName="branchCode" readonly /></div>
-          <div class="form-group name-field"><label>Tên chi nhánh</label><input type="text" formControlName="branchName" /></div>
-          <div class="form-group"><label>Số điện thoại</label><input type="tel" formControlName="phone" placeholder="0900000000" /></div>
+          <div class="form-group code-field">
+            <label>Mã chi nhánh</label><input type="text" formControlName="branchCode" readonly />
+          </div>
+          <div class="form-group name-field">
+            <label>Tên chi nhánh</label
+            ><input
+              appPreventAutofill
+              type="text"
+              formControlName="branchName"
+              autocomplete="off"
+            />
+          </div>
+          <div class="form-group">
+            <label>Số điện thoại</label
+            ><input
+              appPreventAutofill
+              type="tel"
+              formControlName="phone"
+              placeholder="0900000000"
+              autocomplete="off"
+            />
+          </div>
           <div class="form-group">
             <label>Trạng thái</label>
             <select formControlName="status">
@@ -89,10 +142,25 @@
 
           <div class="form-actions full-width">
             <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || isGeocoding">
-              <app-icon *ngIf="!isSubmitting && !isGeocoding" [name]="isEditMode ? 'save' : 'plus'" [size]="16" />
-              {{ (isSubmitting || isGeocoding) ? 'Đang xử lý...' : isEditMode ? 'Lưu thay đổi' : 'Tạo chi nhánh' }}
+              <app-icon
+                *ngIf="!isSubmitting && !isGeocoding"
+                [name]="isEditMode ? 'save' : 'plus'"
+                [size]="16"
+              />
+              {{
+                isSubmitting || isGeocoding
+                  ? 'Đang xử lý...'
+                  : isEditMode
+                    ? 'Lưu thay đổi'
+                    : 'Tạo chi nhánh'
+              }}
             </button>
-            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEdit()">
+            <button
+              *ngIf="isEditMode"
+              type="button"
+              class="btn btn-secondary"
+              (click)="cancelEdit()"
+            >
               <app-icon name="x" [size]="16" />
               Hủy chỉnh sửa
             </button>
@@ -102,15 +170,24 @@
 
       <div class="super-panel branch-list-panel">
         <div class="super-panel__heading list-heading">
-          <div><span>DANH SÁCH</span><h2>Chi nhánh hiện có</h2></div>
+          <div>
+            <span>DANH SÁCH</span>
+            <h2>Chi nhánh hiện có</h2>
+          </div>
           <label class="branch-search">
             <span>Tìm kiếm</span>
-            <input type="search" [(ngModel)]="searchTerm" placeholder="Mã, tên, ngân hàng, khu vực..." />
+            <input
+              type="search"
+              [(ngModel)]="searchTerm"
+              placeholder="Mã, tên, ngân hàng, khu vực..."
+            />
           </label>
         </div>
 
         <div *ngIf="isLoading" class="admin-empty">Đang tải danh sách chi nhánh...</div>
-        <div *ngIf="!isLoading && filteredBranches.length === 0" class="admin-empty">Không có chi nhánh phù hợp.</div>
+        <div *ngIf="!isLoading && filteredBranches.length === 0" class="admin-empty">
+          Không có chi nhánh phù hợp.
+        </div>
 
         <div *ngIf="!isLoading && filteredBranches.length > 0" class="table-wrapper">
           <table class="admin-table">
@@ -125,24 +202,45 @@
             </thead>
             <tbody>
               <tr *ngFor="let branch of filteredBranches">
-                <td><strong>{{ branch.branchName }}</strong><small>{{ branch.branchCode }} · {{ branch.bankName }}</small></td>
+                <td>
+                  <strong>{{ branch.branchName }}</strong
+                  ><small>{{ branch.branchCode }} · {{ branch.bankName }}</small>
+                </td>
                 <td>
                   {{ branch.ward || '-' }}, {{ branch.district || '-' }}
-                  <small>{{ branch.province || '-' }} · <a [href]="branchMapUrl(branch)" target="_blank" rel="noopener">Bản đồ</a></small>
+                  <small
+                    >{{ branch.province || '-' }} ·
+                    <a [href]="branchMapUrl(branch)" target="_blank" rel="noopener"
+                      >Bản đồ</a
+                    ></small
+                  >
                 </td>
-                <td>{{ branch.phone || '-' }}<small>{{ branch.address || '-' }}</small></td>
                 <td>
-                  <span class="admin-badge" [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
+                  {{ branch.phone || '-' }}<small>{{ branch.address || '-' }}</small>
+                </td>
+                <td>
+                  <span
+                    class="admin-badge"
+                    [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'"
+                  >
                     {{ branch.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngừng' }}
                   </span>
                 </td>
                 <td>
                   <div class="row-actions">
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="startEdit(branch)">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      (click)="startEdit(branch)"
+                    >
                       <app-icon name="pencil" [size]="14" />
                       Sửa
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm" (click)="deleteBranch(branch)">
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      (click)="deleteBranch(branch)"
+                    >
                       <app-icon name="trash" [size]="14" />
                       Xóa
                     </button>

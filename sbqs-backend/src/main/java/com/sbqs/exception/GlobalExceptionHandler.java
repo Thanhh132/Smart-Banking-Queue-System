@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -20,6 +21,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
         return badRequest(ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .findFirst()
+                .map(error -> error.getDefaultMessage())
+                .orElse("Du lieu gui len khong hop le");
+        return badRequest(message);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -146,5 +156,14 @@ public class GlobalExceptionHandler {
 
     private String valueOrUnknown(String value) {
         return value == null || value.isBlank() ? "không xác định" : value;
+    }
+    @ExceptionHandler(KeycloakUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleKeycloakUnavailable(KeycloakUnavailableException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", HttpStatus.SERVICE_UNAVAILABLE.value());
+        error.put("error", "Service Unavailable");
+        error.put("message", "Dich vu dang nhap tam thoi gian doan. Vui long thu lai sau.");
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(error);
     }
 }

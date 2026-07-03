@@ -1,11 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
-import {
-  FormBuilder,
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
@@ -13,6 +8,7 @@ import { AppCard } from '../../../shared/components/app-card/app-card';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { ExcelImportPanel } from '../../../shared/components/excel-import-panel/excel-import-panel';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 import {
   PASSWORD_POLICY_MESSAGE,
   PASSWORD_POLICY_PATTERN,
@@ -21,7 +17,15 @@ import {
 @Component({
   selector: 'app-admin-users',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DashboardLayout, AppCard, ExcelImportPanel, AppIcon],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    DashboardLayout,
+    AppCard,
+    ExcelImportPanel,
+    AppIcon,
+    PreventAutofillDirective,
+  ],
   templateUrl: './admin-users.html',
   styleUrl: './admin-users.scss',
 })
@@ -42,7 +46,7 @@ export class AdminUsers implements OnInit {
     private fb: FormBuilder,
     private userManagementService: UserManagementService,
     private apiError: ApiErrorService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -131,7 +135,7 @@ export class AdminUsers implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Tạo tài khoản thất bại. Vui lòng kiểm tra lại dữ liệu.'
+          'Tạo tài khoản thất bại. Vui lòng kiểm tra lại dữ liệu.',
         );
         this.isSubmitting = false;
         this.cdr.detectChanges();
@@ -161,7 +165,7 @@ export class AdminUsers implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          isInactive ? 'Xóa nhân viên thất bại.' : 'Khóa tài khoản nhân viên thất bại.'
+          isInactive ? 'Xóa nhân viên thất bại.' : 'Khóa tài khoản nhân viên thất bại.',
         );
         this.cdr.detectChanges();
       },
@@ -191,7 +195,10 @@ export class AdminUsers implements OnInit {
     this.editingUserId = null;
     this.editingUserStatus = 'ACTIVE';
     const passwordControl = this.staffForm.get('password');
-    passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+    passwordControl?.setValidators([
+      Validators.required,
+      Validators.pattern(PASSWORD_POLICY_PATTERN),
+    ]);
     passwordControl?.updateValueAndValidity();
     this.staffForm.reset();
     this.successMessage = '';
@@ -225,7 +232,10 @@ export class AdminUsers implements OnInit {
         this.editingUserId = null;
         this.editingUserStatus = 'ACTIVE';
         const passwordControl = this.staffForm.get('password');
-        passwordControl?.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+        passwordControl?.setValidators([
+          Validators.required,
+          Validators.pattern(PASSWORD_POLICY_PATTERN),
+        ]);
         passwordControl?.updateValueAndValidity();
         this.staffForm.reset();
         this.loadUsers();

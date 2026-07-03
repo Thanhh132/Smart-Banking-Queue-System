@@ -8,12 +8,15 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.HttpServerErrorException;
+import com.sbqs.exception.KeycloakUnavailableException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
@@ -151,7 +154,6 @@ public class KeycloakService {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public String findUserIdByEmail(String email) {
         return findUserIdByEmail(email, getAdminAccessToken());
     }
@@ -168,18 +170,19 @@ public class KeycloakService {
                 .queryParam("exact", true)
                 .toUriString();
 
-        ResponseEntity<List> response =
+        ResponseEntity<List<Map<String, Object>>> response =
                 restTemplate.exchange(
                         url,
                         HttpMethod.GET,
                         new HttpEntity<>(headers),
-                        List.class);
+                        new ParameterizedTypeReference<>() {
+                        });
 
         if (response.getBody() == null || response.getBody().isEmpty()) {
             throw new RuntimeException("Email da ton tai tren Keycloak nhung khong tim thay user id");
         }
 
-        Map<String, Object> user = (Map<String, Object>) response.getBody().get(0);
+        Map<String, Object> user = response.getBody().get(0);
         Object id = user.get("id");
 
         if (id == null) {
@@ -337,14 +340,15 @@ public class KeycloakService {
     }
 
     private void logKeycloakUserState(String userId, HttpHeaders headers) {
-        ResponseEntity<Map> response =
+        ResponseEntity<Map<String, Object>> response =
                 restTemplate.exchange(
                         userUrl(userId),
                         HttpMethod.GET,
                         new HttpEntity<>(headers),
-                        Map.class);
+                        new ParameterizedTypeReference<>() {
+                        });
 
-        Map body = response.getBody();
+        Map<String, Object> body = response.getBody();
         if (body == null) {
             return;
         }
@@ -409,18 +413,19 @@ public class KeycloakService {
         headers.setBearerAuth(adminToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ResponseEntity<Map> roleResponse =
+        ResponseEntity<Map<String, Object>> roleResponse =
                 restTemplate.exchange(
                         realmRoleUrl(role),
                         HttpMethod.GET,
                         new HttpEntity<>(headers),
-                        Map.class);
+                        new ParameterizedTypeReference<>() {
+                        });
 
         if (roleResponse.getBody() == null) {
             throw new RuntimeException("Khong tim thay role Keycloak: " + role);
         }
 
-        HttpEntity<List<Map>> request =
+        HttpEntity<List<Map<String, Object>>> request =
                 new HttpEntity<>(List.of(roleResponse.getBody()), headers);
 
         restTemplate.exchange(
@@ -430,7 +435,6 @@ public class KeycloakService {
                 Void.class);
     }
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> postFormForMap(
             String url,
             MultiValueMap<String, String> body) {
@@ -443,8 +447,13 @@ public class KeycloakService {
 
         try {
             log.info("Calling Keycloak form endpoint url={}", url);
-            ResponseEntity<Map> response =
-                    restTemplate.postForEntity(url, request, Map.class);
+            ResponseEntity<Map<String, Object>> response =
+                    restTemplate.exchange(
+                            url,
+                            HttpMethod.POST,
+                            request,
+                            new ParameterizedTypeReference<>() {
+                            });
 
             log.info("Keycloak form endpoint responded url={} status={}", url, response.getStatusCode());
 
@@ -459,9 +468,10 @@ public class KeycloakService {
                             + ex.getResponseBodyAsString());
         } catch (ResourceAccessException ex) {
             log.warn("Cannot connect to Keycloak url={}", url, ex);
-            throw new RuntimeException(
-                    "Khong ket noi duoc Keycloak. Kiem tra Keycloak dang chay o "
-                            + keycloakProperties.getServerUrl());
+            throw new KeycloakUnavailableException("Dich vu xac thuc tam thoi khong san sang", ex);
+        } catch (HttpServerErrorException ex) {
+            log.warn("Keycloak server error url={} status={}", url, ex.getStatusCode());
+            throw new KeycloakUnavailableException("Dich vu xac thuc tam thoi khong san sang", ex);
         }
     }
 

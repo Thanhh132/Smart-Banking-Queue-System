@@ -8,6 +8,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+/**
+ * Business category that customers select when taking a queue ticket.
+ * See docs/SERVICE_CATEGORY.md for the category-module mapping.
+ */
 @Entity
 @Table(
         name = "services",

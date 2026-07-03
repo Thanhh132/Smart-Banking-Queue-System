@@ -9,6 +9,7 @@ import com.sbqs.entity.User;
 import com.sbqs.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 import com.sbqs.dto.LoginResponse;
 
 @RestController
@@ -26,7 +27,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<User> register(
-            @RequestBody RegisterRequest request) {
+            @Valid @RequestBody RegisterRequest request) {
 
         return ResponseEntity.ok(
                 authService.register(request));
@@ -34,7 +35,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
-            @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request) {
 
         return ResponseEntity.ok(
                 authService.login(request));
