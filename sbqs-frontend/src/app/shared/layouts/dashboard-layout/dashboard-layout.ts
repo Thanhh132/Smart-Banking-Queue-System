@@ -18,6 +18,10 @@ export class DashboardLayout implements OnInit, OnDestroy {
   private customerTrackingStarted = false;
   @Input() title = 'Dashboard';
 
+  get isFallbackSession(): boolean {
+    return this.authService.isFallbackSession();
+  }
+
   ngOnInit(): void {
     if (this.authService.getRole() === 'CUSTOMER') {
       this.liveTracking.start();

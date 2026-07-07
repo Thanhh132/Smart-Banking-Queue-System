@@ -36,6 +36,7 @@ public class BulkImportService {
         this.currentUserService = currentUserService;
     }
 
+    /** Import nhân viên theo từng dòng; dòng lỗi được thu thập riêng thay vì hủy toàn bộ file. */
     public ImportResult importStaff(MultipartFile file) {
         validateFile(file);
         List<StaffImportRow> rows = readStaff(file);
@@ -60,6 +61,7 @@ public class BulkImportService {
         return result(rows.size(), successCount, errors);
     }
 
+    /** Import danh mục dịch vụ trong phạm vi chi nhánh của admin và trả báo cáo dòng lỗi. */
     public ImportResult importServices(MultipartFile file) {
         validateFile(file);
         List<ServiceImportRow> rows = readServices(file);
@@ -136,6 +138,7 @@ public class BulkImportService {
         }
     }
 
+    /** Chặn file rỗng/sai định dạng trước khi parser đọc nội dung Excel. */
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new RuntimeException("Vui lòng chọn file Excel cần nhập");

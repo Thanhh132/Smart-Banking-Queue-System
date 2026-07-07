@@ -3,6 +3,12 @@
 
   <main class="dashboard-layout__main">
     <app-topbar [title]="title"></app-topbar>
+    @if (isFallbackSession) {
+      <div class="dashboard-layout__fallback-warning" role="status">
+        Keycloak đang tạm gián đoạn. Bạn đang dùng phiên dự phòng ngắn hạn;
+        các thao tác quản trị tài khoản và chi nhánh tạm thời bị khóa.
+      </div>
+    }
     <app-live-ticket-notice></app-live-ticket-notice>
 
     <section class="dashboard-layout__content">

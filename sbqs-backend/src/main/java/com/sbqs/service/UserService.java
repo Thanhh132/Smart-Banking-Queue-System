@@ -77,6 +77,7 @@ public class UserService {
                 return createBranchUser(request, "BRANCH_ADMIN");
         }
 
+        /** Tạo nhân sự đồng thời ở Keycloak và database, kèm BCrypt hash để hỗ trợ fallback. */
         private User createBranchUser(CreateStaffRequest request, String role) {
                 String email = normalizeEmail(request.getEmail());
                 if (userRepository.existsByEmailIgnoreCase(email)) {
@@ -135,6 +136,7 @@ public class UserService {
         }
 
         @Transactional
+        /** Admin cập nhật nhân sự trong phạm vi được phép rồi đồng bộ hồ sơ/trạng thái sang Keycloak. */
         public User updateUser(Long userId, UpdateUserRequest request) {
 
                 User user = userRepository.findById(userId)
@@ -183,6 +185,7 @@ public class UserService {
         }
 
         @Transactional
+        /** Khóa mềm tài khoản thay vì xóa để bảo toàn lịch sử giao dịch và audit ngân hàng. */
         public void deleteUser(Long userId) {
 
                 User user = userRepository.findById(userId)
@@ -204,6 +207,7 @@ public class UserService {
                 }
         }
 
+        /** Áp dụng ma trận: SUPER_ADMIN quản lý cấp dưới; BRANCH_ADMIN chỉ quản lý STAFF cùng chi nhánh. */
         private void requireUserManagementAccess(User targetUser) {
                 User currentUser = currentUserService.requireUser();
 

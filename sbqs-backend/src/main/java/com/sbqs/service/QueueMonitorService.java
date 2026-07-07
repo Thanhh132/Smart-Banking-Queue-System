@@ -40,6 +40,7 @@ public class QueueMonitorService {
     @Cacheable(
             cacheNames = "queueMonitor",
             key = "'branch:' + #branchId + ':machine:' + (#queueMachineId == null ? 'all' : #queueMachineId)")
+    /** Tổng hợp hàng đợi và trạng thái quầy cho màn hình monitor theo chi nhánh/máy bốc số. */
     public QueueMonitorResponse getMonitor(Long branchId, Long queueMachineId) {
         if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
             currentUserService.requireBranch(branchId);

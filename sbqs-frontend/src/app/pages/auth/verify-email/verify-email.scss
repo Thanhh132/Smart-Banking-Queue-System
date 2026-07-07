@@ -1,0 +1,43 @@
+.verify-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: #f4f7fb;
+}
+
+.verify-card {
+  width: min(480px, 100%);
+  padding: 32px;
+  border: 1px solid #d8e2ef;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+
+.verify-card a {
+  display: inline-block;
+  margin-top: 16px;
+  color: #005baa;
+  font-weight: 700;
+}
+
+.verify-resend {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.verify-resend input,
+.verify-resend button {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+}
+
+.verify-resend button {
+  border-color: #005baa;
+  background: #005baa;
+  color: #fff;
+  cursor: pointer;
+}

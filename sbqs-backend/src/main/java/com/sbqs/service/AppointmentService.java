@@ -33,6 +33,7 @@ public class AppointmentService {
         return appointmentRepository.findByBranch(currentUserService.requireUser().getBranch());
     }
 
+    /** Tạo lịch hẹn sau khi xác nhận dịch vụ thực sự thuộc chi nhánh khách hàng đã chọn. */
     public Appointment createAppointment(Appointment appointment) {
         if (appointment.getBranch() == null || appointment.getService() == null) {
             throw new RuntimeException("Chua chon chi nhanh hoac dich vu");

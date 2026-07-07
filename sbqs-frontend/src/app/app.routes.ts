@@ -12,6 +12,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/auth/register/register').then((m) => m.Register),
   },
   {
+    path: 'verify-email',
+    loadComponent: () =>
+      import('./pages/auth/verify-email/verify-email').then((m) => m.VerifyEmail),
+  },
+  {
     path: 'forgot-password',
     loadComponent: () =>
       import('./pages/auth/forgot-password/forgot-password').then((m) => m.ForgotPassword),
@@ -20,6 +25,17 @@ export const routes: Routes = [
     path: 'reset-password',
     loadComponent: () =>
       import('./pages/auth/reset-password/reset-password').then((m) => m.ResetPassword),
+  },
+  {
+    path: 'confirm-account-change',
+    loadComponent: () =>
+      import('./pages/account/confirm-account-change').then((m) => m.ConfirmAccountChange),
+  },
+  {
+    path: 'account',
+    loadComponent: () =>
+      import('./pages/account/account').then((m) => m.Account),
+    canActivate: [roleGuard(['CUSTOMER', 'STAFF', 'BRANCH_ADMIN', 'SUPER_ADMIN'])],
   },
   {
     path: 'customer',

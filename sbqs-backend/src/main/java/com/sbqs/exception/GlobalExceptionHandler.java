@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import com.sbqs.exception.LoginRateLimitExceededException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -30,6 +31,16 @@ public class GlobalExceptionHandler {
                 .map(error -> error.getDefaultMessage())
                 .orElse("Du lieu gui len khong hop le");
         return badRequest(message);
+    }
+
+    @ExceptionHandler(LoginRateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleLoginRateLimit(LoginRateLimitExceededException ex) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("timestamp", LocalDateTime.now());
+        error.put("status", HttpStatus.TOO_MANY_REQUESTS.value());
+        error.put("error", "Too Many Requests");
+        error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

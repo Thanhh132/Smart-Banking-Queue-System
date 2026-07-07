@@ -77,6 +77,10 @@ public class TicketService {
 
     @Transactional
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    /**
+     * Cấp số cho CUSTOMER: kiểm tra dịch vụ được map vào máy, chống lấy nhiều phiếu
+     * đang hoạt động và tăng số thứ tự của đúng máy bốc số trong transaction.
+     */
     public Ticket createTicket(Ticket ticket) {
         String customerEmail = getCurrentEmail();
         if (customerEmail == null || customerEmail.isBlank()) {
@@ -152,6 +156,7 @@ public class TicketService {
         return ticketRepository.findByStatus(status);
     }
 
+    /** Lấy phiếu đang hoạt động của chính email trong JWT, không cho xem phiếu người khác. */
     public Ticket getCurrentCustomerTicket() {
         String customerEmail = getCurrentEmail();
         if (customerEmail == null || customerEmail.isBlank()) {
@@ -165,6 +170,7 @@ public class TicketService {
                 .orElse(null);
     }
 
+    /** Trả trạng thái realtime và số người đang chờ phía trước cho màn hình theo dõi của khách hàng. */
     public TicketTrackingResponse trackCustomerTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu"));
@@ -203,6 +209,10 @@ public class TicketService {
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     @Transactional
+    /**
+     * Nhân viên gọi phiếu WAITING tiếp theo phù hợp dịch vụ của quầy; đồng thời chuyển
+     * phiếu sang SERVING, gắn quầy/nhân viên và cập nhật workflow Camunda.
+     */
     public Ticket callNextTicket(Long counterId) {
         Counter counter = counterRepository.findByIdForUpdate(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -250,6 +260,7 @@ public class TicketService {
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    /** Hoàn tất phiếu đang phục vụ và ghi snapshot vào lịch sử để báo cáo không phụ thuộc dữ liệu sau này. */
     public Ticket completeTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
@@ -316,6 +327,7 @@ public class TicketService {
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    /** Chỉ CUSTOMER sở hữu phiếu mới được hủy phiếu chưa hoàn tất của mình. */
     public Ticket cancelTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
@@ -379,6 +391,7 @@ public class TicketService {
         return email;
     }
 
+    /** Bảo đảm nhân viên chỉ thao tác trên quầy đang được chính mình nhận trong ca hiện tại. */
     private void requireCurrentStaffOwnsCounter(Counter counter) {
         User currentStaff = currentUserService.requireUser();
         counterSessionRepository

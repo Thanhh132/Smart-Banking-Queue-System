@@ -47,6 +47,7 @@ public class QueueMachineMappingService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    /** Gán dịch vụ vào máy bốc số cùng chi nhánh, quyết định khách hàng được lấy loại số nào trên máy. */
     public QueueMachineServiceMapping createMapping(MappingRequest request) {
         QueueMachine queueMachine = queueMachineRepository.findById(request.getQueueMachineId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
@@ -88,6 +89,7 @@ public class QueueMachineMappingService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    /** Gỡ mapping nhưng không làm mất dữ liệu phiếu/lịch sử đã phát sinh trước đó. */
     public void deleteMapping(MappingRequest request) {
         QueueMachine queueMachine = queueMachineRepository.findById(request.getQueueMachineId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));

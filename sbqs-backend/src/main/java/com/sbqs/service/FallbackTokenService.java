@@ -31,6 +31,10 @@ public class FallbackTokenService {
                 new ImmutableSecret<>(properties.getSecret().getBytes(StandardCharsets.UTF_8)));
     }
 
+    /**
+     * Cấp JWT HS256 sống ngắn từ thông tin user nội bộ khi Keycloak bị down.
+     * Claim token_source=fallback được SecurityConfig dùng để khóa thao tác nhạy cảm.
+     */
     public String issue(User user) {
         Instant issuedAt = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()

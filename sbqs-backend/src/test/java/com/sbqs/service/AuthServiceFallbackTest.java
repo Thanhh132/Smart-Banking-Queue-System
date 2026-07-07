@@ -48,7 +48,8 @@ class AuthServiceFallbackTest {
                 mock(PasswordResetService.class),
                 passwordEncoder,
                 fallbackTokenService,
-                properties);
+                properties,
+                mock(EmailVerificationService.class));
     }
 
     @Test

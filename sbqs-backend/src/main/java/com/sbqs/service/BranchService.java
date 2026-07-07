@@ -72,11 +72,13 @@ public class BranchService {
     @Cacheable(
             cacheNames = "branches",
             key = "'nearest:' + #bankName + ':' + #latitude + ':' + #longitude")
+    /** Sắp xếp chi nhánh theo khoảng cách từ tọa độ khách hàng để hỗ trợ chọn nơi giao dịch gần nhất. */
     public List<Branch> getNearestBranches(String bankName, double latitude, double longitude) {
         return branchRepository.findNearestBranches(latitude, longitude, bankName);
     }
 
     @CacheEvict(cacheNames = "branches", allEntries = true)
+    /** Tạo chi nhánh, chuẩn hóa địa chỉ/mã và geocode tọa độ phục vụ tìm kiếm gần nhất. */
     public Branch createBranch(Branch branch) {
         if (branch.getBranchCode() == null
                 || branch.getBranchCode().isBlank()
@@ -147,6 +149,7 @@ public class BranchService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    /** Chỉ xóa khi chưa có dữ liệu nghiệp vụ phụ thuộc; lịch sử phát sinh phải được giữ lại. */
     public void deleteBranch(Long branchId) {
         Branch branch = branchRepository.findById(branchId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));

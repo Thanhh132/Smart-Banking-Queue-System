@@ -38,6 +38,7 @@ public class ReportService {
         this.historyService = historyService;
     }
 
+    /** Xuất báo cáo người dùng theo phạm vi hệ thống hoặc đúng chi nhánh của admin hiện tại. */
     public ReportDocument exportUsers(ReportFormat format) {
         User currentUser = currentUserService.requireUser();
         requireAdminReportAccess(currentUser);
@@ -109,6 +110,7 @@ public class ReportService {
                 format);
     }
 
+    /** Xuất lịch sử giao dịch đã snapshot, phù hợp đối soát ngay cả khi dữ liệu gốc đổi tên. */
     public ReportDocument exportHistory(ReportFormat format) {
         User currentUser = currentUserService.requireUser();
         List<HistoryReportRow> rows = historyService.findScopedHistory(currentUser)
@@ -194,6 +196,7 @@ public class ReportService {
         };
     }
 
+    /** Chỉ role quản trị được xuất báo cáo tổng hợp có dữ liệu của nhiều người dùng. */
     private void requireAdminReportAccess(User user) {
         if (!isSuperAdmin(user) && !"BRANCH_ADMIN".equals(user.getRole())) {
             throw new RuntimeException("Bạn không có quyền xuất báo cáo này");

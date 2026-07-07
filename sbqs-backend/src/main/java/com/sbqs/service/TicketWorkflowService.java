@@ -39,6 +39,7 @@ public class TicketWorkflowService {
         this.currentUserService = currentUserService;
     }
 
+    /** Khởi tạo process Camunda cho phiếu mới và gắn ticketId làm business key. */
     public void startTicketApproval(Ticket ticket) {
         if (ticket.getTicketId() == null) {
             throw new RuntimeException("Khong the khoi tao workflow cho ticket chua duoc luu");
@@ -66,6 +67,7 @@ public class TicketWorkflowService {
                         Map.entry("status", ticket.getStatus())));
     }
 
+    /** Hoàn thành user task chờ duyệt khi nhân viên gọi phiếu vào quầy phục vụ. */
     public void approveForServing(Ticket ticket, Counter counter) {
         startTicketApproval(ticket);
 
@@ -97,6 +99,7 @@ public class TicketWorkflowService {
                         Map.entry("status", "SERVING")));
     }
 
+    /** Báo cho workflow rằng giao dịch đã hoàn tất để process đi tới trạng thái kết thúc. */
     public void completeServing(Ticket ticket) {
         Task servingTask = findActiveTask(ticket.getTicketId(), SERVE_TASK);
         if (servingTask == null) {
@@ -112,6 +115,7 @@ public class TicketWorkflowService {
         taskService.complete(servingTask.getId(), Map.of("status", "COMPLETED"));
     }
 
+    /** Hủy process đang chạy tương ứng khi khách hàng hủy phiếu. */
     public void cancelTicket(Ticket ticket) {
         ProcessInstance processInstance = findActiveProcess(ticket.getTicketId());
         if (processInstance != null) {
@@ -121,6 +125,7 @@ public class TicketWorkflowService {
         }
     }
 
+    /** Liệt kê task chờ xử lý thuộc đúng chi nhánh của nhân viên hiện tại. */
     public List<TicketWorkflowTaskResponse> getPendingApprovalTasks() {
         User currentUser = currentUserService.requireUser();
 

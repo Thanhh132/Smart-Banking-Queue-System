@@ -40,6 +40,7 @@ public class KeycloakService {
         this.keycloakProperties = keycloakProperties;
     }
 
+    /** Gọi token endpoint bằng password grant; đây là nơi xác minh email/mật khẩu chính. */
     public Map<String, Object> login(
             String email,
             String password) {
@@ -58,6 +59,7 @@ public class KeycloakService {
         return postFormForMap(tokenUrl(), body);
     }
 
+    /** Yêu cầu Keycloak xoay vòng/cấp lại token cho phiên đăng nhập đang còn hiệu lực. */
     public Map<String, Object> refreshToken(String refreshToken) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new RuntimeException("Refresh token khong hop le");
@@ -93,11 +95,24 @@ public class KeycloakService {
         postFormForVoid(logoutUrl(), body);
     }
 
+    /** Tạo user Keycloak đã kích hoạt, dùng cho tài khoản nhân sự do quản trị viên cấp. */
     public String createUser(
             String fullName,
             String email,
             String password,
             String role) {
+
+        return createUser(fullName, email, password, role, true, true);
+    }
+
+    /** Tạo user với trạng thái enabled/emailVerified tùy luồng đăng ký hay quản trị nội bộ. */
+    public String createUser(
+            String fullName,
+            String email,
+            String password,
+            String role,
+            boolean enabled,
+            boolean emailVerified) {
 
         String adminToken = getAdminAccessToken();
 
@@ -116,8 +131,8 @@ public class KeycloakService {
         NameParts nameParts = splitName(fullName);
         userPayload.put("firstName", nameParts.firstName());
         userPayload.put("lastName", nameParts.lastName());
-        userPayload.put("enabled", true);
-        userPayload.put("emailVerified", true);
+        userPayload.put("enabled", enabled);
+        userPayload.put("emailVerified", emailVerified);
         userPayload.put("requiredActions", List.of());
         userPayload.put("credentials", List.of(passwordCredential));
         userPayload.put("attributes", Map.of("role", List.of(role)));
@@ -146,6 +161,9 @@ public class KeycloakService {
         } catch (HttpClientErrorException.Conflict ex) {
             String userId = findUserIdByEmail(email, adminToken);
             prepareExistingUser(userId, fullName, email, password, role, adminToken);
+            if (!enabled || !emailVerified) {
+                updateUserVerificationState(userId, enabled, emailVerified, adminToken);
+            }
             return userId;
         } catch (HttpClientErrorException ex) {
             throw new RuntimeException(
@@ -221,6 +239,7 @@ public class KeycloakService {
         }
     }
 
+    /** Đồng bộ họ tên, email và role từ database nghiệp vụ sang danh tính Keycloak. */
     public void updateUserProfile(
             String userId,
             String fullName,
@@ -242,6 +261,7 @@ public class KeycloakService {
         }
     }
 
+    /** Sửa tài khoản Keycloak cũ thiếu cấu hình password/role để có thể đăng nhập lại. */
     public void repairUserPasswordLogin(
             String userId,
             String fullName,
@@ -263,6 +283,27 @@ public class KeycloakService {
         }
 
         resetPassword(userId, password, getAdminAccessToken());
+    }
+
+    public void verifyUserEmail(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new RuntimeException("Tai khoan chua duoc dong bo voi Keycloak");
+        }
+        updateUserVerificationState(userId, true, true, getAdminAccessToken());
+    }
+
+    private void updateUserVerificationState(
+            String userId, boolean enabled, boolean emailVerified, String adminToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(adminToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        restTemplate.exchange(
+                userUrl(userId),
+                HttpMethod.PUT,
+                new HttpEntity<>(Map.of(
+                        "enabled", enabled,
+                        "emailVerified", emailVerified), headers),
+                Void.class);
     }
 
     private void prepareExistingUser(
@@ -385,6 +426,7 @@ public class KeycloakService {
     private record NameParts(String firstName, String lastName) {
     }
 
+    /** Lấy admin token chỉ dùng ở backend để gọi Keycloak Admin REST API. */
     private String getAdminAccessToken() {
 
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
@@ -404,6 +446,7 @@ public class KeycloakService {
         return accessToken.toString();
     }
 
+    /** Gán realm role vào user để Spring Security ánh xạ thành ROLE_* khi đọc JWT. */
     private void assignRealmRole(
             String userId,
             String role,
@@ -435,6 +478,7 @@ public class KeycloakService {
                 Void.class);
     }
 
+    /** Bao bọc các token endpoint và chuyển timeout/lỗi 5xx thành KeycloakUnavailableException. */
     private Map<String, Object> postFormForMap(
             String url,
             MultiValueMap<String, String> body) {

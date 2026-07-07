@@ -19,4 +19,5 @@ public class LoginResponse {
     private String fullName;
     private String email;
     private Long branchId;
+    private String authenticationSource;
 }

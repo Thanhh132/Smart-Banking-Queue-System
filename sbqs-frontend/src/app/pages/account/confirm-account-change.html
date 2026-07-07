@@ -1,0 +1,8 @@
+<main class="confirm-shell">
+  <section class="confirm-card">
+    <h1>Xác nhận thay đổi tài khoản</h1>
+    <p>{{ message }}</p>
+    <a *ngIf="isSuccess && !needsNewEmailConfirmation && emailChanged" routerLink="/login">Đăng nhập bằng email mới</a>
+    <a *ngIf="isSuccess && !needsNewEmailConfirmation && !emailChanged" routerLink="/account">Quay lại tài khoản</a>
+  </section>
+</main>

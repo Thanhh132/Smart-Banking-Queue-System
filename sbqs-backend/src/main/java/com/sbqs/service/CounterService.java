@@ -123,6 +123,10 @@ public class CounterService {
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    /**
+     * Mở ca làm việc: khóa quyền sở hữu quầy cho nhân viên hiện tại và tạo CounterSession
+     * để giữ lịch sử ca kể cả sau này quầy hoặc tên nhân viên thay đổi.
+     */
     public Counter assignCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -171,6 +175,7 @@ public class CounterService {
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    /** Kết thúc ca, giải phóng quầy và đóng CounterSession đang ACTIVE. */
     public Counter unassignCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
@@ -211,6 +216,7 @@ public class CounterService {
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true),
             @CacheEvict(cacheNames = "services", allEntries = true)
     })
+    /** Chỉ xóa quầy chưa phát sinh dữ liệu; dữ liệu có lịch sử nên chuyển INACTIVE thay vì xóa cứng. */
     public void deleteCounter(Long counterId) {
         Counter counter = counterRepository.findById(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));

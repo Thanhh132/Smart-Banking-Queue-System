@@ -1,0 +1,26 @@
+.confirm-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg-main);
+}
+
+.confirm-card {
+  width: min(560px, 100%);
+  padding: 36px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: #fff;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+
+  h1 {
+    font-size: 28px;
+  }
+
+  a {
+    color: var(--primary-color);
+    font-weight: 800;
+  }
+}

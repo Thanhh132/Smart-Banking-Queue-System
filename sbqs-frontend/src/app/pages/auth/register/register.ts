@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -19,13 +19,13 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
 })
 export class Register {
   private fb = inject(FormBuilder);
-  private router = inject(Router);
   private authService = inject(AuthService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
   isSubmitting = false;
   errorMessage = '';
+  successMessage = '';
 
   registerForm = this.fb.group({
     fullName: ['', [Validators.required]],
@@ -36,6 +36,7 @@ export class Register {
 
   submit(): void {
     this.errorMessage = '';
+    this.successMessage = '';
 
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
@@ -63,7 +64,9 @@ export class Register {
       )
       .subscribe({
         next: () => {
-          this.router.navigateByUrl('/login');
+          this.successMessage = 'Đăng ký thành công. Hãy kiểm tra email để kích hoạt tài khoản.';
+          this.registerForm.reset();
+          this.cdr.detectChanges();
         },
         error: (err) => {
           this.errorMessage = this.apiError.getMessage(

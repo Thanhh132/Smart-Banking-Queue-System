@@ -7,10 +7,15 @@ import com.sbqs.dto.ForgotPasswordRequest;
 import com.sbqs.dto.ResetPasswordRequest;
 import com.sbqs.entity.User;
 import com.sbqs.service.AuthService;
+import com.sbqs.service.AuthenticationAuditService;
+import com.sbqs.service.EmailVerificationService;
+import com.sbqs.service.LoginRateLimitService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.sbqs.dto.LoginResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,11 +23,20 @@ import com.sbqs.dto.LoginResponse;
 public class AuthController {
 
     private final AuthService authService;
+    private final LoginRateLimitService loginRateLimitService;
+    private final AuthenticationAuditService authenticationAuditService;
+    private final EmailVerificationService emailVerificationService;
 
     public AuthController(
-            AuthService authService) {
+            AuthService authService,
+            LoginRateLimitService loginRateLimitService,
+            AuthenticationAuditService authenticationAuditService,
+            EmailVerificationService emailVerificationService) {
 
         this.authService = authService;
+        this.loginRateLimitService = loginRateLimitService;
+        this.authenticationAuditService = authenticationAuditService;
+        this.emailVerificationService = emailVerificationService;
     }
 
     @PostMapping("/register")
@@ -35,10 +49,29 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest) {
 
-        return ResponseEntity.ok(
-                authService.login(request));
+        String email = request.getEmail().trim().toLowerCase(Locale.ROOT);
+        String ipAddress = resolveClientIp(httpRequest);
+        String userAgent = httpRequest.getHeader("User-Agent");
+        try {
+            loginRateLimitService.checkAllowed(email, ipAddress);
+            LoginResponse response = authService.login(request);
+            loginRateLimitService.recordSuccess(email, ipAddress);
+            authenticationAuditService.record(
+                    email, true, response.getAuthenticationSource(), null, ipAddress, userAgent);
+            return ResponseEntity.ok(response);
+        } catch (com.sbqs.exception.LoginRateLimitExceededException ex) {
+            authenticationAuditService.record(
+                    email, false, null, "RATE_LIMITED", ipAddress, userAgent);
+            throw ex;
+        } catch (RuntimeException ex) {
+            loginRateLimitService.recordFailure(email, ipAddress);
+            authenticationAuditService.record(
+                    email, false, null, "AUTHENTICATION_FAILED", ipAddress, userAgent);
+            throw ex;
+        }
     }
 
     @PostMapping("/refresh")
@@ -71,5 +104,22 @@ public class AuthController {
 
         authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
+        emailVerificationService.verify(token);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<Void> resendVerification(@RequestBody ForgotPasswordRequest request) {
+        emailVerificationService.requestVerification(request.getEmail());
+        return ResponseEntity.accepted().build();
+    }
+
+    private String resolveClientIp(HttpServletRequest request) {
+        // Do not trust X-Forwarded-For until a trusted reverse proxy is configured.
+        return request.getRemoteAddr();
     }
 }

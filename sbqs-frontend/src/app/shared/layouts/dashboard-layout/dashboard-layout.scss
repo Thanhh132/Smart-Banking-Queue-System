@@ -37,3 +37,13 @@
     flex-direction: column;
   }
 }
+
+.dashboard-layout__fallback-warning {
+  margin: 16px 32px 0;
+  padding: 12px 16px;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 600;
+}

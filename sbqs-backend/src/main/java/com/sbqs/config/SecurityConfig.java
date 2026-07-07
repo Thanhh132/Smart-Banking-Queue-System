@@ -49,6 +49,10 @@ public class SecurityConfig {
     }
 
     @Bean
+    /**
+     * Decoder kép: thử xác minh JWT fallback bằng secret nội bộ trước, nếu không đúng
+     * thì xác minh JWT Keycloak bằng JWKS, issuer và audience/azp của SBQS.
+     */
     public JwtDecoder jwtDecoder(
             @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}") String keycloakIssuer,
             @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}") String keycloakJwkSetUri,
@@ -82,6 +86,7 @@ public class SecurityConfig {
     }
 
     @Bean
+    /** Khai báo toàn bộ ma trận phân quyền endpoint theo role và loại phiên đăng nhập. */
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper)
             throws Exception {
 
@@ -106,8 +111,11 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/auth/refresh",
                                 "/api/auth/logout",
+                                "/api/auth/verify-email",
+                                "/api/auth/resend-verification",
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/account/confirm-change").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Fallback sessions can read dashboards and perform normal queue work,
                         // but cannot mutate identities, roles or top-level branch configuration.
@@ -184,6 +192,7 @@ public class SecurityConfig {
         return http.build();
     }
 
+    /** Chặn JWT fallback khỏi thao tác quản trị danh tính/chi nhánh dù role trong token phù hợp. */
     private AuthorizationManager<RequestAuthorizationContext> nonFallbackWithRoles(String... roles) {
         Set<String> requiredAuthorities = Arrays.stream(roles)
                 .map(role -> "ROLE_" + role)
@@ -208,6 +217,7 @@ public class SecurityConfig {
         return converter;
     }
 
+    /** Chuyển realm_access.roles trong JWT thành authority ROLE_* của Spring Security. */
     private Collection<GrantedAuthority> extractRealmRoles(Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaim("realm_access");
 

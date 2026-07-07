@@ -38,6 +38,7 @@ public class AuthService {
         private final PasswordEncoder passwordEncoder;
         private final FallbackTokenService fallbackTokenService;
         private final FallbackAuthProperties fallbackProperties;
+        private final EmailVerificationService emailVerificationService;
 
         public AuthService(
                         UserRepository userRepository,
@@ -46,7 +47,8 @@ public class AuthService {
                         PasswordResetService passwordResetService,
                         PasswordEncoder passwordEncoder,
                         FallbackTokenService fallbackTokenService,
-                        FallbackAuthProperties fallbackProperties) {
+                        FallbackAuthProperties fallbackProperties,
+                        EmailVerificationService emailVerificationService) {
 
                 this.userRepository = userRepository;
                 this.keycloakService = keycloakService;
@@ -55,8 +57,10 @@ public class AuthService {
                 this.passwordEncoder = passwordEncoder;
                 this.fallbackTokenService = fallbackTokenService;
                 this.fallbackProperties = fallbackProperties;
+                this.emailVerificationService = emailVerificationService;
         }
 
+        /** Đăng ký CUSTOMER: tạo user khóa trên Keycloak, lưu hash fallback và gửi mail kích hoạt. */
         public User register(
                         RegisterRequest request) {
 
@@ -75,7 +79,9 @@ public class AuthService {
                                 request.getFullName(),
                                 email,
                                 request.getPassword(),
-                                "CUSTOMER");
+                                "CUSTOMER",
+                                false,
+                                false);
 
                 User user = new User();
 
@@ -83,17 +89,30 @@ public class AuthService {
                 user.setEmail(email);
                 user.setPhone(request.getPhone());
                 user.setRole("CUSTOMER");
+                user.setStatus("PENDING");
                 user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
                 user.setKeycloakUserId(keycloakUserId);
 
-                return userRepository.save(user);
+                User savedUser = userRepository.save(user);
+                emailVerificationService.sendVerification(savedUser);
+                return savedUser;
         }
 
+        /**
+         * Luồng đăng nhập chính: luôn thử Keycloak trước; chỉ chuyển sang database fallback
+         * khi Keycloak thật sự mất kết nối/timeout, không fallback khi người dùng nhập sai mật khẩu.
+         */
         public LoginResponse login(
                         LoginRequest request) {
 
                 String email = normalizeEmail(request.getEmail());
                 log.info("Requesting Keycloak token for email={}", email);
+
+                userRepository.findByEmailIgnoreCase(email)
+                                .filter(user -> "PENDING".equalsIgnoreCase(user.getStatus()))
+                                .ifPresent(user -> {
+                                        throw new RuntimeException("Vui long xac minh email truoc khi dang nhap");
+                                });
 
                 Map<String, Object> token;
 
@@ -134,6 +153,7 @@ public class AuthService {
                 return response;
         }
 
+        /** Xác thực BCrypt nội bộ và cấp JWT ngắn hạn khi Keycloak không khả dụng. */
         private LoginResponse fallbackLogin(String email, String password, KeycloakUnavailableException cause) {
                 if (!fallbackProperties.isEnabled()) {
                         throw cause;
@@ -165,9 +185,11 @@ public class AuthService {
                                 user.getRole(),
                                 user.getFullName(),
                                 user.getEmail(),
-                                user.getBranch() == null ? null : user.getBranch().getBranchId());
+                                user.getBranch() == null ? null : user.getBranch().getBranchId(),
+                                "FALLBACK");
         }
 
+        /** Đổi refresh token Keycloak lấy bộ token mới; JWT fallback không có refresh token. */
         public LoginResponse refresh(String refreshToken) {
                 Map<String, Object> token = keycloakService.refreshToken(refreshToken);
                 return buildLoginResponse(token, null);
@@ -177,6 +199,7 @@ public class AuthService {
                 keycloakService.logout(refreshToken);
         }
 
+        /** Chuẩn hóa token Keycloak thành response chung mà Angular sử dụng cho mọi role. */
         private LoginResponse buildLoginResponse(
                         Map<String, Object> token,
                         String fallbackEmail) {
@@ -240,7 +263,8 @@ public class AuthService {
                                 resolvedRole,
                                 user.getFullName(),
                                 user.getEmail(),
-                                user.getBranch() == null ? null : user.getBranch().getBranchId());
+                                user.getBranch() == null ? null : user.getBranch().getBranchId(),
+                                "KEYCLOAK");
         }
 
         public void requestPasswordReset(String email) {
@@ -321,6 +345,7 @@ public class AuthService {
                 return email == null ? null : email.trim().toLowerCase(Locale.ROOT);
         }
 
+        /** Chỉ đọc claim để dựng response; việc xác minh chữ ký JWT được Spring Security thực hiện ở request sau. */
         private Map<String, Object> decodeTokenPayload(String accessToken) {
                 if (accessToken == null || accessToken.isBlank()) {
                         throw new RuntimeException("Keycloak access token khong hop le");

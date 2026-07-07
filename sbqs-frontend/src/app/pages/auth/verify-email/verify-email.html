@@ -1,0 +1,12 @@
+<main class="verify-shell">
+  <section class="verify-card">
+    <h1>Xác minh email</h1>
+    <p>{{ message }}</p>
+    <a *ngIf="isVerified" routerLink="/login">Đến trang đăng nhập</a>
+    <div *ngIf="!isLoading && !isVerified" class="verify-resend">
+      <input type="email" [(ngModel)]="email" placeholder="Email đăng ký" />
+      <button type="button" (click)="resend()">Gửi lại email xác minh</button>
+      <p *ngIf="resendMessage">{{ resendMessage }}</p>
+    </div>
+  </section>
+</main>

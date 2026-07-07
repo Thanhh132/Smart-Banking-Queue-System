@@ -14,6 +14,10 @@ public class DatabaseSchemaInitializer {
     }
 
     @PostConstruct
+    /**
+     * Bổ sung schema theo cách idempotent cho môi trường đồ án đang tắt Flyway.
+     * Production nên chuyển các câu lệnh này thành migration có version để audit dễ hơn.
+     */
     public void initialize() {
         jdbcTemplate.execute("alter table branches add column if not exists province varchar(255)");
         jdbcTemplate.execute("alter table branches add column if not exists district varchar(255)");
@@ -21,6 +25,7 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
         jdbcTemplate.execute("alter table tickets alter column service_id drop not null");
         jdbcTemplate.execute("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
+        jdbcTemplate.execute("alter table users drop constraint if exists users_status_check");
         jdbcTemplate.execute("""
                 update queue_machines qm
                 set last_ticket_number = greatest(
@@ -158,6 +163,51 @@ public class DatabaseSchemaInitializer {
                 """);
 
         jdbcTemplate.execute("""
+                create table if not exists email_verification_tokens (
+                    email_verification_token_id bigserial primary key,
+                    user_id bigint not null references users(user_id) on delete cascade,
+                    token_hash varchar(64) not null unique,
+                    expires_at timestamp not null,
+                    used_at timestamp,
+                    created_at timestamp not null
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists authentication_audits (
+                    authentication_audit_id bigserial primary key,
+                    user_id bigint,
+                    email varchar(255) not null,
+                    successful boolean not null,
+                    authentication_source varchar(50),
+                    failure_reason varchar(255),
+                    ip_address varchar(255),
+                    user_agent varchar(512),
+                    created_at timestamp not null
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_auth_audits_email_created_at on authentication_audits(email, created_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_auth_audits_ip_created_at on authentication_audits(ip_address, created_at desc)");
+
+        jdbcTemplate.execute("""
+                create table if not exists account_change_tokens (
+                    account_change_token_id bigserial primary key,
+                    user_id bigint not null references users(user_id) on delete cascade,
+                    pending_full_name varchar(150) not null,
+                    pending_email varchar(255) not null,
+                    pending_phone varchar(30) not null,
+                    current_email_token_hash varchar(64) not null unique,
+                    new_email_token_hash varchar(64) unique,
+                    expires_at timestamp not null,
+                    current_email_confirmed_at timestamp,
+                    new_email_confirmed_at timestamp,
+                    applied_at timestamp,
+                    created_at timestamp not null
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_account_change_user_created_at on account_change_tokens(user_id, created_at desc)");
+
+        jdbcTemplate.execute("""
                 create table if not exists counter_sessions (
                     counter_session_id bigserial primary key,
                     counter_id bigint not null,
@@ -257,6 +307,7 @@ public class DatabaseSchemaInitializer {
                 """);
     }
 
+    /** Chạy migration tương thích dữ liệu legacy; lỗi do dữ liệu cũ không làm backend dừng khởi động. */
     private void executeIfPossible(String sql) {
         try {
             jdbcTemplate.execute(sql);

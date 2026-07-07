@@ -1,0 +1,96 @@
+<app-dashboard-layout title="Tài khoản của tôi">
+  <section class="account-page">
+    <div *ngIf="isLoading" class="account-state">Đang tải thông tin tài khoản...</div>
+    <div *ngIf="loadError" class="message message--error">{{ loadError }}</div>
+
+    <ng-container *ngIf="profile && !isLoading">
+      <article class="account-card account-summary">
+        <div class="account-avatar">{{ profile.fullName.charAt(0) }}</div>
+        <div>
+          <h2>{{ profile.fullName }}</h2>
+          <p>{{ profile.email }}</p>
+          <div class="account-tags">
+            <span>{{ roleLabel }}</span>
+            <span>{{ profile.status === 'ACTIVE' ? 'Đang hoạt động' : profile.status }}</span>
+            <span *ngIf="profile.branchName">{{ profile.branchName }}</span>
+          </div>
+        </div>
+      </article>
+
+      <div class="account-grid">
+        <article class="account-card">
+          <div class="card-heading">
+            <div>
+              <h2>Thông tin cá nhân</h2>
+              <p *ngIf="canEditProfile">Mọi thay đổi phải được xác nhận qua email hiện tại.</p>
+              <p *ngIf="!canEditProfile">Thông tin nhân sự do công ty quản lý. Liên hệ quản trị viên nếu cần điều chỉnh.</p>
+            </div>
+          </div>
+
+          <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="account-form">
+            <label>
+              Họ và tên
+              <input formControlName="fullName" autocomplete="name" />
+            </label>
+            <label>
+              Email đăng nhập
+              <input formControlName="email" autocomplete="email" />
+            </label>
+            <label>
+              Số điện thoại
+              <input formControlName="phone" autocomplete="tel" />
+            </label>
+            <label>
+              Vai trò
+              <input [value]="roleLabel" disabled />
+            </label>
+
+            <div *ngIf="profileMessage" class="message message--success">{{ profileMessage }}</div>
+            <div *ngIf="profileError" class="message message--error">{{ profileError }}</div>
+            <button *ngIf="canEditProfile" type="submit" [disabled]="isSavingProfile">
+              <app-icon name="save" [size]="18" />
+              {{ isSavingProfile ? 'Đang gửi xác nhận...' : 'Gửi yêu cầu thay đổi' }}
+            </button>
+          </form>
+        </article>
+
+        <article class="account-card">
+          <div class="card-heading">
+            <div>
+              <h2>Đổi mật khẩu</h2>
+              <p>Nhập mật khẩu hiện tại để xác nhận chính chủ.</p>
+            </div>
+          </div>
+
+          <form
+            [formGroup]="passwordForm"
+            (ngSubmit)="changePassword()"
+            class="account-form"
+            autocomplete="off"
+          >
+            <label>
+              Mật khẩu hiện tại
+              <input appPreventAutofill type="password" formControlName="currentPassword" autocomplete="current-password" />
+            </label>
+            <label>
+              Mật khẩu mới
+              <input appPreventAutofill type="password" formControlName="newPassword" autocomplete="new-password" />
+            </label>
+            <p class="password-help">{{ passwordPolicyMessage }}</p>
+            <label>
+              Xác nhận mật khẩu mới
+              <input appPreventAutofill type="password" formControlName="confirmPassword" autocomplete="new-password" />
+            </label>
+
+            <div *ngIf="passwordMessage" class="message message--success">{{ passwordMessage }}</div>
+            <div *ngIf="passwordError" class="message message--error">{{ passwordError }}</div>
+            <button type="submit" [disabled]="isChangingPassword">
+              <app-icon name="key" [size]="18" />
+              {{ isChangingPassword ? 'Đang cập nhật...' : 'Đổi mật khẩu' }}
+            </button>
+          </form>
+        </article>
+      </div>
+    </ng-container>
+  </section>
+</app-dashboard-layout>

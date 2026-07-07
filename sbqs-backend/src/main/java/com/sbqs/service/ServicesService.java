@@ -61,6 +61,7 @@ public class ServicesService {
     }
 
     @Cacheable(cacheNames = "services", key = "'mapped:' + #branchId")
+    /** Chỉ trả dịch vụ đang được ít nhất một máy bốc số của chi nhánh cung cấp. */
     public List<Services> getMappedServicesByBranch(Long branchId) {
         requireOperationalBranchAccess(branchId);
         return mappingRepository.findByQueueMachineBranchBranchId(branchId)
@@ -175,6 +176,7 @@ public class ServicesService {
                         "serviceName", existingService.getServiceName()));
     }
 
+    /** Bảo đảm BRANCH_ADMIN chỉ cấu hình dịch vụ thuộc chi nhánh mình phụ trách. */
     private void requireOperationalBranchAccess(Long branchId) {
         if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
             currentUserService.requireBranch(branchId);

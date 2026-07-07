@@ -51,6 +51,7 @@ public class PasswordResetService {
     }
 
     @Transactional
+    /** Tạo token reset một lần cho tài khoản ACTIVE và áp dụng cooldown để chống spam mail. */
     public void requestReset(String email) {
         if (email == null || email.isBlank()) {
             return;
@@ -159,6 +160,7 @@ public class PasswordResetService {
     }
 
     @Transactional
+    /** Kiểm tra hạn/token đã dùng rồi đồng bộ mật khẩu mới sang Keycloak và BCrypt fallback. */
     public void resetPassword(String rawToken, String newPassword) {
         validatePassword(newPassword);
 

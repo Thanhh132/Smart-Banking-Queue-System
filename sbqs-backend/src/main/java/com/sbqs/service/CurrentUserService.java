@@ -15,6 +15,7 @@ public class CurrentUserService {
         this.userRepository = userRepository;
     }
 
+    /** Đọc email từ JWT đã xác minh rồi ánh xạ sang user nghiệp vụ trong PostgreSQL. */
     public User requireUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
@@ -38,6 +39,7 @@ public class CurrentUserService {
         return user.getBranch().getBranchId();
     }
 
+    /** Chặn truy cập chéo chi nhánh đối với role chỉ được vận hành một chi nhánh. */
     public void requireBranch(Long branchId) {
         if (branchId == null || !requireBranchId().equals(branchId)) {
             throw new RuntimeException("Ban khong co quyen truy cap du lieu cua chi nhanh nay");

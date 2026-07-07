@@ -11,6 +11,7 @@ export interface LoginResponse {
   fullName: string;
   email: string;
   branchId: number | null;
+  authenticationSource: 'KEYCLOAK' | 'FALLBACK';
 }
 
 @Injectable({
@@ -60,6 +61,16 @@ export class AuthService {
     });
   }
 
+  verifyEmail(token: string) {
+    return this.http.post<void>(`${this.apiUrl}/verify-email`, null, {
+      params: { token },
+    });
+  }
+
+  resendVerification(email: string) {
+    return this.http.post<void>(`${this.apiUrl}/resend-verification`, { email });
+  }
+
   logout(): Observable<void> {
     const refreshToken = localStorage.getItem('refreshToken');
     this.clearSession();
@@ -93,6 +104,7 @@ export class AuthService {
     localStorage.setItem('userRole', response.role);
     localStorage.setItem('fullName', response.fullName);
     localStorage.setItem('email', response.email);
+    localStorage.setItem('authenticationSource', response.authenticationSource);
 
     if (response.branchId) {
       localStorage.setItem('selectedBranchId', String(response.branchId));
@@ -107,6 +119,7 @@ export class AuthService {
     localStorage.removeItem('userRole');
     localStorage.removeItem('fullName');
     localStorage.removeItem('email');
+    localStorage.removeItem('authenticationSource');
     localStorage.removeItem('selectedBranchId');
     localStorage.removeItem('currentTicket');
     localStorage.removeItem('customerAddress');
@@ -120,6 +133,18 @@ export class AuthService {
 
   getRole(): string {
     return localStorage.getItem('userRole') || '';
+  }
+
+  updateDisplayName(fullName: string): void {
+    localStorage.setItem('fullName', fullName);
+  }
+
+  clearLocalSession(): void {
+    this.clearSession();
+  }
+
+  isFallbackSession(): boolean {
+    return localStorage.getItem('authenticationSource') === 'FALLBACK';
   }
 
   getHomeRoute(role: string): string {

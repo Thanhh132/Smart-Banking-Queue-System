@@ -47,7 +47,8 @@ export class AppSidebar {
   };
 
   get menuItems(): SidebarItem[] {
-    return this.menusByRole[this.authService.getRole()] || [];
+    const roleItems = this.menusByRole[this.authService.getRole()] || [];
+    return [...roleItems, { label: 'Tài khoản của tôi', icon: 'users', route: '/account' }];
   }
 
   logout(): void {
