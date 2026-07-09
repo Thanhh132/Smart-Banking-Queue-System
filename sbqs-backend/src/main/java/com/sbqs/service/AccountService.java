@@ -4,10 +4,15 @@ import com.sbqs.config.AccountChangeProperties;
 import com.sbqs.dto.AccountChangeConfirmationResponse;
 import com.sbqs.dto.AccountProfileResponse;
 import com.sbqs.dto.ChangePasswordRequest;
+import com.sbqs.dto.CustomerPaperlessProfileResponse;
+import com.sbqs.dto.CustomerProfileFieldResponse;
 import com.sbqs.dto.UpdateAccountProfileRequest;
+import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
 import com.sbqs.entity.AccountChangeToken;
+import com.sbqs.entity.Services;
 import com.sbqs.entity.User;
 import com.sbqs.repository.AccountChangeTokenRepository;
+import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.UserRepository;
 import com.sbqs.util.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,7 +23,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -28,8 +36,33 @@ public class AccountService {
     private final KeycloakService keycloakService;
     private final PasswordEncoder passwordEncoder;
     private final AccountChangeTokenRepository changeTokenRepository;
+    private final ServiceRepository serviceRepository;
     private final AuthenticationMailService mailService;
     private final AccountChangeProperties changeProperties;
+
+    private static final Map<String, CustomerProfileFieldResponse> PAPERLESS_FIELDS = Map.ofEntries(
+            Map.entry("DATE_OF_BIRTH", new CustomerProfileFieldResponse(
+                    "DATE_OF_BIRTH", "Ngày sinh", "date", "Định dạng dd/mm/yyyy", true)),
+            Map.entry("IDENTITY_NUMBER", new CustomerProfileFieldResponse(
+                    "IDENTITY_NUMBER", "Số CCCD/Hộ chiếu", "text", "Nhập số giấy tờ tùy thân", true)),
+            Map.entry("IDENTITY_ISSUE_DATE", new CustomerProfileFieldResponse(
+                    "IDENTITY_ISSUE_DATE", "Ngày cấp CCCD/Hộ chiếu", "date", "Định dạng dd/mm/yyyy", true)),
+            Map.entry("IDENTITY_ISSUE_PLACE", new CustomerProfileFieldResponse(
+                    "IDENTITY_ISSUE_PLACE", "Nơi cấp CCCD/Hộ chiếu", "text", "Cơ quan cấp giấy tờ", true)),
+            Map.entry("PERMANENT_ADDRESS", new CustomerProfileFieldResponse(
+                    "PERMANENT_ADDRESS", "Địa chỉ thường trú", "textarea", "Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành", true)),
+            Map.entry("CONTACT_ADDRESS", new CustomerProfileFieldResponse(
+                    "CONTACT_ADDRESS", "Địa chỉ liên hệ", "textarea", "Tự điền theo địa chỉ thường trú nếu để trống", true)),
+            Map.entry("OCCUPATION", new CustomerProfileFieldResponse(
+                    "OCCUPATION", "Nghề nghiệp", "text", "Nghề nghiệp hiện tại", true)),
+            Map.entry("EMPLOYER_NAME", new CustomerProfileFieldResponse(
+                    "EMPLOYER_NAME", "Đơn vị công tác", "text", "Tên công ty hoặc đơn vị công tác", true)),
+            Map.entry("MONTHLY_INCOME", new CustomerProfileFieldResponse(
+                    "MONTHLY_INCOME", "Thu nhập hằng tháng", "number", "Thu nhập dự kiến mỗi tháng", true)),
+            Map.entry("ACCOUNT_NUMBER", new CustomerProfileFieldResponse(
+                    "ACCOUNT_NUMBER", "Số tài khoản liên kết", "text", "Số tài khoản ngân hàng dùng để liên kết thẻ", true)),
+            Map.entry("CARD_DELIVERY_ADDRESS", new CustomerProfileFieldResponse(
+                    "CARD_DELIVERY_ADDRESS", "Địa chỉ nhận thẻ", "textarea", "Tự điền theo địa chỉ liên hệ nếu để trống", true)));
 
     public AccountService(
             CurrentUserService currentUserService,
@@ -37,6 +70,7 @@ public class AccountService {
             KeycloakService keycloakService,
             PasswordEncoder passwordEncoder,
             AccountChangeTokenRepository changeTokenRepository,
+            ServiceRepository serviceRepository,
             AuthenticationMailService mailService,
             AccountChangeProperties changeProperties) {
         this.currentUserService = currentUserService;
@@ -44,6 +78,7 @@ public class AccountService {
         this.keycloakService = keycloakService;
         this.passwordEncoder = passwordEncoder;
         this.changeTokenRepository = changeTokenRepository;
+        this.serviceRepository = serviceRepository;
         this.mailService = mailService;
         this.changeProperties = changeProperties;
     }
@@ -55,6 +90,60 @@ public class AccountService {
      */
     public AccountProfileResponse getProfile() {
         return AccountProfileResponse.from(currentUserService.requireUser());
+    }
+
+    @Transactional(readOnly = true)
+    /**
+     * Tra ve ho so nghiep vu ngan hang cua CUSTOMER va danh sach truong con thieu theo dich vu.
+     * Frontend dung API nay de quyet dinh co can hien form bo sung truoc khi cap so hay khong.
+     */
+    public CustomerPaperlessProfileResponse getPaperlessProfile(Long serviceId) {
+        User user = requireCustomer();
+        List<String> requiredFieldKeys = getRequiredFieldKeys(serviceId);
+        Map<String, String> values = toPaperlessValues(user);
+        List<CustomerProfileFieldResponse> requiredFields = requiredFieldKeys.stream()
+                .map(PAPERLESS_FIELDS::get)
+                .filter(field -> field != null)
+                .toList();
+        List<String> missingFields = requiredFields.stream()
+                .map(CustomerProfileFieldResponse::key)
+                .filter(key -> isBlank(values.get(key)))
+                .toList();
+
+        return new CustomerPaperlessProfileResponse(
+                values,
+                requiredFields,
+                missingFields,
+                missingFields.isEmpty());
+    }
+
+    @Transactional
+    /**
+     * Luu cac thong tin chi can khai bao mot lan de lan sau tu dong dien vao giay to online.
+     * Neu co serviceId, chi cac truong service yeu cau bat buoc moi duoc validate day du.
+     */
+    public CustomerPaperlessProfileResponse updatePaperlessProfile(UpdateCustomerPaperlessProfileRequest request) {
+        User user = requireCustomer();
+        Map<String, String> values = request.values() == null ? Map.of() : request.values();
+
+        for (String key : values.keySet()) {
+            if (!PAPERLESS_FIELDS.containsKey(key)) {
+                throw new RuntimeException("Truong ho so khong hop le: " + key);
+            }
+        }
+
+        applyPaperlessValues(user, values);
+
+        List<String> requiredFieldKeys = getRequiredFieldKeys(request.serviceId());
+        List<String> missingFields = requiredFieldKeys.stream()
+                .filter(key -> isBlank(getPaperlessValue(user, key)))
+                .toList();
+        if (!missingFields.isEmpty()) {
+            throw new RuntimeException("Vui long bo sung day du thong tin bat buoc truoc khi lay so");
+        }
+
+        userRepository.save(user);
+        return getPaperlessProfile(request.serviceId());
     }
 
     @Transactional
@@ -227,5 +316,81 @@ public class AccountService {
         } catch (Exception ex) {
             throw new IllegalStateException("Khong tao duoc token xac nhan tai khoan", ex);
         }
+    }
+
+    /** Chi CUSTOMER moi duoc tu cap nhat ho so giay to cua chinh minh. */
+    private User requireCustomer() {
+        User user = currentUserService.requireUser();
+        if (!"CUSTOMER".equals(user.getRole())) {
+            throw new RuntimeException("Chi khach hang moi duoc cap nhat ho so giay to");
+        }
+        return user;
+    }
+
+    /** Lay danh sach truong ma mot dich vu yeu cau de chuan bi giay to online. */
+    private List<String> getRequiredFieldKeys(Long serviceId) {
+        if (serviceId == null) {
+            return List.of();
+        }
+
+        Services service = serviceRepository.findById(serviceId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+        return service.getRequiredCustomerFields() == null
+                ? List.of()
+                : service.getRequiredCustomerFields().stream()
+                        .filter(PAPERLESS_FIELDS::containsKey)
+                        .distinct()
+                        .toList();
+    }
+
+    private Map<String, String> toPaperlessValues(User user) {
+        Map<String, String> values = new LinkedHashMap<>();
+        PAPERLESS_FIELDS.keySet().forEach(key -> values.put(key, getPaperlessValue(user, key)));
+        return values;
+    }
+
+    private String getPaperlessValue(User user, String key) {
+        return switch (key) {
+            case "DATE_OF_BIRTH" -> user.getDateOfBirth();
+            case "IDENTITY_NUMBER" -> user.getIdentityNumber();
+            case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
+            case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
+            case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
+            case "CONTACT_ADDRESS" -> user.getContactAddress();
+            case "OCCUPATION" -> user.getOccupation();
+            case "EMPLOYER_NAME" -> user.getEmployerName();
+            case "MONTHLY_INCOME" -> user.getMonthlyIncome();
+            case "ACCOUNT_NUMBER" -> user.getAccountNumber();
+            case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
+            default -> "";
+        };
+    }
+
+    private void applyPaperlessValues(User user, Map<String, String> values) {
+        values.forEach((key, value) -> {
+            String normalized = normalizeProfileValue(value);
+            switch (key) {
+                case "DATE_OF_BIRTH" -> user.setDateOfBirth(normalized);
+                case "IDENTITY_NUMBER" -> user.setIdentityNumber(normalized);
+                case "IDENTITY_ISSUE_DATE" -> user.setIdentityIssueDate(normalized);
+                case "IDENTITY_ISSUE_PLACE" -> user.setIdentityIssuePlace(normalized);
+                case "PERMANENT_ADDRESS" -> user.setPermanentAddress(normalized);
+                case "CONTACT_ADDRESS" -> user.setContactAddress(normalized);
+                case "OCCUPATION" -> user.setOccupation(normalized);
+                case "EMPLOYER_NAME" -> user.setEmployerName(normalized);
+                case "MONTHLY_INCOME" -> user.setMonthlyIncome(normalized);
+                case "ACCOUNT_NUMBER" -> user.setAccountNumber(normalized);
+                case "CARD_DELIVERY_ADDRESS" -> user.setCardDeliveryAddress(normalized);
+                default -> throw new RuntimeException("Truong ho so khong hop le: " + key);
+            }
+        });
+    }
+
+    private String normalizeProfileValue(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

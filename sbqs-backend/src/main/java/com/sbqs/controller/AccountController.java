@@ -3,7 +3,9 @@ package com.sbqs.controller;
 import com.sbqs.dto.AccountProfileResponse;
 import com.sbqs.dto.AccountChangeConfirmationResponse;
 import com.sbqs.dto.ChangePasswordRequest;
+import com.sbqs.dto.CustomerPaperlessProfileResponse;
 import com.sbqs.dto.UpdateAccountProfileRequest;
+import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
 import com.sbqs.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,20 @@ public class AccountController {
     /** API dùng chung cho mọi role để xem thông tin tài khoản của chính mình. */
     public ResponseEntity<AccountProfileResponse> getProfile() {
         return ResponseEntity.ok(accountService.getProfile());
+    }
+
+    @GetMapping("/paperless-profile")
+    /** Tra ve ho so giay to cua customer va cac truong con thieu theo dich vu duoc chon. */
+    public ResponseEntity<CustomerPaperlessProfileResponse> getPaperlessProfile(
+            @RequestParam(required = false) Long serviceId) {
+        return ResponseEntity.ok(accountService.getPaperlessProfile(serviceId));
+    }
+
+    @PutMapping("/paperless-profile")
+    /** Luu ho so giay to dung chung cho cac dich vu can dien form online. */
+    public ResponseEntity<CustomerPaperlessProfileResponse> updatePaperlessProfile(
+            @Valid @RequestBody UpdateCustomerPaperlessProfileRequest request) {
+        return ResponseEntity.ok(accountService.updatePaperlessProfile(request));
     }
 
     @PostMapping("/change-request")

@@ -33,6 +33,39 @@ public class User {
 
     private String phone;
 
+    @Column(name = "date_of_birth")
+    private String dateOfBirth;
+
+    @Column(name = "identity_number")
+    private String identityNumber;
+
+    @Column(name = "identity_issue_date")
+    private String identityIssueDate;
+
+    @Column(name = "identity_issue_place")
+    private String identityIssuePlace;
+
+    @Column(name = "permanent_address")
+    private String permanentAddress;
+
+    @Column(name = "contact_address")
+    private String contactAddress;
+
+    @Column(name = "occupation")
+    private String occupation;
+
+    @Column(name = "employer_name")
+    private String employerName;
+
+    @Column(name = "monthly_income")
+    private String monthlyIncome;
+
+    @Column(name = "account_number")
+    private String accountNumber;
+
+    @Column(name = "card_delivery_address")
+    private String cardDeliveryAddress;
+
     private String role;
 
     private String status;

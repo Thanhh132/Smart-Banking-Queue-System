@@ -7,6 +7,8 @@ import lombok.Setter;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Business category that customers select when taking a queue ticket.
@@ -54,4 +56,8 @@ public class Services {
     
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE";
+
+    @Convert(converter = StringListConverter.class)
+    @Column(name = "required_customer_fields", length = 1000)
+    private List<String> requiredCustomerFields = new ArrayList<>();
 }

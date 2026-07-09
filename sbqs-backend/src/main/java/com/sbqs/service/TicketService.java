@@ -8,6 +8,8 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
+import com.sbqs.dto.TicketPaperlessFieldResponse;
+import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.repository.BranchRepository;
@@ -18,6 +20,7 @@ import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
+import com.sbqs.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -40,6 +43,7 @@ public class TicketService {
     private final HistoryRepository historyRepository;
     private final BranchRepository branchRepository;
     private final ServiceRepository serviceRepository;
+    private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final CounterSessionRepository counterSessionRepository;
     private final TicketWorkflowService ticketWorkflowService;
@@ -53,6 +57,7 @@ public class TicketService {
             HistoryRepository historyRepository,
             BranchRepository branchRepository,
             ServiceRepository serviceRepository,
+            UserRepository userRepository,
             CurrentUserService currentUserService,
             CounterSessionRepository counterSessionRepository,
             TicketWorkflowService ticketWorkflowService,
@@ -65,6 +70,7 @@ public class TicketService {
         this.historyRepository = historyRepository;
         this.branchRepository = branchRepository;
         this.serviceRepository = serviceRepository;
+        this.userRepository = userRepository;
         this.currentUserService = currentUserService;
         this.counterSessionRepository = counterSessionRepository;
         this.ticketWorkflowService = ticketWorkflowService;
@@ -107,6 +113,8 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
         Services service = serviceRepository.findById(ticket.getService().getServiceId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+        User customer = currentUserService.requireUser();
+        requireCompletePaperlessProfile(customer, service);
 
         if (service.getBranch() == null
                 || !service.getBranch().getBranchId().equals(branch.getBranchId())) {
@@ -213,7 +221,7 @@ public class TicketService {
      * Nhân viên gọi phiếu WAITING tiếp theo phù hợp dịch vụ của quầy; đồng thời chuyển
      * phiếu sang SERVING, gắn quầy/nhân viên và cập nhật workflow Camunda.
      */
-    public Ticket callNextTicket(Long counterId) {
+    public TicketStaffViewResponse callNextTicket(Long counterId) {
         Counter counter = counterRepository.findByIdForUpdate(counterId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay quay"));
 
@@ -256,7 +264,24 @@ public class TicketService {
                         "counterName", counter.getCounterName(),
                         "serviceName", savedTicket.getService().getServiceName()));
 
-        return savedTicket;
+        return toStaffView(savedTicket);
+    }
+
+    @Transactional(readOnly = true)
+    /** Chi nhan vien dang giu quay phuc vu moi duoc xem ho so giay to cua phieu da goi. */
+    public TicketStaffViewResponse getServingTicketForStaff(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
+
+        if (!"SERVING".equals(ticket.getStatus())) {
+            throw new RuntimeException("Chi hien ho so giay to sau khi phieu da duoc goi");
+        }
+
+        Counter counter = counterRepository.findFirstByCurrentTicketTicketId(ticketId)
+                .orElseThrow(() -> new RuntimeException("Phieu nay chua duoc goi vao quay nao"));
+        requireCurrentStaffOwnsCounter(counter);
+
+        return toStaffView(ticket);
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
@@ -392,6 +417,91 @@ public class TicketService {
     }
 
     /** Bảo đảm nhân viên chỉ thao tác trên quầy đang được chính mình nhận trong ca hiện tại. */
+    /** Chan cap so cho dich vu can giay to online khi customer chua khai bao du thong tin bat buoc. */
+    private void requireCompletePaperlessProfile(User customer, Services service) {
+        List<String> requiredFields = service.getRequiredCustomerFields();
+        if (requiredFields == null || requiredFields.isEmpty()) {
+            return;
+        }
+
+        boolean incomplete = requiredFields.stream()
+                .anyMatch(field -> isBlank(getPaperlessValue(customer, field)));
+        if (incomplete) {
+            throw new RuntimeException("Vui long bo sung day du ho so giay to truoc khi lay so dich vu nay");
+        }
+    }
+
+    private String getPaperlessValue(User user, String field) {
+        return switch (field) {
+            case "DATE_OF_BIRTH" -> user.getDateOfBirth();
+            case "IDENTITY_NUMBER" -> user.getIdentityNumber();
+            case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
+            case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
+            case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
+            case "CONTACT_ADDRESS" -> user.getContactAddress();
+            case "OCCUPATION" -> user.getOccupation();
+            case "EMPLOYER_NAME" -> user.getEmployerName();
+            case "MONTHLY_INCOME" -> user.getMonthlyIncome();
+            case "ACCOUNT_NUMBER" -> user.getAccountNumber();
+            case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
+            default -> "";
+        };
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private TicketStaffViewResponse toStaffView(Ticket ticket) {
+        Services service = ticket.getService();
+        List<String> requiredFields = service == null || service.getRequiredCustomerFields() == null
+                ? List.of()
+                : service.getRequiredCustomerFields();
+        User customer = ticket.getCustomerEmail() == null
+                ? null
+                : userRepository.findByEmailIgnoreCase(ticket.getCustomerEmail()).orElse(null);
+        List<TicketPaperlessFieldResponse> paperlessFields = customer == null
+                ? List.of()
+                : requiredFields.stream()
+                        .map(key -> new TicketPaperlessFieldResponse(
+                                key,
+                                getPaperlessLabel(key),
+                                getPaperlessValue(customer, key)))
+                        .toList();
+
+        return new TicketStaffViewResponse(
+                ticket.getTicketId(),
+                ticket.getTicketNumber(),
+                ticket.getStatus(),
+                ticket.getCustomerEmail(),
+                ticket.getServingStartedAt(),
+                service == null ? null : new TicketStaffViewResponse.ServiceSummary(
+                        service.getServiceId(),
+                        service.getServiceCode(),
+                        service.getServiceName(),
+                        service.getServiceType()),
+                paperlessFields,
+                !paperlessFields.isEmpty());
+    }
+
+    private String getPaperlessLabel(String field) {
+        return switch (field) {
+            case "DATE_OF_BIRTH" -> "Ngày sinh";
+            case "IDENTITY_NUMBER" -> "Số CCCD/Hộ chiếu";
+            case "IDENTITY_ISSUE_DATE" -> "Ngày cấp CCCD/Hộ chiếu";
+            case "IDENTITY_ISSUE_PLACE" -> "Nơi cấp CCCD/Hộ chiếu";
+            case "PERMANENT_ADDRESS" -> "Địa chỉ thường trú";
+            case "CONTACT_ADDRESS" -> "Địa chỉ liên hệ";
+            case "OCCUPATION" -> "Nghề nghiệp";
+            case "EMPLOYER_NAME" -> "Đơn vị công tác";
+            case "MONTHLY_INCOME" -> "Thu nhập hằng tháng";
+            case "ACCOUNT_NUMBER" -> "Số tài khoản liên kết";
+            case "CARD_DELIVERY_ADDRESS" -> "Địa chỉ nhận thẻ";
+            default -> field;
+        };
+    }
+
+    /** Bao dam nhan vien chi thao tac tren quay dang duoc chinh minh nhan trong ca hien tai. */
     private void requireCurrentStaffOwnsCounter(Counter counter) {
         User currentStaff = currentUserService.requireUser();
         counterSessionRepository

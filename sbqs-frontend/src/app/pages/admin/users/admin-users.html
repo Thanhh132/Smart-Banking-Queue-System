@@ -191,6 +191,7 @@
                   </span>
                 </td>
                 <td>
+                  <div class="user-row-actions">
                   <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">
                     <app-icon name="pencil" [size]="14" />
                     Sửa
@@ -206,8 +207,9 @@
                   </button>
                   <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
                     <app-icon [name]="user.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
-                    {{ user.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
+                    {{ user.status === 'INACTIVE' ? 'Xóa khỏi danh sách' : 'Khóa tài khoản' }}
                   </button>
+                  </div>
                 </td>
               </tr>
             </tbody>

@@ -36,11 +36,19 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
+  align-items: stretch;
+
+  app-card {
+    display: block;
+    height: 100%;
+  }
 }
 
 .summary-card {
   display: grid;
   gap: 6px;
+  min-height: 132px;
+  align-content: space-between;
 
   strong {
     font-size: 34px;
@@ -90,6 +98,37 @@
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
+}
+
+.admin-panel-grid {
+  align-items: stretch;
+}
+
+.admin-panel-grid app-card {
+  height: 100%;
+}
+
+.admin-form {
+  gap: 16px;
+}
+
+.admin-table td:last-child {
+  min-width: 360px;
+}
+
+.user-row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.user-row-actions button {
+  min-width: 86px;
+}
+
+.user-row-actions .btn-danger {
+  min-width: 142px;
 }
 
 .badge-info {

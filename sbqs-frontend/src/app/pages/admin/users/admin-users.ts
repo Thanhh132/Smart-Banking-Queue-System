@@ -160,7 +160,12 @@ export class AdminUsers implements OnInit {
         this.successMessage = isInactive
           ? 'Đã xóa nhân viên khỏi danh sách.'
           : 'Đã khóa tài khoản nhân viên.';
-        this.loadUsers();
+        this.users = isInactive
+          ? this.users.filter((item) => item.userId !== user.userId)
+          : this.users.map((item) =>
+              item.userId === user.userId ? { ...item, status: 'INACTIVE' } : item,
+            );
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(

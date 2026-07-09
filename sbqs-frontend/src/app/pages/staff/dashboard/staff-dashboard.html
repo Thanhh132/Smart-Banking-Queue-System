@@ -134,15 +134,29 @@
             <span>Trạng thái</span>
             <strong>{{ currentTicket.status }}</strong>
           </div>
-          <button
-            type="button"
-            class="btn btn-success"
-            (click)="complete()"
-            [disabled]="isCompleting"
-          >
-            <app-icon name="check-circle" [size]="16" />
-            {{ isCompleting ? 'Đang hoàn tất...' : 'Hoàn thành phục vụ' }}
-          </button>
+          <section *ngIf="currentTicket.hasPaperlessProfile" class="ticket-paperless">
+            <div class="ticket-paperless__heading">
+              <span>Thông tin giấy tờ</span>
+              <strong>Hồ sơ khách đã khai báo</strong>
+            </div>
+            <dl>
+              <div *ngFor="let field of currentTicket.paperlessFields">
+                <dt>{{ field.label }}</dt>
+                <dd>{{ field.value || '-' }}</dd>
+              </div>
+            </dl>
+          </section>
+          <div class="ticket-actions">
+            <button
+              type="button"
+              class="btn btn-success"
+              (click)="complete()"
+              [disabled]="isCompleting"
+            >
+              <app-icon name="check-circle" [size]="16" />
+              {{ isCompleting ? 'Đang hoàn tất...' : 'Hoàn thành phục vụ' }}
+            </button>
+          </div>
         </div>
       </app-card>
     </div>

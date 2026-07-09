@@ -25,6 +25,12 @@ export class StaffService {
     );
   }
 
+  getTicketStaffView(ticketId: number) {
+    return this.http.get<any>(
+      `${this.apiUrl}/${ticketId}/staff-view`
+    );
+  }
+
   getPendingApprovalTasks() {
     return this.http.get<any[]>(
       'http://localhost:8081/api/workflows/tickets/pending-approval'

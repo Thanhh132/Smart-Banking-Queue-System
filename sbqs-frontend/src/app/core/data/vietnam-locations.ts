@@ -20,57 +20,70 @@ const wards = (...labels: string[]): WardOption[] => labels.map((label) => ({ la
 
 export const VIETNAM_LOCATIONS: ProvinceOption[] = [
   {
-    label: 'Bình Dương', code: 'BD', districts: [
-      { label: 'Thủ Dầu Một', code: 'TDM', latitude: 10.9804, longitude: 106.6519, wards: wards('Phú Cường', 'Phú Hòa', 'Phú Lợi', 'Hiệp Thành', 'Chánh Nghĩa', 'Định Hòa', 'Tương Bình Hiệp', 'Phú Mỹ', 'Hòa Phú', 'Hiệp An') },
-      { label: 'Dĩ An', code: 'DA', latitude: 10.9068, longitude: 106.7694, wards: wards('Dĩ An', 'An Bình', 'Bình An', 'Bình Thắng', 'Đông Hòa', 'Tân Bình', 'Tân Đông Hiệp') },
-      { label: 'Thuận An', code: 'TA', latitude: 10.9318, longitude: 106.7117, wards: wards('Lái Thiêu', 'An Phú', 'An Thạnh', 'Bình Chuẩn', 'Bình Hòa', 'Bình Nhâm', 'Hưng Định', 'Thuận Giao', 'Vĩnh Phú') },
-      { label: 'Bến Cát', code: 'BC', latitude: 11.1510, longitude: 106.5940, wards: wards('Mỹ Phước', 'Chánh Phú Hòa', 'Hòa Lợi', 'Tân Định', 'Thới Hòa') },
-      { label: 'Tân Uyên', code: 'TU', latitude: 11.0491, longitude: 106.7578, wards: wards('Uyên Hưng', 'Khánh Bình', 'Hội Nghĩa', 'Phú Chánh', 'Tân Hiệp', 'Tân Phước Khánh', 'Thái Hòa') },
-      { label: 'Bàu Bàng', code: 'BB', latitude: 11.2872, longitude: 106.6153, wards: wards('Lai Uyên', 'Lai Hưng', 'Long Nguyên', 'Tân Hưng', 'Trừ Văn Thố') },
-      { label: 'Bắc Tân Uyên', code: 'BTU', latitude: 11.1372, longitude: 106.8354, wards: wards('Tân Thành', 'Bình Mỹ', 'Đất Cuốc', 'Hiếu Liêm', 'Lạc An', 'Tân Bình') },
-      { label: 'Phú Giáo', code: 'PG', latitude: 11.2912, longitude: 106.7942, wards: wards('Phước Vĩnh', 'An Bình', 'An Linh', 'Phước Hòa', 'Tân Hiệp', 'Vĩnh Hòa') },
-      { label: 'Dầu Tiếng', code: 'DT', latitude: 11.3480, longitude: 106.4644, wards: wards('Dầu Tiếng', 'An Lập', 'Định An', 'Định Hiệp', 'Long Hòa', 'Minh Hòa') },
+    label: 'Thành phố Hà Nội',
+    code: '01',
+    districts: [
+      { label: 'Quận Ba Đình', code: '001', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Phúc Xá', 'Phường Trúc Bạch', 'Phường Vĩnh Phúc', 'Phường Cống Vị', 'Phường Giảng Võ', 'Phường Thành Công', 'Phường Kim Mã', 'Phường Ngọc Khánh', 'Phường Đội Cấn', 'Phường Điện Biên', 'Phường Quán Thánh', 'Phường Nguyễn Trung Trực', 'Phường Liễu Giai') },
+      { label: 'Quận Hoàn Kiếm', code: '002', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Phúc Tân', 'Phường Đồng Xuân', 'Phường Hàng Mã', 'Phường Hàng Buồm', 'Phường Hàng Đào', 'Phường Hàng Bạc', 'Phường Hàng Gai', 'Phường Cửa Đông', 'Phường Hàng Bông', 'Phường Tràng Tiền', 'Phường Trần Hưng Đạo', 'Phường Phan Chu Trinh', 'Phường Hàng Bài', 'Phường Lý Thái Tổ', 'Phường Cửa Nam', 'Phường Hàng Trống', 'Phường Hàng Khay', 'Phường Chương Dương') },
+      { label: 'Quận Tây Hồ', code: '003', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Phú Thượng', 'Phường Nhật Tân', 'Phường Tứ Liên', 'Phường Quảng An', 'Phường Xuân La', 'Phường Yên Phụ', 'Phường Bưởi', 'Phường Thụy Khuê') },
+      { label: 'Quận Cầu Giấy', code: '005', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Nghĩa Đô', 'Phường Nghĩa Tân', 'Phường Dịch Vọng', 'Phường Dịch Vọng Hậu', 'Phường Quan Hoa', 'Phường Láng Thượng', 'Phường Trung Hòa', 'Phường Yên Hòa', 'Phường Mai Dịch') },
+      { label: 'Quận Đống Đa', code: '006', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Cát Linh', 'Phường Văn Miếu', 'Phường Quốc Tử Giám', 'Phường Hàng Bột', 'Phường Ô Chợ Dừa', 'Phường Thổ Quan', 'Phường Khâm Thiên', 'Phường Trung Phụng', 'Phường Quang Trung', 'Phường Khương Thượng', 'Phường Nam Đồng', 'Phường Phương Liên', 'Phường Phương Mai', 'Phường Khương Mai', 'Phường Láng Hạ', 'Phường Láng Thượng', 'Phường Kim Liên', 'Phường Trung Tự', 'Phường Trung Liệt', 'Phường Thịnh Quang') },
+      { label: 'Quận Hai Bà Trưng', code: '007', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Nguyễn Du', 'Phường Lê Đại Hành', 'Phường Phố Huế', 'Phường Phạm Đình Hổ', 'Phường Bạch Đằng', 'Phường Thanh Lương', 'Phường Thanh Nhàn', 'Phường Cầu Dền', 'Phường Bách Khoa', 'Phường Đồng Tâm', 'Phường Quỳnh Lôi', 'Phường Quỳnh Mai', 'Phường Vĩnh Tuy', 'Phường Minh Khai', 'Phường Trương Định') },
+      { label: 'Quận Thanh Xuân', code: '009', latitude: 21.0285, longitude: 105.8542, wards: wards('Phường Nhân Chính', 'Phường Thượng Đình', 'Phường Khương Trung', 'Phường Khương Mai', 'Phường Khương Đình', 'Phường Hạ Đình', 'Phường Thanh Xuân Bắc', 'Phường Thanh Xuân Nam', 'Phường Thanh Xuân Trung', 'Phường Phương Liệt', 'Phường Kim Giang') },
     ],
   },
   {
-    label: 'Thành phố Hồ Chí Minh', code: 'HCM', districts: [
-      { label: 'Quận 1', code: 'Q1', latitude: 10.7756, longitude: 106.7004, wards: wards('Bến Nghé', 'Bến Thành', 'Cầu Kho', 'Cầu Ông Lãnh', 'Đa Kao', 'Nguyễn Cư Trinh', 'Nguyễn Thái Bình', 'Tân Định') },
-      { label: 'Quận 3', code: 'Q3', latitude: 10.7844, longitude: 106.6844, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 9', 'Võ Thị Sáu') },
-      { label: 'Quận 7', code: 'Q7', latitude: 10.7340, longitude: 106.7216, wards: wards('Tân Phú', 'Tân Phong', 'Tân Quy', 'Tân Hưng', 'Tân Thuận Đông', 'Tân Thuận Tây', 'Phú Mỹ', 'Phú Thuận') },
-      { label: 'Thành phố Thủ Đức', code: 'TD', latitude: 10.8494, longitude: 106.7537, wards: wards('An Khánh', 'An Phú', 'Bình Thọ', 'Hiệp Bình Chánh', 'Linh Trung', 'Linh Tây', 'Long Bình', 'Thảo Điền', 'Thủ Thiêm') },
-      { label: 'Quận Bình Thạnh', code: 'BT', latitude: 10.8106, longitude: 106.7091, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 5', 'Phường 11', 'Phường 13', 'Phường 19', 'Phường 22', 'Phường 25') },
+    label: 'Thành phố Hồ Chí Minh',
+    code: '79',
+    districts: [
+      { label: 'Quận 1', code: '760', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường Bến Nghé', 'Phường Bến Thành', 'Phường Cô Giang', 'Phường Cầu Kho', 'Phường Cầu Ông Lãnh', 'Phường Nguyễn Cư Trinh', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Tân Định', 'Phường Đa Kao') },
+      { label: 'Quận 3', code: '770', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường Võ Thị Sáu', 'Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14') },
+      { label: 'Quận 10', code: '771', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 2', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15') },
+      { label: 'Quận 11', code: '772', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15', 'Phường 16') },
+      { label: 'Quận 5', code: '773', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14') },
+      { label: 'Quận 6', code: '774', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14') },
+      { label: 'Quận 7', code: '778', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường Tân Kiểng', 'Phường Tân Quy', 'Phường Tân Phong', 'Phường Tân Phú', 'Phường Tân Thuận Đông', 'Phường Tân Thuận Tây', 'Phường Bình Thuận', 'Phường Phú Mỹ', 'Phường Phú Thuận') },
+      { label: 'Quận Gò Vấp', code: '764', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15', 'Phường 16', 'Phường 17') },
+      { label: 'Quận Bình Thạnh', code: '765', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15', 'Phường 17', 'Phường 19', 'Phường 21', 'Phường 22', 'Phường 24', 'Phường 25', 'Phường 26', 'Phường 27', 'Phường 28') },
+      { label: 'Thành phố Thủ Đức', code: '769', latitude: 10.7769, longitude: 106.7009, wards: wards('Phường Thảo Điền', 'Phường An Phú', 'Phường Bình An', 'Phường An Khánh', 'Phường Thủ Thiêm', 'Phường Linh Đông', 'Phường Linh Tây', 'Phường Linh Chiểu', 'Phường Linh Trung', 'Phường Linh Xuân', 'Phường Bình Thọ', 'Phường Trường Thọ', 'Phường Tam Phú', 'Phường Tam Bình', 'Phường Hiệp Bình Chánh', 'Phường Hiệp Bình Phước', 'Phường Long Trường', 'Phường Trường Thạnh', 'Phường Phước Long A', 'Phường Phước Long B', 'Phường Tăng Nhơn Phú A', 'Phường Tăng Nhơn Phú B') },
     ],
   },
   {
-    label: 'Đồng Nai', code: 'DNA', districts: [
-      { label: 'Biên Hòa', code: 'BH', latitude: 10.9574, longitude: 106.8426, wards: wards('An Bình', 'Bửu Hòa', 'Bửu Long', 'Hố Nai', 'Long Bình', 'Quang Vinh', 'Quyết Thắng', 'Tam Hiệp', 'Tân Phong', 'Trảng Dài') },
-      { label: 'Long Khánh', code: 'LK', latitude: 10.9265, longitude: 107.2442, wards: wards('Bảo Vinh', 'Bàu Sen', 'Phú Bình', 'Suối Tre', 'Xuân An', 'Xuân Bình', 'Xuân Hòa', 'Xuân Thanh') },
-      { label: 'Nhơn Trạch', code: 'NT', latitude: 10.6969, longitude: 106.8898, wards: wards('Hiệp Phước', 'Long Tân', 'Long Thọ', 'Phú Hội', 'Phước An', 'Phước Thiền') },
+    label: 'Bình Dương',
+    code: '74',
+    districts: [
+      { label: 'Thành phố Thủ Dầu Một', code: '718', latitude: 10.9804, longitude: 106.6519, wards: wards('Phường Phú Cường', 'Phường Hiệp Thành', 'Phường Chánh Nghĩa', 'Phường Phú Thọ', 'Phường Phú Hòa', 'Phường Phú Lợi', 'Phường Định Hòa', 'Phường Hiệp An', 'Phường Phú Mỹ', 'Phường Hòa Phú', 'Phường Phú Tân', 'Phường Tương Bình Hiệp', 'Phường Tân An', 'Phường Chánh Mỹ') },
+      { label: 'Thành phố Thuận An', code: '721', latitude: 10.9804, longitude: 106.6519, wards: wards('Phường Lái Thiêu', 'Phường An Thạnh', 'Phường Vĩnh Phú', 'Phường Bình Hòa', 'Phường Bình Nhâm', 'Phường Thuận Giao', 'Phường An Phú', 'Phường Bình Chuẩn', 'Phường Hưng Định', 'Xã An Sơn') },
+      { label: 'Thành phố Dĩ An', code: '722', latitude: 10.9804, longitude: 106.6519, wards: wards('Phường Dĩ An', 'Phường An Bình', 'Phường Tân Đông Hiệp', 'Phường Đông Hòa', 'Phường Tân Bình', 'Phường Bình An', 'Phường Bình Thắng') },
     ],
   },
   {
-    label: 'Bà Rịa - Vũng Tàu', code: 'BRVT', districts: [
-      { label: 'Vũng Tàu', code: 'VT', latitude: 10.4114, longitude: 107.1362, wards: wards('Phường 1', 'Phường 2', 'Phường 3', 'Phường 7', 'Phường 8', 'Phường 10', 'Phường 11', 'Thắng Tam', 'Rạch Dừa') },
-      { label: 'Bà Rịa', code: 'BR', latitude: 10.4990, longitude: 107.1676, wards: wards('Phước Hiệp', 'Phước Hưng', 'Phước Nguyên', 'Long Hương', 'Long Tâm', 'Kim Dinh') },
+    label: 'Đồng Nai',
+    code: '75',
+    districts: [
+      { label: 'Thành phố Biên Hòa', code: '731', latitude: 10.9574, longitude: 106.8426, wards: wards('Phường Thanh Bình', 'Phường Hòa Bình', 'Phường Quang Vinh', 'Phường Quyết Thắng', 'Phường Thống Nhất', 'Phường Trung Dũng', 'Phường Bửu Long', 'Phường Tân Tiến', 'Phường Tân Mai', 'Phường Tam Hiệp', 'Phường Tam Hòa', 'Phường Tân Hiệp', 'Phường Trảng Dài', 'Phường Tân Phong', 'Phường Hố Nai', 'Phường An Bình', 'Phường Bình Đa') },
     ],
   },
   {
-    label: 'Hà Nội', code: 'HN', districts: [
-      { label: 'Hoàn Kiếm', code: 'HK', latitude: 21.0287, longitude: 105.8522, wards: wards('Hàng Bạc', 'Hàng Bài', 'Hàng Bồ', 'Hàng Buồm', 'Hàng Đào', 'Tràng Tiền', 'Cửa Đông') },
-      { label: 'Cầu Giấy', code: 'CG', latitude: 21.0362, longitude: 105.7906, wards: wards('Dịch Vọng', 'Dịch Vọng Hậu', 'Mai Dịch', 'Nghĩa Đô', 'Nghĩa Tân', 'Quan Hoa', 'Trung Hòa', 'Yên Hòa') },
-      { label: 'Ba Đình', code: 'BDI', latitude: 21.0358, longitude: 105.8347, wards: wards('Cống Vị', 'Điện Biên', 'Đội Cấn', 'Giảng Võ', 'Kim Mã', 'Liễu Giai', 'Ngọc Hà', 'Quán Thánh') },
+    label: 'Thành phố Đà Nẵng',
+    code: '48',
+    districts: [
+      { label: 'Quận Hải Châu', code: '490', latitude: 16.0471, longitude: 108.2068, wards: wards('Phường Hải Châu I', 'Phường Hải Châu II', 'Phường Thạch Thang', 'Phường Thanh Bình', 'Phường Thuận Phước', 'Phường Phước Ninh', 'Phường Nam Dương', 'Phường Bình Hiên', 'Phường Bình Thuận', 'Phường Hòa Thuận Đông', 'Phường Hòa Thuận Tây', 'Phường Hòa Cường Bắc', 'Phường Hòa Cường Nam') },
+      { label: 'Quận Thanh Khê', code: '492', latitude: 16.0471, longitude: 108.2068, wards: wards('Phường Tam Thuận', 'Phường Thanh Khê Đông', 'Phường Thanh Khê Tây', 'Phường Xuân Hà', 'Phường Chính Gián', 'Phường Thạc Gián', 'Phường An Khê', 'Phường Hòa Khê', 'Phường Vĩnh Trung', 'Phường Tân Chính') },
     ],
   },
   {
-    label: 'Đà Nẵng', code: 'DN', districts: [
-      { label: 'Hải Châu', code: 'HC', latitude: 16.0471, longitude: 108.2068, wards: wards('Bình Hiên', 'Bình Thuận', 'Hải Châu I', 'Hải Châu II', 'Hòa Cường Bắc', 'Hòa Cường Nam', 'Nam Dương', 'Phước Ninh', 'Thạch Thang') },
-      { label: 'Sơn Trà', code: 'ST', latitude: 16.1063, longitude: 108.2520, wards: wards('An Hải Bắc', 'An Hải Đông', 'An Hải Tây', 'Mân Thái', 'Nại Hiên Đông', 'Phước Mỹ', 'Thọ Quang') },
+    label: 'Quảng Ninh',
+    code: '22',
+    districts: [
+      { label: 'Thành phố Hạ Long', code: '193', latitude: 20.9712, longitude: 107.0448, wards: wards('Phường Bạch Đằng', 'Phường Hòn Gai', 'Phường Bãi Cháy', 'Phường Hồng Gai', 'Phường Hồng Hà', 'Phường Hồng Hải', 'Phường Cao Thắng', 'Phường Cao Xanh', 'Phường Giếng Đáy', 'Phường Hà Tu', 'Phường Hà Khẩu', 'Phường Tuần Châu') },
     ],
   },
   {
-    label: 'Cần Thơ', code: 'CT', districts: [
-      { label: 'Ninh Kiều', code: 'NK', latitude: 10.0342, longitude: 105.7594, wards: wards('An Cư', 'An Hòa', 'An Khánh', 'An Nghiệp', 'Cái Khế', 'Hưng Lợi', 'Tân An', 'Thới Bình', 'Xuân Khánh') },
-      { label: 'Bình Thủy', code: 'BTH', latitude: 10.0743, longitude: 105.7396, wards: wards('An Thới', 'Bình Thủy', 'Bùi Hữu Nghĩa', 'Long Hòa', 'Long Tuyền', 'Thới An Đông') },
+    label: 'Nghệ An',
+    code: '40',
+    districts: [
+      { label: 'Thành phố Vinh', code: '412', latitude: 18.6796, longitude: 105.6813, wards: wards('Phường Lê Mao', 'Phường Lê Lợi', 'Phường Hà Huy Tập', 'Phường Đội Cung', 'Phường Quang Trung', 'Phường Cửa Nam', 'Phường Trường Thi', 'Phường Hưng Bình', 'Phường Hưng Phúc', 'Phường Đông Vĩnh', 'Phường Bến Thủy') },
     ],
   },
 ];

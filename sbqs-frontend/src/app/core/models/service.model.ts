@@ -6,4 +6,5 @@ export interface Service {
   description?: string | null;
   estimatedTime: number;
   status: string;
+  requiredCustomerFields?: string[];
 }

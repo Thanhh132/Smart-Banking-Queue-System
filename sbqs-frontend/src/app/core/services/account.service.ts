@@ -19,6 +19,21 @@ export interface AccountChangeConfirmation {
   emailChanged: boolean;
 }
 
+export interface CustomerProfileField {
+  key: string;
+  label: string;
+  type: 'text' | 'date' | 'number' | 'textarea';
+  placeholder: string;
+  required: boolean;
+}
+
+export interface CustomerPaperlessProfile {
+  values: Record<string, string>;
+  requiredFields: CustomerProfileField[];
+  missingFields: string[];
+  complete: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AccountService {
   private http = inject(HttpClient);
@@ -43,5 +58,19 @@ export class AccountService {
   /** Đổi mật khẩu sau khi backend kiểm tra mật khẩu hiện tại với Keycloak. */
   changePassword(payload: { currentPassword: string; newPassword: string }) {
     return this.http.put<void>(`${this.apiUrl}/password`, payload);
+  }
+
+  getPaperlessProfile(serviceId?: number) {
+    if (!serviceId) {
+      return this.http.get<CustomerPaperlessProfile>(`${this.apiUrl}/paperless-profile`);
+    }
+
+    return this.http.get<CustomerPaperlessProfile>(`${this.apiUrl}/paperless-profile`, {
+      params: { serviceId },
+    });
+  }
+
+  updatePaperlessProfile(payload: { serviceId?: number; values: Record<string, string> }) {
+    return this.http.put<CustomerPaperlessProfile>(`${this.apiUrl}/paperless-profile`, payload);
   }
 }

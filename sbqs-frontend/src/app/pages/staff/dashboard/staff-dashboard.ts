@@ -103,7 +103,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     this.staffService.getAssignedCounter().subscribe({
       next: (counter: any) => {
         this.selectedCounter = counter || null;
-        this.currentTicket = counter?.currentTicket || null;
+        this.setServingTicket(counter?.currentTicket || null);
 
         if (counter?.counterId) {
           this.selectedCounterId = counter.counterId;
@@ -146,7 +146,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     this.staffService.assignCounter(this.selectedCounterId).subscribe({
       next: (counter: any) => {
         this.selectedCounter = counter;
-        this.currentTicket = counter.currentTicket || null;
+        this.setServingTicket(counter.currentTicket || null);
         this.successMessage = `Đã vào ${counter.counterName}.`;
         this.loadDashboard();
       },
@@ -249,9 +249,46 @@ export class StaffDashboard implements OnInit, OnDestroy {
       this.cdr.detectChanges();
     })).subscribe(({ counter, tasks }) => {
       this.selectedCounter = counter || null;
-      this.currentTicket = counter?.currentTicket || null;
+      this.setServingTicket(counter?.currentTicket || null);
       this.pendingApprovalTasks = tasks || [];
       this.lastUpdatedAt = new Date();
+    });
+  }
+
+  private setServingTicket(ticket: any): void {
+    if (!ticket) {
+      this.currentTicket = null;
+      return;
+    }
+
+    if (
+      this.currentTicket?.ticketId === ticket.ticketId &&
+      Array.isArray(this.currentTicket?.paperlessFields)
+    ) {
+      this.currentTicket = {
+        ...this.currentTicket,
+        status: ticket.status,
+        servingStartedAt: ticket.servingStartedAt || this.currentTicket.servingStartedAt,
+      };
+      return;
+    }
+
+    this.currentTicket = ticket;
+
+    if (ticket.status !== 'SERVING') {
+      return;
+    }
+
+    this.staffService.getTicketStaffView(ticket.ticketId).subscribe({
+      next: (detail: any) => {
+        if (this.currentTicket?.ticketId === detail?.ticketId) {
+          this.currentTicket = detail;
+          this.cdr.detectChanges();
+        }
+      },
+      error: () => {
+        // Khong chan man hinh goi so neu chi tiet ho so tam thoi chua tai duoc.
+      },
     });
   }
 

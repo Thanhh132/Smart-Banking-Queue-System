@@ -219,8 +219,8 @@ $text-secondary: #64748b;
 }
 
 .ticket-current {
-  grid-template-columns: 150px repeat(2, minmax(0, 1fr)) auto;
-  align-items: center;
+  grid-template-columns: 150px repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 
   @media (max-width: 1120px) {
     grid-template-columns: 1fr 1fr;
@@ -244,8 +244,8 @@ $text-secondary: #64748b;
 
 .ticket-detail {
   display: grid;
-  gap: 8px;
-  min-height: 112px;
+  min-height: 134px;
+  align-content: start;
   padding: 16px;
   border: 1px solid $border-color;
   border-radius: 8px;

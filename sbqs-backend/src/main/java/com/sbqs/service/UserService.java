@@ -47,25 +47,40 @@ public class UserService {
                 Branch branch = branchRepository.findById(branchId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
-                return userRepository.findByBranch(branch);
+                return userRepository.findByBranch(branch)
+                                .stream()
+                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
+                                .toList();
         }
 
         public List<User> getAllUsers() {
                 User currentUser = currentUserService.requireUser();
                 if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-                        return userRepository.findAll();
+                        return userRepository.findAll()
+                                        .stream()
+                                        .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
+                                        .toList();
                 }
 
-                return userRepository.findByBranch(currentUser.getBranch());
+                return userRepository.findByBranch(currentUser.getBranch())
+                                .stream()
+                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
+                                .toList();
         }
 
         public List<User> getUsersByRole(String role) {
                 User currentUser = currentUserService.requireUser();
                 if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-                        return userRepository.findByRole(role);
+                        return userRepository.findByRole(role)
+                                        .stream()
+                                        .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
+                                        .toList();
                 }
 
-                return userRepository.findByBranchAndRole(currentUser.getBranch(), role);
+                return userRepository.findByBranchAndRole(currentUser.getBranch(), role)
+                                .stream()
+                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
+                                .toList();
         }
 
         public User createStaff(CreateStaffRequest request) {
@@ -193,9 +208,8 @@ public class UserService {
 
                 requireUserManagementAccess(user);
 
-                // Banking identities are never hard-deleted: history and audit references
-                // must remain intact. Repeated delete requests are therefore idempotent.
-                user.setStatus("INACTIVE");
+                // Khong xoa vat ly de giu lich su giao dich; lan xoa thu hai an khoi danh sach quan tri.
+                user.setStatus("INACTIVE".equalsIgnoreCase(user.getStatus()) ? "DELETED" : "INACTIVE");
                 userRepository.save(user);
                 keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
         }

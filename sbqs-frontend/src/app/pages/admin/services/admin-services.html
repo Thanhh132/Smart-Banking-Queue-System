@@ -176,6 +176,18 @@
               <textarea formControlName="description" rows="3"></textarea>
             </label>
 
+            <fieldset class="paperless-fieldset">
+              <legend>Thong tin can dien vao giay to online</legend>
+              <label class="paperless-option" *ngFor="let field of paperlessFieldOptions">
+                <input
+                  type="checkbox"
+                  [checked]="hasRequiredField(field.key)"
+                  (change)="toggleRequiredField(field.key, $any($event.target).checked)"
+                />
+                <span>{{ field.label }}</span>
+              </label>
+            </fieldset>
+
             <div class="admin-actions">
               <button class="btn-primary" type="submit" [disabled]="isSubmitting">
                 <app-icon *ngIf="!isSubmitting" name="save" [size]="16" />

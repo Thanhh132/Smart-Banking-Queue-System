@@ -24,6 +24,18 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("alter table branches add column if not exists ward varchar(255)");
         jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
         jdbcTemplate.execute("alter table tickets alter column service_id drop not null");
+        jdbcTemplate.execute("alter table services add column if not exists required_customer_fields varchar(1000)");
+        jdbcTemplate.execute("alter table users add column if not exists date_of_birth varchar(30)");
+        jdbcTemplate.execute("alter table users add column if not exists identity_number varchar(30)");
+        jdbcTemplate.execute("alter table users add column if not exists identity_issue_date varchar(30)");
+        jdbcTemplate.execute("alter table users add column if not exists identity_issue_place varchar(255)");
+        jdbcTemplate.execute("alter table users add column if not exists permanent_address varchar(500)");
+        jdbcTemplate.execute("alter table users add column if not exists contact_address varchar(500)");
+        jdbcTemplate.execute("alter table users add column if not exists occupation varchar(255)");
+        jdbcTemplate.execute("alter table users add column if not exists employer_name varchar(255)");
+        jdbcTemplate.execute("alter table users add column if not exists monthly_income varchar(50)");
+        jdbcTemplate.execute("alter table users add column if not exists account_number varchar(50)");
+        jdbcTemplate.execute("alter table users add column if not exists card_delivery_address varchar(500)");
         jdbcTemplate.execute("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
         jdbcTemplate.execute("alter table users drop constraint if exists users_status_check");
         jdbcTemplate.execute("""

@@ -128,7 +128,15 @@ button,
   font-family: inherit;
   cursor: pointer;
   text-decoration: none;
+  line-height: 1.2;
+  text-align: center;
   transition: 0.2s ease;
+  white-space: nowrap;
+}
+
+button app-icon,
+.btn app-icon {
+  flex: 0 0 auto;
 }
 
 .btn-sm {
@@ -584,7 +592,7 @@ button[type='submit']:hover {
 
 .customer-option-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 14px;
 }
 
@@ -592,6 +600,7 @@ button[type='submit']:hover {
   display: grid;
   align-content: start;
   gap: 8px;
+  min-width: 0;
   min-height: 190px;
   padding: 20px;
   background: #ffffff;
@@ -599,6 +608,7 @@ button[type='submit']:hover {
   border-radius: 7px;
   color: var(--text-primary);
   text-align: left;
+  white-space: normal;
   cursor: pointer;
   transition:
     border-color 150ms ease,
@@ -618,6 +628,8 @@ button[type='submit']:hover {
 .customer-option strong {
   font-size: 19px;
   line-height: 1.35;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .customer-option p,
@@ -625,6 +637,8 @@ button[type='submit']:hover {
   margin: 0;
   color: var(--text-secondary);
   line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .customer-option__action {
@@ -715,6 +729,77 @@ button[type='submit']:hover {
   font-weight: 700;
 }
 
+.ticket-paperless {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.ticket-paperless__heading {
+  display: grid;
+  gap: 4px;
+}
+
+.ticket-paperless__heading span,
+.ticket-paperless dt {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ticket-paperless__heading strong {
+  color: var(--text-primary);
+  font-size: 18px;
+}
+
+.ticket-paperless dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.ticket-paperless dl div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe5f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.ticket-paperless dt {
+  margin: 0 0 5px;
+}
+
+.ticket-paperless dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 750;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.ticket-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.ticket-actions .btn {
+  min-width: 190px;
+}
+
+.ticket-detail strong {
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 .report-center {
   padding: 24px;
   background: #ffffff;
@@ -795,6 +880,9 @@ button[type='submit']:hover {
   .report-center__grid {
     grid-template-columns: 1fr;
   }
+  .ticket-paperless dl {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -841,7 +929,7 @@ button[type='submit']:hover {
 
 .admin-panel-grid {
   display: grid;
-  grid-template-columns: 380px 1fr;
+  grid-template-columns: minmax(360px, 0.72fr) minmax(0, 1.28fr);
   gap: 24px;
   align-items: start;
 }
@@ -861,6 +949,11 @@ button[type='submit']:hover {
   gap: 12px;
   flex-wrap: wrap;
   align-items: center;
+
+  .btn,
+  button {
+    min-width: 132px;
+  }
 }
 
 .admin-table {
@@ -889,6 +982,7 @@ button[type='submit']:hover {
   padding: 16px;
   border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
+  vertical-align: middle;
 }
 
 .admin-table tr:hover td {

@@ -1,6 +1,7 @@
 package com.sbqs.controller;
 
 import com.sbqs.entity.Ticket;
+import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.service.TicketService;
 import org.springframework.http.ResponseEntity;
@@ -50,10 +51,15 @@ public class TicketController {
     }
 
     @PostMapping("/call-next")
-    public ResponseEntity<Ticket> callNextTicket(
+    public ResponseEntity<TicketStaffViewResponse> callNextTicket(
             @RequestParam Long counterId) {
 
         return ResponseEntity.ok(ticketService.callNextTicket(counterId));
+    }
+
+    @GetMapping("/{ticketId}/staff-view")
+    public ResponseEntity<TicketStaffViewResponse> getStaffTicketView(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.getServingTicketForStaff(ticketId));
     }
 
     @PostMapping("/{ticketId}/complete")

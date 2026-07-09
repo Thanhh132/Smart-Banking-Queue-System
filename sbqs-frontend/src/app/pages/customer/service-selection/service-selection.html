@@ -8,6 +8,45 @@
 
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+    <section class="customer-section paperless-profile" *ngIf="showPaperlessForm && selectedService">
+      <div class="customer-section__header">
+        <div>
+          <h2>Bổ sung hồ sơ cho {{ selectedService.serviceName }}</h2>
+          <p>Thông tin này chỉ cần điền một lần, lần sau hệ thống sẽ tự động điền vào giấy tờ online.</p>
+        </div>
+      </div>
+
+      <form class="paperless-form" [formGroup]="profileForm" (ngSubmit)="submitPaperlessProfile()">
+        <label *ngFor="let field of requiredProfileFields">
+          {{ field.label }}
+          <textarea
+            *ngIf="field.type === 'textarea'; else regularField"
+            rows="3"
+            [formControlName]="field.key"
+            [placeholder]="getProfilePlaceholder(field)"
+          ></textarea>
+          <ng-template #regularField>
+            <input
+              [type]="getProfileInputType(field)"
+              [formControlName]="field.key"
+              [placeholder]="getProfilePlaceholder(field)"
+            />
+          </ng-template>
+          <span *ngIf="isProfileFieldInvalid(field.key)">Thông tin này bắt buộc.</span>
+        </label>
+
+        <div class="paperless-actions">
+          <button class="btn-primary" type="submit" [disabled]="isSavingProfile || isCreatingTicket">
+            <app-icon *ngIf="!isSavingProfile" name="save" [size]="16" />
+            {{ isSavingProfile ? 'Đang lưu...' : 'Lưu hồ sơ và lấy số' }}
+          </button>
+          <button class="btn-secondary" type="button" (click)="cancelPaperlessForm()" [disabled]="isSavingProfile">
+            Hủy
+          </button>
+        </div>
+      </form>
+    </section>
+
     <section class="customer-summary-grid" *ngIf="monitor">
       <div class="customer-summary-item">
         <span>Chi nhánh đã chọn</span>
@@ -40,7 +79,7 @@
           class="customer-option service-option"
           *ngFor="let service of services"
           (click)="selectService(service)"
-          [disabled]="isCreatingTicket"
+          [disabled]="isCreatingTicket || isLoadingProfile"
         >
           <span class="customer-option__eyebrow">{{ service.serviceType || 'Dịch vụ' }}</span>
           <strong>{{ service.serviceName }}</strong>

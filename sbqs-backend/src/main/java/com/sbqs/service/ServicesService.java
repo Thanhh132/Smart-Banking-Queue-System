@@ -82,7 +82,12 @@ public class ServicesService {
         if (serviceRepository.existsByBranchAndServiceCode(
                 service.getBranch(),
                 service.getServiceCode())) {
-            throw new RuntimeException("Ma dich vu da ton tai trong chi nhanh nay");
+            throw new RuntimeException("Mã dịch vụ đã tồn tại trong chi nhánh này");
+        }
+        if (serviceRepository.existsByBranchAndServiceNameIgnoreCase(
+                service.getBranch(),
+                service.getServiceName())) {
+            throw new RuntimeException("Tên dịch vụ đã tồn tại trong chi nhánh này");
         }
 
         Services savedService = serviceRepository.save(service);
@@ -104,7 +109,7 @@ public class ServicesService {
     })
     public Services updateService(Long serviceId, Services updatedService) {
         Services existingService = serviceRepository.findById(serviceId)
-                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
 
         currentUserService.requireBranch(existingService.getBranch().getBranchId());
         currentUserService.requireBranch(updatedService.getBranch().getBranchId());
@@ -113,7 +118,13 @@ public class ServicesService {
                 updatedService.getBranch(),
                 updatedService.getServiceCode(),
                 serviceId)) {
-            throw new RuntimeException("Ma dich vu da ton tai trong chi nhanh nay");
+            throw new RuntimeException("Mã dịch vụ đã tồn tại trong chi nhánh này");
+        }
+        if (serviceRepository.existsByBranchAndServiceNameIgnoreCaseAndServiceIdNot(
+                updatedService.getBranch(),
+                updatedService.getServiceName(),
+                serviceId)) {
+            throw new RuntimeException("Tên dịch vụ đã tồn tại trong chi nhánh này");
         }
 
         existingService.setServiceCode(updatedService.getServiceCode());
@@ -123,6 +134,7 @@ public class ServicesService {
         existingService.setEstimatedTime(updatedService.getEstimatedTime());
         existingService.setStatus(updatedService.getStatus());
         existingService.setBranch(updatedService.getBranch());
+        existingService.setRequiredCustomerFields(updatedService.getRequiredCustomerFields());
 
         Services savedService = serviceRepository.save(existingService);
         eventPublisher.publish(
@@ -145,7 +157,7 @@ public class ServicesService {
     @Transactional
     public void deleteService(Long serviceId) {
         Services existingService = serviceRepository.findById(serviceId)
-                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
 
         currentUserService.requireBranch(existingService.getBranch().getBranchId());
 
@@ -153,12 +165,12 @@ public class ServicesService {
         boolean hasOpenTicket = tickets.stream()
                 .anyMatch(ticket -> List.of("WAITING", "SERVING").contains(ticket.getStatus()));
         if (hasOpenTicket) {
-            throw new RuntimeException("Khong the xoa dich vu vi con phieu dang cho hoac dang phuc vu");
+            throw new RuntimeException("Không thể xóa dịch vụ vì còn phiếu đang chờ hoặc đang phục vụ");
         }
 
         List<Appointment> appointments = appointmentRepository.findByService(existingService);
         if (!appointments.isEmpty()) {
-            throw new RuntimeException("Khong the xoa dich vu vi con lich hen dang gan voi dich vu nay");
+            throw new RuntimeException("Không thể xóa dịch vụ vì còn lịch hẹn đang gắn với dịch vụ này");
         }
 
         mappingRepository.deleteAll(mappingRepository.findByService(existingService));

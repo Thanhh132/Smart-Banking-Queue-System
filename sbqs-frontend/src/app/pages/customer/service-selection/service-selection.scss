@@ -1,1 +1,62 @@
 .service-option { min-height: 210px; }
+
+.paperless-profile {
+  border: 1px solid #d8e2ef;
+  border-radius: 8px;
+  padding: 18px;
+  background: #ffffff;
+  max-width: 980px;
+}
+
+.paperless-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+  }
+
+  label {
+    display: grid;
+    align-content: start;
+    gap: 7px;
+    color: #0f172a;
+    font-weight: 850;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #bfd0e3;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font: inherit;
+    background: #fff;
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 84px;
+  }
+
+  span {
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 800;
+  }
+}
+
+.paperless-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+
+  .btn-primary,
+  .btn-secondary {
+    min-width: 150px;
+  }
+}

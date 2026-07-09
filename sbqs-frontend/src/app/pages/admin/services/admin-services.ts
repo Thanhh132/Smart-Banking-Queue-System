@@ -22,6 +22,12 @@ interface ServiceTemplate {
   type: string;
   estimatedTime: number;
   description: string;
+  requiredCustomerFields?: string[];
+}
+
+interface PaperlessFieldOption {
+  key: string;
+  label: string;
 }
 
 @Component({
@@ -39,6 +45,20 @@ export class AdminServices implements OnInit {
 
   services: any[] = [];
   serviceForm!: FormGroup;
+
+  paperlessFieldOptions: PaperlessFieldOption[] = [
+    { key: 'DATE_OF_BIRTH', label: 'Ngày sinh' },
+    { key: 'IDENTITY_NUMBER', label: 'Số CCCD/Hộ chiếu' },
+    { key: 'IDENTITY_ISSUE_DATE', label: 'Ngày cấp CCCD/Hộ chiếu' },
+    { key: 'IDENTITY_ISSUE_PLACE', label: 'Nơi cấp CCCD/Hộ chiếu' },
+    { key: 'PERMANENT_ADDRESS', label: 'Địa chỉ thường trú' },
+    { key: 'CONTACT_ADDRESS', label: 'Địa chỉ liên hệ' },
+    { key: 'OCCUPATION', label: 'Nghề nghiệp' },
+    { key: 'EMPLOYER_NAME', label: 'Đơn vị công tác' },
+    { key: 'MONTHLY_INCOME', label: 'Thu nhập hằng tháng' },
+    { key: 'ACCOUNT_NUMBER', label: 'Số tài khoản liên kết' },
+    { key: 'CARD_DELIVERY_ADDRESS', label: 'Địa chỉ nhận thẻ' },
+  ];
 
   serviceCatalog: ServiceTemplate[] = [
     {
@@ -70,11 +90,39 @@ export class AdminServices implements OnInit {
       description: 'Đăng ký tài khoản mới',
     },
     {
-      key: 'CARD_REGISTER',
-      name: 'Đăng ký thẻ',
+      key: 'CREDIT_CARD_REGISTER',
+      name: 'Đăng ký mở thẻ tín dụng',
       type: 'CARD',
-      estimatedTime: 15,
-      description: 'Đăng ký thẻ ATM, ghi nợ hoặc tín dụng',
+      estimatedTime: 25,
+      description: 'Đăng ký phát hành thẻ tín dụng và thu thập thông tin thẩm định cơ bản',
+      requiredCustomerFields: [
+        'DATE_OF_BIRTH',
+        'IDENTITY_NUMBER',
+        'IDENTITY_ISSUE_DATE',
+        'IDENTITY_ISSUE_PLACE',
+        'PERMANENT_ADDRESS',
+        'CONTACT_ADDRESS',
+        'OCCUPATION',
+        'EMPLOYER_NAME',
+        'MONTHLY_INCOME',
+        'CARD_DELIVERY_ADDRESS',
+      ],
+    },
+    {
+      key: 'PHYSICAL_CARD_LINKED_ACCOUNT',
+      name: 'Đăng ký mở thẻ vật lý liên kết tài khoản',
+      type: 'CARD',
+      estimatedTime: 18,
+      description: 'Phát hành thẻ vật lý gắn với tài khoản thanh toán hiện có',
+      requiredCustomerFields: [
+        'DATE_OF_BIRTH',
+        'IDENTITY_NUMBER',
+        'IDENTITY_ISSUE_DATE',
+        'IDENTITY_ISSUE_PLACE',
+        'CONTACT_ADDRESS',
+        'ACCOUNT_NUMBER',
+        'CARD_DELIVERY_ADDRESS',
+      ],
     },
     {
       key: 'CARD_REISSUE',
@@ -82,6 +130,27 @@ export class AdminServices implements OnInit {
       type: 'CARD',
       estimatedTime: 12,
       description: 'Cấp lại thẻ mất hoặc hỏng',
+      requiredCustomerFields: [
+        'IDENTITY_NUMBER',
+        'IDENTITY_ISSUE_DATE',
+        'IDENTITY_ISSUE_PLACE',
+        'ACCOUNT_NUMBER',
+        'CARD_DELIVERY_ADDRESS',
+      ],
+    },
+    {
+      key: 'CARD_REREGISTER',
+      name: 'Đăng ký lại thẻ',
+      type: 'CARD',
+      estimatedTime: 15,
+      description: 'Đăng ký lại thẻ khi hết hạn, thất lạc hoặc thay đổi thông tin phát hành',
+      requiredCustomerFields: [
+        'IDENTITY_NUMBER',
+        'IDENTITY_ISSUE_DATE',
+        'IDENTITY_ISSUE_PLACE',
+        'ACCOUNT_NUMBER',
+        'CARD_DELIVERY_ADDRESS',
+      ],
     },
     {
       key: 'CARD_PIN',
@@ -170,6 +239,7 @@ export class AdminServices implements OnInit {
       description: [''],
       estimatedTime: [10, [Validators.required, Validators.min(1)]],
       status: ['ACTIVE', [Validators.required]],
+      requiredCustomerFields: [[]],
     });
   }
 
@@ -250,6 +320,7 @@ export class AdminServices implements OnInit {
         description: template.description,
         estimatedTime: template.estimatedTime,
         status: 'ACTIVE',
+        requiredCustomerFields: template.requiredCustomerFields || [],
         branch: { branchId },
       };
 
@@ -284,6 +355,7 @@ export class AdminServices implements OnInit {
       description: service.description || '',
       estimatedTime: service.estimatedTime,
       status: service.status || 'ACTIVE',
+      requiredCustomerFields: service.requiredCustomerFields || [],
     });
 
     this.cdr.detectChanges();
@@ -362,6 +434,7 @@ export class AdminServices implements OnInit {
       description: '',
       estimatedTime: 10,
       status: 'ACTIVE',
+      requiredCustomerFields: [],
     });
 
     this.cdr.detectChanges();
@@ -388,6 +461,25 @@ export class AdminServices implements OnInit {
     }
 
     return `${label} không hợp lệ.`;
+  }
+
+  toggleRequiredField(key: string, checked: boolean): void {
+    const control = this.serviceForm.get('requiredCustomerFields');
+    const current = (control?.value || []) as string[];
+    const next = checked
+      ? Array.from(new Set([...current, key]))
+      : current.filter((item) => item !== key);
+    control?.setValue(next);
+    control?.markAsDirty();
+  }
+
+  hasRequiredField(key: string): boolean {
+    const current = (this.serviceForm.get('requiredCustomerFields')?.value || []) as string[];
+    return current.includes(key);
+  }
+
+  getRequiredFieldLabel(key: string): string {
+    return this.paperlessFieldOptions.find((field) => field.key === key)?.label || key;
   }
 
   private generateServiceCode(branchId: number, type: string, number: number): string {
