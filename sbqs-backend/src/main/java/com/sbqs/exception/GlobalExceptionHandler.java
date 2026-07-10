@@ -40,6 +40,7 @@ public class GlobalExceptionHandler {
         error.put("status", HttpStatus.TOO_MANY_REQUESTS.value());
         error.put("error", "Too Many Requests");
         error.put("message", ex.getMessage());
+        error.put("retryAfterSeconds", ex.getRetryAfterSeconds());
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
     }
 

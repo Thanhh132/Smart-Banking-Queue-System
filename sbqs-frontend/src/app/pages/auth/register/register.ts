@@ -26,12 +26,15 @@ export class Register {
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
+  showPassword = false;
+  showConfirmPassword = false;
 
   registerForm = this.fb.group({
     fullName: ['', [Validators.required]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
+    confirmPassword: ['', [Validators.required]],
   });
 
   submit(): void {
@@ -44,11 +47,18 @@ export class Register {
       return;
     }
 
+    if (this.registerForm.value.password !== this.registerForm.value.confirmPassword) {
+      this.errorMessage = 'Mật khẩu xác nhận không khớp.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     const payload = {
       fullName: this.registerForm.value.fullName || '',
       email: this.registerForm.value.email || '',
       phone: this.registerForm.value.phone || '',
       password: this.registerForm.value.password || '',
+      confirmPassword: this.registerForm.value.confirmPassword || '',
     };
 
     this.isSubmitting = true;
@@ -76,5 +86,13 @@ export class Register {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 }

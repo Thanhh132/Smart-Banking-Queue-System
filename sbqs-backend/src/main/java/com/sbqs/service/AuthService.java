@@ -73,6 +73,7 @@ public class AuthService {
                         throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
                 }
 
+                validatePasswordConfirmation(request.getPassword(), request.getConfirmPassword());
                 PasswordPolicy.validate(request.getPassword());
 
                 String keycloakUserId = keycloakService.createUser(
@@ -140,6 +141,8 @@ public class AuthService {
                                 token = keycloakService.login(
                                                 email,
                                                 request.getPassword());
+                        } else if (canUseLocalFallback(existingUser, request.getPassword())) {
+                                return fallbackLogin(email, request.getPassword(), ex);
                         } else {
                                 throw ex;
                         }
@@ -155,6 +158,10 @@ public class AuthService {
 
         /** Xác thực BCrypt nội bộ và cấp JWT ngắn hạn khi Keycloak không khả dụng. */
         private LoginResponse fallbackLogin(String email, String password, KeycloakUnavailableException cause) {
+                return fallbackLogin(email, password, (RuntimeException) cause);
+        }
+
+        private LoginResponse fallbackLogin(String email, String password, RuntimeException cause) {
                 if (!fallbackProperties.isEnabled()) {
                         throw cause;
                 }
@@ -187,6 +194,15 @@ public class AuthService {
                                 user.getEmail(),
                                 user.getBranch() == null ? null : user.getBranch().getBranchId(),
                                 "FALLBACK");
+        }
+
+        private boolean canUseLocalFallback(Optional<User> user, String password) {
+                return user
+                                .filter(existingUser -> "ACTIVE".equalsIgnoreCase(existingUser.getStatus()))
+                                .filter(existingUser -> existingUser.getPasswordHash() != null)
+                                .filter(existingUser -> !"KEYCLOAK_MANAGED".equals(existingUser.getPasswordHash()))
+                                .filter(existingUser -> passwordEncoder.matches(password, existingUser.getPasswordHash()))
+                                .isPresent();
         }
 
         /** Đổi refresh token Keycloak lấy bộ token mới; JWT fallback không có refresh token. */
@@ -273,6 +289,17 @@ public class AuthService {
 
         public void resetPassword(String token, String newPassword) {
                 passwordResetService.resetPassword(token, newPassword);
+        }
+
+        public void resetPassword(String token, String newPassword, String confirmPassword) {
+                validatePasswordConfirmation(newPassword, confirmPassword);
+                passwordResetService.resetPassword(token, newPassword);
+        }
+
+        private void validatePasswordConfirmation(String password, String confirmPassword) {
+                if (confirmPassword == null || !confirmPassword.equals(password)) {
+                        throw new RuntimeException("Mat khau xac nhan khong khop");
+                }
         }
 
         private String valueAsString(Object value) {

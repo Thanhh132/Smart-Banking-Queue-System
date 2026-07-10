@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { Branch } from '../../../core/models/branch.model';
-import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
@@ -19,18 +18,17 @@ import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 export class BranchSelection implements OnInit {
   private branchService = inject(BranchService);
   private locationService = inject(LocationService);
-  private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
 
   branches: Branch[] = [];
-  errorMessage = '';
-  locationMessage = '';
+  popup: { type: 'success' | 'error' | 'info'; title: string; message: string } | null = null;
   searchTerm = '';
   selectedBank = 'ALL';
-  customerAddress = localStorage.getItem('customerAddress') || '';
+  customerLocationLabel = localStorage.getItem('customerAddress') || '';
   isLocating = false;
   private distances = new Map<number, number>();
+  private popupTimer: ReturnType<typeof setTimeout> | null = null;
 
   get bankOptions(): string[] {
     return [...new Set(this.branches.map((branch) => branch.bankName))].sort();
@@ -55,35 +53,13 @@ export class BranchSelection implements OnInit {
         this.branches = (data || []).filter((branch) => branch.status === 'ACTIVE');
         const latitude = Number(localStorage.getItem('customerLatitude'));
         const longitude = Number(localStorage.getItem('customerLongitude'));
-        if (latitude && longitude) this.setCustomerLocation(latitude, longitude, this.customerAddress);
+        if (latitude && longitude) {
+          this.setCustomerLocation(latitude, longitude, this.customerLocationLabel || 'Vị trí hiện tại');
+        }
         this.cdr.detectChanges();
       },
       error: () => {
-        this.errorMessage = 'Không tải được danh sách chi nhánh.';
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  findNearbyByAddress(): void {
-    if (!this.customerAddress.trim()) {
-      this.errorMessage = 'Vui lòng nhập địa chỉ của bạn.';
-      return;
-    }
-
-    this.isLocating = true;
-    this.errorMessage = '';
-    this.locationService.geocode(this.customerAddress).subscribe({
-      next: (result) => {
-        this.customerAddress = result.formattedAddress;
-        this.setCustomerLocation(result.latitude, result.longitude, result.formattedAddress);
-        this.isLocating = false;
-        this.locationMessage = 'Đã sắp xếp chi nhánh theo khoảng cách gần nhất.';
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.isLocating = false;
-        this.errorMessage = this.apiError.getMessage(err, 'Không xác định được địa chỉ của bạn.');
+        this.showPopup('error', 'Không tải được chi nhánh', 'Vui lòng kiểm tra kết nối hoặc thử lại sau.');
         this.cdr.detectChanges();
       },
     });
@@ -91,27 +67,35 @@ export class BranchSelection implements OnInit {
 
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
-      this.errorMessage = 'Trình duyệt không hỗ trợ xác định vị trí.';
+      this.showPopup('error', 'Không hỗ trợ định vị', 'Trình duyệt hiện tại không hỗ trợ lấy vị trí tự động.');
       return;
     }
 
     this.isLocating = true;
-    this.errorMessage = '';
+    this.showPopup('info', 'Đang lấy vị trí', 'Nếu trình duyệt hỏi quyền truy cập vị trí, hãy chọn Cho phép.');
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.setCustomerLocation(position.coords.latitude, position.coords.longitude, 'Vị trí hiện tại');
-        this.customerAddress = 'Vị trí hiện tại';
+        this.customerLocationLabel = 'Vị trí hiện tại';
         this.isLocating = false;
-        this.locationMessage = 'Đã sắp xếp chi nhánh theo vị trí hiện tại.';
+        this.showPopup('success', 'Đã xác định vị trí', 'Danh sách chi nhánh đã được sắp xếp theo khoảng cách gần nhất.');
         this.cdr.detectChanges();
       },
-      () => {
+      (error) => {
         this.isLocating = false;
-        this.errorMessage = 'Không thể lấy vị trí. Vui lòng cấp quyền vị trí cho trình duyệt.';
+        this.showPopup('error', 'Không lấy được vị trí', this.getGeolocationErrorMessage(error));
         this.cdr.detectChanges();
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
+  }
+
+  closePopup(): void {
+    if (this.popupTimer) {
+      clearTimeout(this.popupTimer);
+      this.popupTimer = null;
+    }
+    this.popup = null;
   }
 
   distanceLabel(branch: Branch): string {
@@ -139,5 +123,24 @@ export class BranchSelection implements OnInit {
           latitude, longitude, branch.latitude, branch.longitude));
       }
     }
+  }
+
+  private showPopup(type: 'success' | 'error' | 'info', title: string, message: string): void {
+    this.closePopup();
+    this.popup = { type, title, message };
+    this.popupTimer = setTimeout(() => {
+      this.popup = null;
+      this.cdr.detectChanges();
+    }, 5000);
+  }
+
+  private getGeolocationErrorMessage(error: GeolocationPositionError): string {
+    if (error.code === error.PERMISSION_DENIED) {
+      return 'Bạn cần bật quyền truy cập vị trí cho trình duyệt rồi bấm lại nút Vị trí hiện tại.';
+    }
+    if (error.code === error.TIMEOUT) {
+      return 'Trình duyệt lấy vị trí quá lâu. Hãy kiểm tra GPS/Wi-Fi rồi thử lại.';
+    }
+    return 'Không thể xác định vị trí hiện tại. Vui lòng thử lại sau.';
   }
 }

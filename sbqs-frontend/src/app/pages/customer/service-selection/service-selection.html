@@ -17,23 +17,69 @@
       </div>
 
       <form class="paperless-form" [formGroup]="profileForm" (ngSubmit)="submitPaperlessProfile()">
-        <label *ngFor="let field of requiredProfileFields">
-          {{ field.label }}
-          <textarea
-            *ngIf="field.type === 'textarea'; else regularField"
-            rows="3"
-            [formControlName]="field.key"
-            [placeholder]="getProfilePlaceholder(field)"
-          ></textarea>
-          <ng-template #regularField>
-            <input
-              [type]="getProfileInputType(field)"
+        <ng-container *ngFor="let field of requiredProfileFields; let i = index">
+        <h3 class="paperless-group-title" *ngIf="isFirstProfileFieldInGroup(i)">
+          {{ getProfileGroupLabel(field.key) }}
+        </h3>
+        <ng-container *ngIf="isCardDeliveryAddressField(field); else normalProfileField">
+          <fieldset class="paperless-field paperless-field--full paperless-delivery">
+            <legend>{{ field.label }}</legend>
+            <div class="paperless-delivery__options">
+              <label>
+                <input
+                  type="radio"
+                  name="cardDeliveryMethod"
+                  [checked]="cardDeliveryMethod === 'BRANCH'"
+                  (change)="onCardDeliveryMethodChange('BRANCH')"
+                />
+                Nhận tại chi nhánh
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="cardDeliveryMethod"
+                  [checked]="cardDeliveryMethod === 'DELIVERY'"
+                  (change)="onCardDeliveryMethodChange('DELIVERY')"
+                />
+                Giao về địa chỉ liên hệ
+              </label>
+            </div>
+            <textarea
+              rows="3"
+              [formControlName]="field.key"
+              [placeholder]="cardDeliveryMethod === 'BRANCH' ? 'Tự lấy địa chỉ chi nhánh đã chọn' : 'Tự điền theo địa chỉ liên hệ nếu để trống'"
+              [readOnly]="cardDeliveryMethod === 'BRANCH'"
+            ></textarea>
+            <small *ngIf="cardDeliveryMethod === 'BRANCH'">Hệ thống sẽ dùng địa chỉ chi nhánh: {{ getBranchPickupAddress() }}</small>
+            <span *ngIf="isProfileFieldInvalid(field.key)">{{ getProfileErrorMessage(field.key) }}</span>
+          </fieldset>
+        </ng-container>
+        <ng-template #normalProfileField>
+          <label class="paperless-field">
+            {{ field.label }}
+            <textarea
+              *ngIf="field.type === 'textarea'; else regularField"
+              rows="3"
               [formControlName]="field.key"
               [placeholder]="getProfilePlaceholder(field)"
-            />
-          </ng-template>
-          <span *ngIf="isProfileFieldInvalid(field.key)">Thông tin này bắt buộc.</span>
-        </label>
+            ></textarea>
+            <ng-template #regularField>
+              <select *ngIf="isSelectProfileField(field); else inputField" [formControlName]="field.key">
+                <option value="" disabled>Chọn {{ field.label | lowercase }}</option>
+                <option *ngFor="let option of getProfileOptions(field)" [value]="option">{{ option }}</option>
+              </select>
+              <ng-template #inputField>
+                <input
+                  [type]="getProfileInputType(field)"
+                  [formControlName]="field.key"
+                  [placeholder]="getProfilePlaceholder(field)"
+                />
+              </ng-template>
+            </ng-template>
+            <span *ngIf="isProfileFieldInvalid(field.key)">{{ getProfileErrorMessage(field.key) }}</span>
+          </label>
+        </ng-template>
+        </ng-container>
 
         <div class="paperless-actions">
           <button class="btn-primary" type="submit" [disabled]="isSavingProfile || isCreatingTicket">

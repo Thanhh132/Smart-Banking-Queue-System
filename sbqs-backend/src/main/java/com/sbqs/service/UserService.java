@@ -103,6 +103,11 @@ public class UserService {
                         throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
                 }
 
+                if (request.getConfirmPassword() == null
+                                || !request.getConfirmPassword().equals(request.getPassword())) {
+                        throw new RuntimeException("Mat khau xac nhan khong khop");
+                }
+
                 PasswordPolicy.validate(request.getPassword());
 
                 Branch branch = branchRepository.findById(request.getBranchId())

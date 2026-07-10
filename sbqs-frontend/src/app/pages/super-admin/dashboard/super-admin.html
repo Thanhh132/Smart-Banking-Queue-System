@@ -85,6 +85,7 @@
             }}
           </p>
         </div>
+
         <form
           [formGroup]="adminBranchForm"
           (ngSubmit)="submitAdminBranch()"
@@ -92,40 +93,63 @@
           autocomplete="off"
           data-form-type="other"
         >
-          <label
-            >Họ và tên<input
-              appPreventAutofill
-              type="text"
-              formControlName="fullName"
-              placeholder="Nguyễn Văn A"
-              autocomplete="off"
-          /></label>
-          <label
-            >Email<input
-              appPreventAutofill
-              type="email"
-              formControlName="email"
-              name="sbqs-branch-admin-identity"
-              placeholder="admin.branch@sbqs.com"
-              autocomplete="off"
-          /></label>
-          <label
-            >Số điện thoại<input
-              appPreventAutofill
-              type="tel"
-              formControlName="phone"
-              placeholder="0900000000"
-              autocomplete="off"
-          /></label>
-          <label *ngIf="!isEditMode"
-            >Mật khẩu khởi tạo<input
-              appPreventAutofill
-              type="password"
-              formControlName="password"
-              name="sbqs-branch-admin-secret"
-              placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
-              autocomplete="new-password"
-          /></label>
+          <label>
+            Họ và tên
+            <input appPreventAutofill type="text" formControlName="fullName" placeholder="Nguyễn Văn A" autocomplete="off" />
+          </label>
+          <label>
+            Email
+            <input appPreventAutofill type="email" formControlName="email" name="sbqs-branch-admin-identity" placeholder="admin.branch@sbqs.com" autocomplete="off" />
+          </label>
+          <label>
+            Số điện thoại
+            <input appPreventAutofill type="tel" formControlName="phone" placeholder="0900000000" autocomplete="off" />
+          </label>
+
+          <label *ngIf="!isEditMode">
+            Mật khẩu khởi tạo
+            <span class="password-input">
+              <input
+                appPreventAutofill
+                [type]="showPassword ? 'text' : 'password'"
+                formControlName="password"
+                name="sbqs-branch-admin-secret"
+                placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                class="password-input__toggle"
+                (click)="togglePasswordVisibility('password')"
+                [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+              >
+                <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18" />
+              </button>
+            </span>
+          </label>
+
+          <label *ngIf="!isEditMode">
+            Xác nhận mật khẩu
+            <span class="password-input">
+              <input
+                appPreventAutofill
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                formControlName="confirmPassword"
+                name="sbqs-branch-admin-secret-confirmation"
+                placeholder="Nhập lại mật khẩu"
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                class="password-input__toggle"
+                (click)="togglePasswordVisibility('confirmPassword')"
+                [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+              >
+                <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18" />
+              </button>
+            </span>
+          </label>
+
           <label *ngIf="isEditMode">
             Trạng thái
             <select formControlName="status">
@@ -133,6 +157,7 @@
               <option value="INACTIVE">Tạm khóa</option>
             </select>
           </label>
+
           <label class="full-row">
             Chi nhánh phụ trách
             <select formControlName="branchId">
@@ -142,24 +167,13 @@
               </option>
             </select>
           </label>
+
           <div class="full-row form-actions">
             <button type="submit" class="btn btn-primary" [disabled]="isSubmitting">
-              <app-icon
-                *ngIf="!isSubmitting"
-                [name]="isEditMode ? 'save' : 'user-plus'"
-                [size]="16"
-              />
-              {{
-                isSubmitting ? 'Đang xử lý...' : isEditMode ? 'Cập nhật tài khoản' : 'Tạo tài khoản'
-              }}
+              <app-icon *ngIf="!isSubmitting" [name]="isEditMode ? 'save' : 'user-plus'" [size]="16" />
+              {{ isSubmitting ? 'Đang xử lý...' : isEditMode ? 'Cập nhật tài khoản' : 'Tạo tài khoản' }}
             </button>
-            <button
-              *ngIf="isEditMode"
-              type="button"
-              class="btn btn-secondary"
-              (click)="cancelEditAdminBranch()"
-              [disabled]="isSubmitting"
-            >
+            <button *ngIf="isEditMode" type="button" class="btn btn-secondary" (click)="cancelEditAdminBranch()" [disabled]="isSubmitting">
               <app-icon name="x" [size]="16" />
               Hủy sửa
             </button>
@@ -173,16 +187,15 @@
             <span>DANH SÁCH</span>
             <h2>Quản trị chi nhánh</h2>
           </div>
-          <label class="admin-search"
-            ><span>Tìm kiếm</span
-            ><input type="search" [(ngModel)]="searchTerm" placeholder="Tên, email, chi nhánh..."
-          /></label>
+          <label class="admin-search">
+            <span>Tìm kiếm</span>
+            <input type="search" [(ngModel)]="searchTerm" placeholder="Tên, email, chi nhánh..." />
+          </label>
         </div>
 
         <div *ngIf="isListLoading" class="admin-empty">Đang tải danh sách...</div>
-        <div *ngIf="!isListLoading && filteredAdmins.length === 0" class="admin-empty">
-          Chưa có tài khoản phù hợp.
-        </div>
+        <div *ngIf="!isListLoading && filteredAdmins.length === 0" class="admin-empty">Chưa có tài khoản phù hợp.</div>
+
         <div *ngIf="!isListLoading && filteredAdmins.length > 0" class="table-wrapper">
           <table class="admin-table">
             <thead>
@@ -197,36 +210,25 @@
             <tbody>
               <tr *ngFor="let admin of filteredAdmins">
                 <td>
-                  <strong>{{ admin.fullName }}</strong
-                  ><small>{{ admin.email }}</small>
+                  <strong>{{ admin.fullName }}</strong>
+                  <small>{{ admin.email }}</small>
                 </td>
                 <td>
-                  {{ admin.branch?.branchName || 'Chưa gán'
-                  }}<small>{{ admin.branch?.branchCode || '-' }}</small>
+                  {{ admin.branch?.branchName || 'Chưa gán' }}
+                  <small>{{ admin.branch?.branchCode || '-' }}</small>
                 </td>
                 <td>{{ admin.phone || '-' }}</td>
                 <td>
-                  <span
-                    class="admin-badge"
-                    [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'"
-                  >
+                  <span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
                     {{ admin.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
                   </span>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    class="btn btn-secondary btn-sm"
-                    (click)="startEditAdminBranch(admin)"
-                  >
+                  <button type="button" class="btn btn-secondary btn-sm" (click)="startEditAdminBranch(admin)">
                     <app-icon name="pencil" [size]="14" />
                     Sửa
                   </button>
-                  <button
-                    type="button"
-                    class="btn btn-danger btn-sm"
-                    (click)="deleteAdminBranch(admin)"
-                  >
+                  <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
                     <app-icon [name]="admin.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
                     {{ admin.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
                   </button>

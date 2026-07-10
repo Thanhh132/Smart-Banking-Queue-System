@@ -1,31 +1,32 @@
 <app-dashboard-layout title="Chọn chi nhánh">
   <div class="customer-page">
+    <div class="location-popup" *ngIf="popup" [ngClass]="'location-popup--' + popup.type">
+      <div>
+        <strong>{{ popup.title }}</strong>
+        <p>{{ popup.message }}</p>
+      </div>
+      <button type="button" (click)="closePopup()" aria-label="Đóng thông báo">
+        <app-icon name="x" [size]="16" />
+      </button>
+    </div>
+
     <header class="customer-page__intro">
       <span class="customer-kicker">Bước 1/3</span>
       <h1>Tìm điểm giao dịch phù hợp</h1>
-      <p>Chọn ngân hàng, nhập vị trí và xem các chi nhánh gần bạn nhất.</p>
+      <p>Cho phép trình duyệt lấy vị trí hiện tại để hệ thống sắp xếp các chi nhánh gần bạn nhất.</p>
     </header>
-
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-    <div *ngIf="locationMessage" class="alert alert-success">{{ locationMessage }}</div>
 
     <section class="location-panel">
       <div class="location-panel__address">
         <label>Vị trí của bạn</label>
-        <div class="location-input-row">
-          <input
-            type="text"
-            [(ngModel)]="customerAddress"
-            placeholder="Nhập số nhà, đường, phường/xã, tỉnh thành..."
-            (keyup.enter)="findNearbyByAddress()"
-          />
-          <button type="button" class="btn btn-primary" (click)="findNearbyByAddress()" [disabled]="isLocating">
-            <app-icon *ngIf="!isLocating" name="search" [size]="16" />
-            Tìm gần tôi
-          </button>
-          <button type="button" class="btn btn-secondary" (click)="useCurrentLocation()" [disabled]="isLocating">
+        <div class="current-location-card">
+          <div>
+            <strong>{{ customerLocationLabel || 'Chưa xác định vị trí' }}</strong>
+            <p>Hệ thống chỉ dùng vị trí hiện tại để tính khoảng cách đến chi nhánh.</p>
+          </div>
+          <button type="button" class="btn btn-primary" (click)="useCurrentLocation()" [disabled]="isLocating">
             <app-icon *ngIf="!isLocating" name="locate" [size]="16" />
-            Vị trí hiện tại
+            {{ isLocating ? 'Đang lấy vị trí...' : 'Vị trí hiện tại' }}
           </button>
         </div>
       </div>
@@ -53,7 +54,7 @@
         </div>
       </div>
 
-      <div *ngIf="branches.length === 0 && !errorMessage" class="customer-state">
+      <div *ngIf="branches.length === 0" class="customer-state">
         Đang tải danh sách chi nhánh...
       </div>
       <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">

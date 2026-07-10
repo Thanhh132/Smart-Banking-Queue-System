@@ -229,7 +229,7 @@ export class SuperAdminBranches implements OnInit {
     const latitude = this.branchForm.get('latitude')?.value;
     const longitude = this.branchForm.get('longitude')?.value;
     const query =
-      latitude != null && longitude != null
+      latitude != null && longitude != null && this.shouldPreviewCoordinates()
         ? `${latitude},${longitude}`
         : this.addressQuery || 'Việt Nam';
     this.mapPreviewUrl = this.sanitizer.bypassSecurityTrustResourceUrl(
@@ -298,9 +298,13 @@ export class SuperAdminBranches implements OnInit {
     this.locationService.geocode(this.addressQuery).subscribe({
       next: (result) => {
         const administrative = this.resolveAdministrativeFields(result);
+        const shouldUseResolvedAddress = this.looksLikeMapUrlOrCoordinates(this.fullAddress)
+          && !!result.formattedAddress
+          && !this.looksLikeMapUrlOrCoordinates(result.formattedAddress);
         this.isHydratingForm = true;
         this.branchForm.patchValue(
           {
+            address: shouldUseResolvedAddress ? result.formattedAddress : this.fullAddress,
             province: administrative.province,
             district: administrative.district,
             ward: administrative.ward,
@@ -425,6 +429,12 @@ export class SuperAdminBranches implements OnInit {
 
   private looksLikeMapUrlOrCoordinates(value: string): boolean {
     return /https?:\/\/|@-?\d|!3d-?\d|-?\d{1,2}(\.\d+)?,\s*-?\d{1,3}(\.\d+)?/.test(value);
+  }
+
+  private shouldPreviewCoordinates(): boolean {
+    const address = this.fullAddress;
+    if (!address) return true;
+    return /@-?\d|!3d-?\d|-?\d{1,2}(\.\d+)?,\s*-?\d{1,3}(\.\d+)?/.test(address);
   }
 
   private normalizeText(value: string): string {

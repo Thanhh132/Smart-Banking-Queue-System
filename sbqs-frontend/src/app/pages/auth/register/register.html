@@ -49,14 +49,46 @@
 
       <label>
         Mật khẩu
-        <input
-          appPreventAutofill
-          type="password"
-          formControlName="password"
-          name="sbqs-register-secret"
-          placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
-          autocomplete="new-password"
-        />
+        <span class="password-input">
+          <input
+            appPreventAutofill
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            name="sbqs-register-secret"
+            placeholder="Ít nhất 8 ký tự, có hoa, thường, số và ký tự đặc biệt"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-input__toggle"
+            (click)="togglePasswordVisibility('password')"
+            [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          >
+            <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18" />
+          </button>
+        </span>
+      </label>
+
+      <label>
+        Xác nhận mật khẩu
+        <span class="password-input">
+          <input
+            appPreventAutofill
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            name="sbqs-register-secret-confirmation"
+            placeholder="Nhập lại mật khẩu"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-input__toggle"
+            (click)="togglePasswordVisibility('confirmPassword')"
+            [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          >
+            <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18" />
+          </button>
+        </span>
       </label>
 
       <div *ngIf="errorMessage" class="auth-error">

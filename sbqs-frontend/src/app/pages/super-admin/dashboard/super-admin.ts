@@ -44,6 +44,8 @@ export class SuperAdmin implements OnInit {
   successMessage = '';
   errorMessage = '';
   searchTerm = '';
+  showPassword = false;
+  showConfirmPassword = false;
 
   get activeAdminCount(): number {
     return this.adminBranches.filter((admin) => admin.status === 'ACTIVE').length;
@@ -64,6 +66,7 @@ export class SuperAdmin implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required]],
     password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
+    confirmPassword: ['', [Validators.required]],
     branchId: [null as number | null, [Validators.required]],
     status: ['ACTIVE'],
   });
@@ -132,6 +135,12 @@ export class SuperAdmin implements OnInit {
       return;
     }
 
+    if (this.adminBranchForm.value.password !== this.adminBranchForm.value.confirmPassword) {
+      this.errorMessage = 'Mật khẩu xác nhận không khớp.';
+      this.cdr.detectChanges();
+      return;
+    }
+
     this.isSubmitting = true;
 
     const payload = {
@@ -139,6 +148,7 @@ export class SuperAdmin implements OnInit {
       email: this.adminBranchForm.value.email,
       phone: this.adminBranchForm.value.phone,
       password: this.adminBranchForm.value.password,
+      confirmPassword: this.adminBranchForm.value.confirmPassword,
       branchId: this.adminBranchForm.value.branchId,
     };
 
@@ -167,14 +177,18 @@ export class SuperAdmin implements OnInit {
     this.errorMessage = '';
 
     const passwordControl = this.adminBranchForm.get('password');
+    const confirmPasswordControl = this.adminBranchForm.get('confirmPassword');
     passwordControl?.clearValidators();
     passwordControl?.updateValueAndValidity();
+    confirmPasswordControl?.clearValidators();
+    confirmPasswordControl?.updateValueAndValidity();
 
     this.adminBranchForm.reset({
       fullName: admin.fullName || '',
       email: admin.email || '',
       phone: admin.phone || '',
       password: '',
+      confirmPassword: '',
       branchId: admin.branch?.branchId || null,
       status: admin.status || 'ACTIVE',
     });
@@ -235,17 +249,21 @@ export class SuperAdmin implements OnInit {
     this.editingAdminId = null;
 
     const passwordControl = this.adminBranchForm.get('password');
+    const confirmPasswordControl = this.adminBranchForm.get('confirmPassword');
     passwordControl?.setValidators([
       Validators.required,
       Validators.pattern(PASSWORD_POLICY_PATTERN),
     ]);
     passwordControl?.updateValueAndValidity();
+    confirmPasswordControl?.setValidators([Validators.required]);
+    confirmPasswordControl?.updateValueAndValidity();
 
     this.adminBranchForm.reset({
       fullName: '',
       email: '',
       phone: '',
       password: '',
+      confirmPassword: '',
       branchId: null,
       status: 'ACTIVE',
     });
@@ -279,5 +297,13 @@ export class SuperAdmin implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 }

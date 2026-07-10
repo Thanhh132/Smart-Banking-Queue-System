@@ -134,13 +134,23 @@ public class GeocodingService {
 
     private GeocodeResponse fromCoordinates(String value) {
         Matcher googleBangMatcher = GOOGLE_BANG_COORDINATES.matcher(value);
-        if (googleBangMatcher.find()) {
-            return coordinateResponse(googleBangMatcher.group(1), googleBangMatcher.group(2));
+        String latitude = null;
+        String longitude = null;
+        while (googleBangMatcher.find()) {
+            latitude = googleBangMatcher.group(1);
+            longitude = googleBangMatcher.group(2);
+        }
+        if (latitude != null && longitude != null) {
+            return coordinateResponse(latitude, longitude);
         }
 
         Matcher googleAtMatcher = GOOGLE_AT_COORDINATES.matcher(value);
-        if (googleAtMatcher.find()) {
-            return coordinateResponse(googleAtMatcher.group(1), googleAtMatcher.group(2));
+        while (googleAtMatcher.find()) {
+            latitude = googleAtMatcher.group(1);
+            longitude = googleAtMatcher.group(2);
+        }
+        if (latitude != null && longitude != null) {
+            return coordinateResponse(latitude, longitude);
         }
 
         Matcher plainMatcher = PLAIN_COORDINATES.matcher(value.trim());
@@ -157,6 +167,12 @@ public class GeocodingService {
         if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
             throw new RuntimeException("Toa do khong hop le");
         }
+
+        GeocodeResponse reverseResult = reverseGeocode(latitude, longitude);
+        if (reverseResult != null) {
+            return reverseResult;
+        }
+
         return new GeocodeResponse(
                 latitude + ", " + longitude,
                 latitude,
@@ -164,6 +180,54 @@ public class GeocodingService {
                 "",
                 "",
                 "");
+    }
+
+    private GeocodeResponse reverseGeocode(double latitude, double longitude) {
+        URI uri = UriComponentsBuilder.fromUriString(reverseUrl())
+                .queryParam("lat", latitude)
+                .queryParam("lon", longitude)
+                .queryParam("format", "jsonv2")
+                .queryParam("addressdetails", 1)
+                .queryParam("accept-language", "vi")
+                .build()
+                .encode()
+                .toUri();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.USER_AGENT, properties.getUserAgent());
+
+        try {
+            ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+                    uri,
+                    HttpMethod.GET,
+                    new HttpEntity<>(headers),
+                    new ParameterizedTypeReference<>() {
+                    });
+
+            Map<String, Object> result = response.getBody();
+            if (result == null || result.isEmpty()) {
+                return null;
+            }
+
+            Map<String, Object> addressParts = addressParts(result.get("address"));
+            return new GeocodeResponse(
+                    String.valueOf(result.getOrDefault("display_name", latitude + ", " + longitude)),
+                    latitude,
+                    longitude,
+                    firstValue(addressParts, "state", "province", "city"),
+                    firstValue(addressParts, "city_district", "district", "county", "city", "town"),
+                    firstValue(addressParts, "ward", "suburb", "quarter", "neighbourhood", "village"));
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private String reverseUrl() {
+        String searchUrl = properties.getNominatimUrl();
+        if (searchUrl.endsWith("/search")) {
+            return searchUrl.substring(0, searchUrl.length() - "/search".length()) + "/reverse";
+        }
+        return searchUrl.replace("search", "reverse");
     }
 
     private void pauseBeforeRetry(int index, int candidateCount) {

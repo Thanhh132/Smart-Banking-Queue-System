@@ -58,6 +58,10 @@
 }
 
 .card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
   margin-bottom: 20px;
 
   h2 {
@@ -74,6 +78,14 @@
 .account-form {
   display: grid;
   gap: 16px;
+}
+
+.account-card--locked .account-form input:disabled {
+  cursor: default;
+  background: #f8fafc;
+  color: #334155;
+  border-color: #d7e1ec;
+  opacity: 1;
 }
 
 .password-help {
@@ -107,5 +119,10 @@
 @media (max-width: 900px) {
   .account-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card-heading {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

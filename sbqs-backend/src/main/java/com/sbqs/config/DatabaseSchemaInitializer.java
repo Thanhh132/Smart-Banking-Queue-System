@@ -19,26 +19,50 @@ public class DatabaseSchemaInitializer {
      * Production nên chuyển các câu lệnh này thành migration có version để audit dễ hơn.
      */
     public void initialize() {
-        jdbcTemplate.execute("alter table branches add column if not exists province varchar(255)");
-        jdbcTemplate.execute("alter table branches add column if not exists district varchar(255)");
-        jdbcTemplate.execute("alter table branches add column if not exists ward varchar(255)");
-        jdbcTemplate.execute("alter table tickets add column if not exists customer_email varchar(255)");
-        jdbcTemplate.execute("alter table tickets alter column service_id drop not null");
-        jdbcTemplate.execute("alter table services add column if not exists required_customer_fields varchar(1000)");
-        jdbcTemplate.execute("alter table users add column if not exists date_of_birth varchar(30)");
-        jdbcTemplate.execute("alter table users add column if not exists identity_number varchar(30)");
-        jdbcTemplate.execute("alter table users add column if not exists identity_issue_date varchar(30)");
-        jdbcTemplate.execute("alter table users add column if not exists identity_issue_place varchar(255)");
-        jdbcTemplate.execute("alter table users add column if not exists permanent_address varchar(500)");
-        jdbcTemplate.execute("alter table users add column if not exists contact_address varchar(500)");
-        jdbcTemplate.execute("alter table users add column if not exists occupation varchar(255)");
-        jdbcTemplate.execute("alter table users add column if not exists employer_name varchar(255)");
-        jdbcTemplate.execute("alter table users add column if not exists monthly_income varchar(50)");
-        jdbcTemplate.execute("alter table users add column if not exists account_number varchar(50)");
-        jdbcTemplate.execute("alter table users add column if not exists card_delivery_address varchar(500)");
-        jdbcTemplate.execute("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
-        jdbcTemplate.execute("alter table users drop constraint if exists users_status_check");
-        jdbcTemplate.execute("""
+        createCoreTablesIfMissing();
+
+        executeIfPossible("alter table branches add column if not exists province varchar(255)");
+        executeIfPossible("alter table branches add column if not exists district varchar(255)");
+        executeIfPossible("alter table branches add column if not exists ward varchar(255)");
+        executeIfPossible("alter table services add column if not exists branch_id bigint");
+        executeIfPossible("alter table services add column if not exists service_type varchar(255) not null default 'BASIC'");
+        executeIfPossible("alter table services add column if not exists status varchar(255) not null default 'ACTIVE'");
+        executeIfPossible("alter table tickets add column if not exists customer_email varchar(255)");
+        executeIfPossible("alter table tickets add column if not exists branch_id bigint");
+        executeIfPossible("alter table tickets add column if not exists service_id bigint");
+        executeIfPossible("alter table tickets add column if not exists queue_machine_id bigint");
+        executeIfPossible("alter table tickets add column if not exists ticket_number integer");
+        executeIfPossible("alter table tickets add column if not exists serving_started_at timestamp");
+        executeIfPossible("alter table tickets add column if not exists created_at timestamp not null default current_timestamp");
+        executeIfPossible("alter table tickets alter column appointment_id drop not null");
+        executeIfPossible("alter table tickets alter column service_id drop not null");
+        executeIfPossible("alter table services add column if not exists required_customer_fields varchar(1000)");
+        executeIfPossible("alter table users add column if not exists date_of_birth varchar(30)");
+        executeIfPossible("alter table users add column if not exists gender varchar(30)");
+        executeIfPossible("alter table users add column if not exists nationality varchar(100)");
+        executeIfPossible("alter table users add column if not exists passport_number varchar(50)");
+        executeIfPossible("alter table users add column if not exists visa_number varchar(50)");
+        executeIfPossible("alter table users add column if not exists identity_number varchar(30)");
+        executeIfPossible("alter table users add column if not exists identity_issue_date varchar(30)");
+        executeIfPossible("alter table users add column if not exists identity_issue_place varchar(255)");
+        executeIfPossible("alter table users add column if not exists permanent_address varchar(500)");
+        executeIfPossible("alter table users add column if not exists contact_address varchar(500)");
+        executeIfPossible("alter table users add column if not exists occupation varchar(255)");
+        executeIfPossible("alter table users add column if not exists employment_status varchar(100)");
+        executeIfPossible("alter table users add column if not exists employer_name varchar(255)");
+        executeIfPossible("alter table users add column if not exists work_phone varchar(30)");
+        executeIfPossible("alter table users add column if not exists job_title varchar(100)");
+        executeIfPossible("alter table users add column if not exists monthly_income varchar(50)");
+        executeIfPossible("alter table users add column if not exists salary_payment_method varchar(255)");
+        executeIfPossible("alter table users add column if not exists account_number varchar(50)");
+        executeIfPossible("alter table users add column if not exists card_delivery_address varchar(500)");
+        executeIfPossible("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
+        executeIfPossible("alter table counters add column if not exists queue_machine_id bigint");
+        executeIfPossible("alter table counters add column if not exists current_ticket_id bigint");
+        executeIfPossible("alter table appointments add column if not exists customer_name varchar(255)");
+        executeIfPossible("alter table appointments add column if not exists customer_phone varchar(30)");
+        executeIfPossible("alter table users drop constraint if exists users_status_check");
+        executeIfPossible("""
                 update queue_machines qm
                 set last_ticket_number = greatest(
                     qm.last_ticket_number,
@@ -49,9 +73,9 @@ public class DatabaseSchemaInitializer {
                     ), 0)
                 )
                 """);
-        jdbcTemplate.execute("alter table tickets drop constraint if exists tickets_ticket_number_key");
-        jdbcTemplate.execute("alter table tickets drop constraint if exists uk_tickets_ticket_number");
-        jdbcTemplate.execute("alter table tickets drop constraint if exists unique_ticket_per_machine");
+        executeIfPossible("alter table tickets drop constraint if exists tickets_ticket_number_key");
+        executeIfPossible("alter table tickets drop constraint if exists uk_tickets_ticket_number");
+        executeIfPossible("alter table tickets drop constraint if exists unique_ticket_per_machine");
         executeIfPossible("""
                 do $$
                 declare
@@ -163,7 +187,7 @@ public class DatabaseSchemaInitializer {
                 end $$;
                 """);
 
-        jdbcTemplate.execute("""
+        executeIfPossible("""
                 create table if not exists password_reset_tokens (
                     password_reset_token_id bigserial primary key,
                     user_id bigint not null references users(user_id) on delete cascade,
@@ -174,7 +198,7 @@ public class DatabaseSchemaInitializer {
                 )
                 """);
 
-        jdbcTemplate.execute("""
+        executeIfPossible("""
                 create table if not exists email_verification_tokens (
                     email_verification_token_id bigserial primary key,
                     user_id bigint not null references users(user_id) on delete cascade,
@@ -201,7 +225,7 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("create index if not exists idx_auth_audits_email_created_at on authentication_audits(email, created_at desc)");
         jdbcTemplate.execute("create index if not exists idx_auth_audits_ip_created_at on authentication_audits(ip_address, created_at desc)");
 
-        jdbcTemplate.execute("""
+        executeIfPossible("""
                 create table if not exists account_change_tokens (
                     account_change_token_id bigserial primary key,
                     user_id bigint not null references users(user_id) on delete cascade,
@@ -276,7 +300,7 @@ public class DatabaseSchemaInitializer {
                 end $$;
                 """);
 
-        jdbcTemplate.execute("""
+        executeIfPossible("""
                 update counters c
                 set status = 'INACTIVE'
                 where not exists (
@@ -287,9 +311,9 @@ public class DatabaseSchemaInitializer {
                 )
                 """);
 
-        jdbcTemplate.execute("alter table services drop constraint if exists services_service_code_key");
-        jdbcTemplate.execute("alter table queue_machines drop constraint if exists queue_machines_machine_code_key");
-        jdbcTemplate.execute("alter table counters drop constraint if exists counters_counter_code_key");
+        executeIfPossible("alter table services drop constraint if exists services_service_code_key");
+        executeIfPossible("alter table queue_machines drop constraint if exists queue_machines_machine_code_key");
+        executeIfPossible("alter table counters drop constraint if exists counters_counter_code_key");
 
         executeIfPossible("""
                 do $$
@@ -320,6 +344,119 @@ public class DatabaseSchemaInitializer {
     }
 
     /** Chạy migration tương thích dữ liệu legacy; lỗi do dữ liệu cũ không làm backend dừng khởi động. */
+    private void createCoreTablesIfMissing() {
+        jdbcTemplate.execute("""
+                create table if not exists branches (
+                    branch_id bigserial primary key,
+                    bank_name varchar(255) not null,
+                    branch_code varchar(255) not null unique,
+                    branch_name varchar(255) not null,
+                    province varchar(255),
+                    district varchar(255),
+                    ward varchar(255),
+                    address varchar(500),
+                    phone varchar(30),
+                    status varchar(255) not null default 'ACTIVE',
+                    created_at timestamp not null default current_timestamp,
+                    latitude double precision not null default 0,
+                    longitude double precision not null default 0
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists users (
+                    user_id bigserial primary key,
+                    full_name varchar(255),
+                    email varchar(255) unique,
+                    password_hash varchar(255),
+                    keycloak_user_id varchar(255),
+                    phone varchar(30),
+                    role varchar(255),
+                    status varchar(255) default 'ACTIVE',
+                    created_at timestamp,
+                    branch_id bigint references branches(branch_id)
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists queue_machines (
+                    queue_machine_id bigserial primary key,
+                    branch_id bigint not null references branches(branch_id),
+                    machine_code varchar(255) not null,
+                    machine_name varchar(255) not null,
+                    location_note varchar(500),
+                    instruction_note varchar(500),
+                    status varchar(255) not null default 'ACTIVE',
+                    last_ticket_number integer not null default 0,
+                    created_at timestamp not null default current_timestamp
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists services (
+                    service_id bigserial primary key,
+                    branch_id bigint references branches(branch_id),
+                    service_code varchar(255) not null,
+                    service_name varchar(255) not null,
+                    service_type varchar(255) not null default 'BASIC',
+                    description text,
+                    estimated_time integer not null default 15,
+                    status varchar(255) not null default 'ACTIVE',
+                    required_customer_fields varchar(1000)
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists counters (
+                    counter_id bigserial primary key,
+                    branch_id bigint not null references branches(branch_id),
+                    queue_machine_id bigint references queue_machines(queue_machine_id),
+                    current_ticket_id bigint,
+                    counter_code varchar(255) not null,
+                    counter_name varchar(255) not null,
+                    status varchar(255) not null default 'INACTIVE'
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists appointments (
+                    appointment_id bigserial primary key,
+                    customer_name varchar(255),
+                    customer_phone varchar(30),
+                    branch_id bigint not null references branches(branch_id),
+                    service_id bigint not null references services(service_id),
+                    appointment_date date not null,
+                    appointment_time time not null,
+                    status varchar(255) not null default 'PENDING',
+                    created_at timestamp not null default current_timestamp
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists tickets (
+                    ticket_id bigserial primary key,
+                    queue_machine_id bigint references queue_machines(queue_machine_id),
+                    appointment_id bigint references appointments(appointment_id),
+                    branch_id bigint not null references branches(branch_id),
+                    service_id bigint references services(service_id),
+                    counter_id bigint references counters(counter_id),
+                    ticket_number integer not null,
+                    customer_email varchar(255),
+                    status varchar(255) not null default 'WAITING',
+                    serving_started_at timestamp,
+                    created_at timestamp not null default current_timestamp
+                )
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists queue_machine_services (
+                    queue_machine_id bigint not null references queue_machines(queue_machine_id),
+                    service_id bigint not null references services(service_id),
+                    primary key (queue_machine_id, service_id)
+                )
+                """);
+    }
+
     private void executeIfPossible(String sql) {
         try {
             jdbcTemplate.execute(sql);

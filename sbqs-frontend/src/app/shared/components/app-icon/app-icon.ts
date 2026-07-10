@@ -8,6 +8,8 @@ import {
   LucideCircleStop,
   LucideDownload,
   LucideExternalLink,
+  LucideEye,
+  LucideEyeOff,
   LucideFileSpreadsheet,
   LucideFileText,
   LucideKeyRound,
@@ -47,6 +49,8 @@ export type AppIconName =
   | 'dashboard'
   | 'download'
   | 'external-link'
+  | 'eye'
+  | 'eye-off'
   | 'file-spreadsheet'
   | 'file-text'
   | 'key'
@@ -88,6 +92,8 @@ export type AppIconName =
     LucideCircleStop,
     LucideDownload,
     LucideExternalLink,
+    LucideEye,
+    LucideEyeOff,
     LucideFileSpreadsheet,
     LucideFileText,
     LucideKeyRound,

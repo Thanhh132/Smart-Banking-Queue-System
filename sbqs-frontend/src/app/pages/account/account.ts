@@ -42,6 +42,10 @@ export class Account {
   profileError = '';
   passwordMessage = '';
   passwordError = '';
+  isEditingProfile = false;
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   profileForm = this.fb.group({
     fullName: ['', [Validators.required, Validators.maxLength(150)]],
@@ -89,9 +93,8 @@ export class Account {
           email: profile.email,
           phone: profile.phone,
         });
-        if (profile.role !== 'CUSTOMER') {
-          this.profileForm.disable();
-        }
+        this.isEditingProfile = false;
+        this.profileForm.disable();
         this.cdr.detectChanges();
       },
       error: (error) => {
@@ -103,6 +106,10 @@ export class Account {
 
   /** CUSTOMER gửi yêu cầu sửa hồ sơ; nhân viên không đi vào luồng này. */
   saveProfile(): void {
+    if (!this.isEditingProfile) {
+      return;
+    }
+
     this.profileMessage = '';
     this.profileError = '';
     if (this.profileForm.invalid) {
@@ -111,10 +118,11 @@ export class Account {
     }
 
     this.isSavingProfile = true;
+    const profileValue = this.profileForm.getRawValue();
     this.accountService.requestProfileChange({
-      fullName: this.profileForm.value.fullName || '',
-      email: this.profileForm.value.email || '',
-      phone: this.profileForm.value.phone || '',
+      fullName: profileValue.fullName || '',
+      email: profileValue.email || '',
+      phone: profileValue.phone || '',
     }).pipe(
       finalize(() => {
         this.isSavingProfile = false;
@@ -122,6 +130,8 @@ export class Account {
       }),
     ).subscribe({
       next: () => {
+        this.isEditingProfile = false;
+        this.profileForm.disable();
         this.profileMessage = 'Đã gửi link xác nhận tới email hiện tại. Thông tin chỉ thay đổi sau khi bạn xác nhận.';
         this.cdr.detectChanges();
       },
@@ -133,6 +143,34 @@ export class Account {
   }
 
   /** Kiểm tra form và mật khẩu xác nhận trước khi gọi API đổi mật khẩu. */
+  startEditProfile(): void {
+    if (!this.canEditProfile || this.isSavingProfile) {
+      return;
+    }
+
+    this.profileMessage = '';
+    this.profileError = '';
+    this.isEditingProfile = true;
+    this.profileForm.enable();
+  }
+
+  cancelEditProfile(): void {
+    if (!this.profile || this.isSavingProfile) {
+      return;
+    }
+
+    this.profileForm.patchValue({
+      fullName: this.profile.fullName,
+      email: this.profile.email,
+      phone: this.profile.phone,
+    });
+    this.profileForm.markAsPristine();
+    this.profileForm.markAsUntouched();
+    this.profileError = '';
+    this.isEditingProfile = false;
+    this.profileForm.disable();
+  }
+
   changePassword(): void {
     this.passwordMessage = '';
     this.passwordError = '';
@@ -164,5 +202,17 @@ export class Account {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {
+    if (field === 'current') {
+      this.showCurrentPassword = !this.showCurrentPassword;
+      return;
+    }
+    if (field === 'new') {
+      this.showNewPassword = !this.showNewPassword;
+      return;
+    }
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 }

@@ -1,7 +1,14 @@
 package com.sbqs.exception;
 
 public class LoginRateLimitExceededException extends RuntimeException {
-    public LoginRateLimitExceededException(String message) {
+    private final long retryAfterSeconds;
+
+    public LoginRateLimitExceededException(String message, long retryAfterSeconds) {
         super(message);
+        this.retryAfterSeconds = retryAfterSeconds;
+    }
+
+    public long getRetryAfterSeconds() {
+        return retryAfterSeconds;
     }
 }

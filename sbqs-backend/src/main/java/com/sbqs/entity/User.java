@@ -33,6 +33,18 @@ public class User {
 
     private String phone;
 
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "nationality")
+    private String nationality;
+
+    @Column(name = "passport_number")
+    private String passportNumber;
+
+    @Column(name = "visa_number")
+    private String visaNumber;
+
     @Column(name = "date_of_birth")
     private String dateOfBirth;
 
@@ -54,11 +66,23 @@ public class User {
     @Column(name = "occupation")
     private String occupation;
 
+    @Column(name = "employment_status")
+    private String employmentStatus;
+
     @Column(name = "employer_name")
     private String employerName;
 
+    @Column(name = "work_phone")
+    private String workPhone;
+
+    @Column(name = "job_title")
+    private String jobTitle;
+
     @Column(name = "monthly_income")
     private String monthlyIncome;
+
+    @Column(name = "salary_payment_method")
+    private String salaryPaymentMethod;
 
     @Column(name = "account_number")
     private String accountNumber;

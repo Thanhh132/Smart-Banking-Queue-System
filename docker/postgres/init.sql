@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS branches (
     address VARCHAR(500),
     bank_name VARCHAR(100),
     latitude DOUBLE PRECISION,
-    longitude DOUBLE PRECISION
+    longitude DOUBLE PRECISION,
     phone VARCHAR(30),
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP

@@ -26,6 +26,7 @@ export class Login {
 
   isSubmitting = false;
   errorMessage = '';
+  showPassword = false;
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -69,5 +70,9 @@ export class Login {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 }

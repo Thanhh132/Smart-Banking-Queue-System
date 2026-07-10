@@ -28,6 +28,9 @@ export class ResetPassword {
   isSubmitting = false;
   isCompleted = false;
   errorMessage = this.token ? '' : 'Liên kết đặt lại mật khẩu không hợp lệ.';
+  showPassword = false;
+  showConfirmPassword = false;
+
   form = this.fb.group({
     password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
     confirmPassword: ['', [Validators.required]],
@@ -41,14 +44,15 @@ export class ResetPassword {
     }
 
     const password = this.form.value.password || '';
-    if (password !== this.form.value.confirmPassword) {
+    const confirmPassword = this.form.value.confirmPassword || '';
+    if (password !== confirmPassword) {
       this.errorMessage = 'Mật khẩu xác nhận không khớp.';
       return;
     }
 
     this.isSubmitting = true;
     this.authService
-      .resetPassword(this.token, password)
+      .resetPassword(this.token, password, confirmPassword)
       .pipe(
         finalize(() => {
           this.isSubmitting = false;
@@ -65,5 +69,13 @@ export class ResetPassword {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 }

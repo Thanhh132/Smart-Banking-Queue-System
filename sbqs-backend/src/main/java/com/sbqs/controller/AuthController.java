@@ -102,7 +102,10 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(
             @RequestBody ResetPasswordRequest request) {
 
-        authService.resetPassword(request.getToken(), request.getNewPassword());
+        authService.resetPassword(
+                request.getToken(),
+                request.getNewPassword(),
+                request.getConfirmPassword());
         return ResponseEntity.noContent().build();
     }
 

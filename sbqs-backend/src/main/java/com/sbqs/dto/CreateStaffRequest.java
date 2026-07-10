@@ -20,6 +20,9 @@ public class CreateStaffRequest {
     @NotBlank(message = "Mat khau khong duoc de trong")
     private String password;
 
+    @NotBlank(message = "Xac nhan mat khau khong duoc de trong")
+    private String confirmPassword;
+
     @NotBlank(message = "So dien thoai khong duoc de trong")
     private String phone;
 

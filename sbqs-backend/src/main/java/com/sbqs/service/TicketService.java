@@ -433,15 +433,26 @@ public class TicketService {
 
     private String getPaperlessValue(User user, String field) {
         return switch (field) {
+            case "FULL_NAME" -> user.getFullName();
             case "DATE_OF_BIRTH" -> user.getDateOfBirth();
+            case "GENDER" -> user.getGender();
+            case "NATIONALITY" -> user.getNationality();
             case "IDENTITY_NUMBER" -> user.getIdentityNumber();
             case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
             case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
+            case "PASSPORT_NUMBER" -> user.getPassportNumber();
+            case "VISA_NUMBER" -> user.getVisaNumber();
+            case "MOBILE_PHONE" -> user.getPhone();
+            case "EMAIL_ADDRESS" -> user.getEmail();
             case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
             case "CONTACT_ADDRESS" -> user.getContactAddress();
             case "OCCUPATION" -> user.getOccupation();
+            case "EMPLOYMENT_STATUS" -> user.getEmploymentStatus();
             case "EMPLOYER_NAME" -> user.getEmployerName();
+            case "WORK_PHONE" -> user.getWorkPhone();
+            case "JOB_TITLE" -> user.getJobTitle();
             case "MONTHLY_INCOME" -> user.getMonthlyIncome();
+            case "SALARY_PAYMENT_METHOD" -> user.getSalaryPaymentMethod();
             case "ACCOUNT_NUMBER" -> user.getAccountNumber();
             case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
             default -> "";
@@ -486,15 +497,26 @@ public class TicketService {
 
     private String getPaperlessLabel(String field) {
         return switch (field) {
+            case "FULL_NAME" -> "Họ và tên";
             case "DATE_OF_BIRTH" -> "Ngày sinh";
-            case "IDENTITY_NUMBER" -> "Số CCCD/Hộ chiếu";
-            case "IDENTITY_ISSUE_DATE" -> "Ngày cấp CCCD/Hộ chiếu";
-            case "IDENTITY_ISSUE_PLACE" -> "Nơi cấp CCCD/Hộ chiếu";
+            case "GENDER" -> "Giới tính";
+            case "NATIONALITY" -> "Quốc tịch";
+            case "IDENTITY_NUMBER" -> "Số CCCD/CMND";
+            case "IDENTITY_ISSUE_DATE" -> "Ngày cấp CCCD";
+            case "IDENTITY_ISSUE_PLACE" -> "Nơi cấp CCCD";
+            case "PASSPORT_NUMBER" -> "Số hộ chiếu";
+            case "VISA_NUMBER" -> "Số thị thực";
+            case "MOBILE_PHONE" -> "Số điện thoại di động";
+            case "EMAIL_ADDRESS" -> "Địa chỉ email";
             case "PERMANENT_ADDRESS" -> "Địa chỉ thường trú";
-            case "CONTACT_ADDRESS" -> "Địa chỉ liên hệ";
+            case "CONTACT_ADDRESS" -> "Địa chỉ cư trú hiện tại";
             case "OCCUPATION" -> "Nghề nghiệp";
-            case "EMPLOYER_NAME" -> "Đơn vị công tác";
-            case "MONTHLY_INCOME" -> "Thu nhập hằng tháng";
+            case "EMPLOYMENT_STATUS" -> "Tình trạng việc làm";
+            case "EMPLOYER_NAME" -> "Tên công ty/Cơ quan";
+            case "WORK_PHONE" -> "Số điện thoại nơi làm việc";
+            case "JOB_TITLE" -> "Chức vụ/Vị trí";
+            case "MONTHLY_INCOME" -> "Thu nhập trung bình hàng tháng";
+            case "SALARY_PAYMENT_METHOD" -> "Hình thức nhận lương";
             case "ACCOUNT_NUMBER" -> "Số tài khoản liên kết";
             case "CARD_DELIVERY_ADDRESS" -> "Địa chỉ nhận thẻ";
             default -> field;

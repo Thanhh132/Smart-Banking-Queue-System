@@ -41,24 +41,46 @@ public class AccountService {
     private final AccountChangeProperties changeProperties;
 
     private static final Map<String, CustomerProfileFieldResponse> PAPERLESS_FIELDS = Map.ofEntries(
+            Map.entry("FULL_NAME", new CustomerProfileFieldResponse(
+                    "FULL_NAME", "Họ và tên", "text", "Ví dụ: NGUYEN VAN A", true)),
             Map.entry("DATE_OF_BIRTH", new CustomerProfileFieldResponse(
                     "DATE_OF_BIRTH", "Ngày sinh", "date", "Định dạng dd/mm/yyyy", true)),
+            Map.entry("GENDER", new CustomerProfileFieldResponse(
+                    "GENDER", "Giới tính", "text", "Nam / Nữ / Khác", true)),
+            Map.entry("NATIONALITY", new CustomerProfileFieldResponse(
+                    "NATIONALITY", "Quốc tịch", "text", "Mặc định: Việt Nam", true)),
             Map.entry("IDENTITY_NUMBER", new CustomerProfileFieldResponse(
-                    "IDENTITY_NUMBER", "Số CCCD/Hộ chiếu", "text", "Nhập số giấy tờ tùy thân", true)),
+                    "IDENTITY_NUMBER", "Số CCCD/CMND", "text", "Gồm 12 số", true)),
             Map.entry("IDENTITY_ISSUE_DATE", new CustomerProfileFieldResponse(
-                    "IDENTITY_ISSUE_DATE", "Ngày cấp CCCD/Hộ chiếu", "date", "Định dạng dd/mm/yyyy", true)),
+                    "IDENTITY_ISSUE_DATE", "Ngày cấp CCCD", "date", "Định dạng dd/mm/yyyy", true)),
             Map.entry("IDENTITY_ISSUE_PLACE", new CustomerProfileFieldResponse(
-                    "IDENTITY_ISSUE_PLACE", "Nơi cấp CCCD/Hộ chiếu", "text", "Cơ quan cấp giấy tờ", true)),
+                    "IDENTITY_ISSUE_PLACE", "Nơi cấp CCCD", "text", "Cơ quan cấp giấy tờ", true)),
+            Map.entry("PASSPORT_NUMBER", new CustomerProfileFieldResponse(
+                    "PASSPORT_NUMBER", "Số hộ chiếu", "text", "Dành cho khách hàng nước ngoài", true)),
+            Map.entry("VISA_NUMBER", new CustomerProfileFieldResponse(
+                    "VISA_NUMBER", "Số thị thực", "text", "Dành cho khách hàng nước ngoài nếu có", true)),
+            Map.entry("MOBILE_PHONE", new CustomerProfileFieldResponse(
+                    "MOBILE_PHONE", "Số điện thoại di động", "text", "Số dùng nhận OTP/SMS Banking", true)),
+            Map.entry("EMAIL_ADDRESS", new CustomerProfileFieldResponse(
+                    "EMAIL_ADDRESS", "Địa chỉ email", "text", "Email nhận thông báo hoặc sao kê", true)),
             Map.entry("PERMANENT_ADDRESS", new CustomerProfileFieldResponse(
-                    "PERMANENT_ADDRESS", "Địa chỉ thường trú", "textarea", "Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành", true)),
+                    "PERMANENT_ADDRESS", "Địa chỉ thường trú", "textarea", "Địa chỉ ghi trên CCCD", true)),
             Map.entry("CONTACT_ADDRESS", new CustomerProfileFieldResponse(
-                    "CONTACT_ADDRESS", "Địa chỉ liên hệ", "textarea", "Tự điền theo địa chỉ thường trú nếu để trống", true)),
+                    "CONTACT_ADDRESS", "Địa chỉ cư trú hiện tại", "textarea", "Nơi đang ở thực tế để liên hệ/giao thẻ", true)),
             Map.entry("OCCUPATION", new CustomerProfileFieldResponse(
                     "OCCUPATION", "Nghề nghiệp", "text", "Nghề nghiệp hiện tại", true)),
+            Map.entry("EMPLOYMENT_STATUS", new CustomerProfileFieldResponse(
+                    "EMPLOYMENT_STATUS", "Tình trạng việc làm", "text", "Nhân viên hợp đồng / Chủ doanh nghiệp / Tự do / Học sinh - Sinh viên", true)),
             Map.entry("EMPLOYER_NAME", new CustomerProfileFieldResponse(
-                    "EMPLOYER_NAME", "Đơn vị công tác", "text", "Tên công ty hoặc đơn vị công tác", true)),
+                    "EMPLOYER_NAME", "Tên công ty/Cơ quan", "text", "Tên công ty hoặc cơ quan đang làm việc", true)),
+            Map.entry("WORK_PHONE", new CustomerProfileFieldResponse(
+                    "WORK_PHONE", "Số điện thoại nơi làm việc", "text", "Số điện thoại công ty/cơ quan", true)),
+            Map.entry("JOB_TITLE", new CustomerProfileFieldResponse(
+                    "JOB_TITLE", "Chức vụ/Vị trí", "text", "Nhân viên, Trưởng phòng, Giám đốc...", true)),
             Map.entry("MONTHLY_INCOME", new CustomerProfileFieldResponse(
-                    "MONTHLY_INCOME", "Thu nhập hằng tháng", "number", "Thu nhập dự kiến mỗi tháng", true)),
+                    "MONTHLY_INCOME", "Thu nhập trung bình hàng tháng", "number", "Nhập số tiền thu nhập mỗi tháng", true)),
+            Map.entry("SALARY_PAYMENT_METHOD", new CustomerProfileFieldResponse(
+                    "SALARY_PAYMENT_METHOD", "Hình thức nhận lương", "text", "Chuyển khoản qua ngân hàng nào hoặc tiền mặt", true)),
             Map.entry("ACCOUNT_NUMBER", new CustomerProfileFieldResponse(
                     "ACCOUNT_NUMBER", "Số tài khoản liên kết", "text", "Số tài khoản ngân hàng dùng để liên kết thẻ", true)),
             Map.entry("CARD_DELIVERY_ADDRESS", new CustomerProfileFieldResponse(
@@ -351,15 +373,26 @@ public class AccountService {
 
     private String getPaperlessValue(User user, String key) {
         return switch (key) {
+            case "FULL_NAME" -> user.getFullName();
             case "DATE_OF_BIRTH" -> user.getDateOfBirth();
+            case "GENDER" -> user.getGender();
+            case "NATIONALITY" -> user.getNationality();
             case "IDENTITY_NUMBER" -> user.getIdentityNumber();
             case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
             case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
+            case "PASSPORT_NUMBER" -> user.getPassportNumber();
+            case "VISA_NUMBER" -> user.getVisaNumber();
+            case "MOBILE_PHONE" -> user.getPhone();
+            case "EMAIL_ADDRESS" -> user.getEmail();
             case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
             case "CONTACT_ADDRESS" -> user.getContactAddress();
             case "OCCUPATION" -> user.getOccupation();
+            case "EMPLOYMENT_STATUS" -> user.getEmploymentStatus();
             case "EMPLOYER_NAME" -> user.getEmployerName();
+            case "WORK_PHONE" -> user.getWorkPhone();
+            case "JOB_TITLE" -> user.getJobTitle();
             case "MONTHLY_INCOME" -> user.getMonthlyIncome();
+            case "SALARY_PAYMENT_METHOD" -> user.getSalaryPaymentMethod();
             case "ACCOUNT_NUMBER" -> user.getAccountNumber();
             case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
             default -> "";
@@ -370,20 +403,47 @@ public class AccountService {
         values.forEach((key, value) -> {
             String normalized = normalizeProfileValue(value);
             switch (key) {
+                case "FULL_NAME" -> user.setFullName(normalized == null ? null : normalized.toUpperCase(Locale.ROOT));
                 case "DATE_OF_BIRTH" -> user.setDateOfBirth(normalized);
+                case "GENDER" -> user.setGender(normalized);
+                case "NATIONALITY" -> user.setNationality(isBlank(normalized) ? "Việt Nam" : normalized);
                 case "IDENTITY_NUMBER" -> user.setIdentityNumber(normalized);
                 case "IDENTITY_ISSUE_DATE" -> user.setIdentityIssueDate(normalized);
                 case "IDENTITY_ISSUE_PLACE" -> user.setIdentityIssuePlace(normalized);
+                case "PASSPORT_NUMBER" -> user.setPassportNumber(normalized);
+                case "VISA_NUMBER" -> user.setVisaNumber(normalized);
+                case "MOBILE_PHONE" -> applyPaperlessPhone(user, normalized);
+                case "EMAIL_ADDRESS" -> applyPaperlessEmail(user, normalized);
                 case "PERMANENT_ADDRESS" -> user.setPermanentAddress(normalized);
                 case "CONTACT_ADDRESS" -> user.setContactAddress(normalized);
                 case "OCCUPATION" -> user.setOccupation(normalized);
+                case "EMPLOYMENT_STATUS" -> user.setEmploymentStatus(normalized);
                 case "EMPLOYER_NAME" -> user.setEmployerName(normalized);
+                case "WORK_PHONE" -> user.setWorkPhone(normalized);
+                case "JOB_TITLE" -> user.setJobTitle(normalized);
                 case "MONTHLY_INCOME" -> user.setMonthlyIncome(normalized);
+                case "SALARY_PAYMENT_METHOD" -> user.setSalaryPaymentMethod(normalized);
                 case "ACCOUNT_NUMBER" -> user.setAccountNumber(normalized);
                 case "CARD_DELIVERY_ADDRESS" -> user.setCardDeliveryAddress(normalized);
                 default -> throw new RuntimeException("Truong ho so khong hop le: " + key);
             }
         });
+    }
+
+    private void applyPaperlessPhone(User user, String phone) {
+        if (!isBlank(phone) && userRepository.existsByPhoneAndUserIdNot(phone, user.getUserId())) {
+            throw new RuntimeException("Số điện thoại đã được tài khoản khác sử dụng");
+        }
+        user.setPhone(phone);
+    }
+
+    private void applyPaperlessEmail(User user, String email) {
+        String normalizedEmail = email == null ? null : email.toLowerCase(Locale.ROOT);
+        if (!isBlank(normalizedEmail)
+                && userRepository.existsByEmailIgnoreCaseAndUserIdNot(normalizedEmail, user.getUserId())) {
+            throw new RuntimeException("Email đã được tài khoản khác sử dụng");
+        }
+        user.setEmail(normalizedEmail);
     }
 
     private String normalizeProfileValue(String value) {

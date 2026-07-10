@@ -42,8 +42,32 @@ export class ApiErrorService {
       return 'Số điện thoại đã tồn tại. Vui lòng dùng số khác.';
     }
 
-    if (lower.includes('invalid_grant')) {
+    if (lower.includes('invalid_grant') || lower.includes('email hoac mat khau khong dung')) {
       return 'Email hoặc mật khẩu không chính xác.';
+    }
+
+    if (lower.includes('mat khau xac nhan khong khop')) {
+      return 'Mật khẩu xác nhận không khớp.';
+    }
+
+    if (lower.includes('vui long xac minh email')) {
+      return 'Tài khoản chưa xác minh email. Vui lòng kiểm tra hộp thư và kích hoạt tài khoản trước khi đăng nhập.';
+    }
+
+    if (lower.includes('tai khoan da bi khoa')) {
+      return 'Tài khoản đang bị khóa. Vui lòng liên hệ quản trị viên.';
+    }
+
+    if (lower.includes('chua duoc gan role') || lower.includes('chưa được gán role')) {
+      return 'Tài khoản chưa được gán quyền trong Keycloak. Vui lòng kiểm tra role SBQS của tài khoản.';
+    }
+
+    if (lower.includes('qua nhieu lan dang nhap')) {
+      return message
+        .replace('Qua nhieu lan dang nhap that bai', 'Đăng nhập sai quá nhiều lần')
+        .replace('Vui long thu lai sau', 'Vui lòng thử lại sau')
+        .replace('phut', 'phút')
+        .replace('giay', 'giây');
     }
 
     return message;

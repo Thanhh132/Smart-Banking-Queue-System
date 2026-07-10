@@ -36,6 +36,8 @@ export class AdminUsers implements OnInit {
   isListLoading = false;
   isSubmitting = false;
   isEditMode = false;
+  showPassword = false;
+  showConfirmPassword = false;
 
   editingUserId: number | null = null;
   editingUserStatus = 'ACTIVE';
@@ -60,6 +62,7 @@ export class AdminUsers implements OnInit {
       email: ['', [Validators.required, Validators.email]],
       phone: ['', [Validators.required, Validators.pattern(/^[0-9]{10,11}$/)]],
       password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
+      confirmPassword: ['', [Validators.required]],
     });
   }
 
@@ -107,6 +110,11 @@ export class AdminUsers implements OnInit {
       return;
     }
 
+    if (this.staffForm.value.password !== this.staffForm.value.confirmPassword) {
+      this.errorMessage = 'Mật khẩu xác nhận không khớp.';
+      return;
+    }
+
     const selectedBranchId = Number(localStorage.getItem('selectedBranchId'));
 
     if (!selectedBranchId) {
@@ -121,6 +129,7 @@ export class AdminUsers implements OnInit {
       email: this.staffForm.value.email,
       phone: this.staffForm.value.phone,
       password: this.staffForm.value.password,
+      confirmPassword: this.staffForm.value.confirmPassword,
       role: 'STAFF',
       branchId: selectedBranchId,
     };
@@ -182,14 +191,18 @@ export class AdminUsers implements OnInit {
     this.editingUserId = user.userId;
     this.editingUserStatus = user.status || 'ACTIVE';
     const passwordControl = this.staffForm.get('password');
+    const confirmPasswordControl = this.staffForm.get('confirmPassword');
     passwordControl?.clearValidators();
     passwordControl?.updateValueAndValidity();
+    confirmPasswordControl?.clearValidators();
+    confirmPasswordControl?.updateValueAndValidity();
 
     this.staffForm.patchValue({
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
       password: '',
+      confirmPassword: '',
     });
 
     this.cdr.detectChanges();
@@ -200,11 +213,14 @@ export class AdminUsers implements OnInit {
     this.editingUserId = null;
     this.editingUserStatus = 'ACTIVE';
     const passwordControl = this.staffForm.get('password');
+    const confirmPasswordControl = this.staffForm.get('confirmPassword');
     passwordControl?.setValidators([
       Validators.required,
       Validators.pattern(PASSWORD_POLICY_PATTERN),
     ]);
     passwordControl?.updateValueAndValidity();
+    confirmPasswordControl?.setValidators([Validators.required]);
+    confirmPasswordControl?.updateValueAndValidity();
     this.staffForm.reset();
     this.successMessage = '';
     this.errorMessage = '';
@@ -237,11 +253,14 @@ export class AdminUsers implements OnInit {
         this.editingUserId = null;
         this.editingUserStatus = 'ACTIVE';
         const passwordControl = this.staffForm.get('password');
+        const confirmPasswordControl = this.staffForm.get('confirmPassword');
         passwordControl?.setValidators([
           Validators.required,
           Validators.pattern(PASSWORD_POLICY_PATTERN),
         ]);
         passwordControl?.updateValueAndValidity();
+        confirmPasswordControl?.setValidators([Validators.required]);
+        confirmPasswordControl?.updateValueAndValidity();
         this.staffForm.reset();
         this.loadUsers();
       },
@@ -317,5 +336,13 @@ export class AdminUsers implements OnInit {
     }
 
     return `${label} không hợp lệ.`;
+  }
+
+  togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {
+    if (field === 'password') {
+      this.showPassword = !this.showPassword;
+      return;
+    }
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 }

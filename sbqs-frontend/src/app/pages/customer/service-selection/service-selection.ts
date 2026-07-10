@@ -5,8 +5,10 @@ import { Router } from '@angular/router';
 
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
 import { Service } from '../../../core/models/service.model';
+import { Branch } from '../../../core/models/branch.model';
 import { AccountService, CustomerProfileField } from '../../../core/services/account.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { BranchService } from '../../../core/services/branch.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { ServicesService } from '../../../core/services/services.service';
 import { TicketService } from '../../../core/services/ticket.service';
@@ -25,6 +27,7 @@ export class ServiceSelection implements OnInit {
   private monitorService = inject(QueueMonitorService);
   private ticketService = inject(TicketService);
   private accountService = inject(AccountService);
+  private branchService = inject(BranchService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
@@ -32,9 +35,11 @@ export class ServiceSelection implements OnInit {
 
   services: Service[] = [];
   monitor: QueueMonitor | null = null;
+  selectedBranch: Branch | null = null;
   selectedService: Service | null = null;
   requiredProfileFields: CustomerProfileField[] = [];
   profileForm: FormGroup = this.fb.group({});
+  cardDeliveryMethod: 'BRANCH' | 'DELIVERY' = 'BRANCH';
   errorMessage = '';
   isLoading = false;
   isCreatingTicket = false;
@@ -103,6 +108,8 @@ export class ServiceSelection implements OnInit {
         this.cdr.detectChanges();
       },
     });
+
+    this.loadSelectedBranch(branchId);
   }
 
   selectService(service: Service): void {
@@ -158,6 +165,8 @@ export class ServiceSelection implements OnInit {
       return;
     }
 
+    this.syncCardDeliveryAddress();
+
     if (this.profileForm.invalid) {
       this.profileForm.markAllAsTouched();
       return;
@@ -199,15 +208,79 @@ export class ServiceSelection implements OnInit {
   }
 
   getProfileInputType(field: CustomerProfileField): string {
-    return field.type === 'date' ? 'text' : field.type;
+    return field.type === 'date' ? 'date' : field.type;
   }
 
   getProfilePlaceholder(field: CustomerProfileField): string {
-    if (field.type === 'date') {
-      return 'dd/mm/yyyy';
-    }
-
     return field.placeholder;
+  }
+
+  isSelectProfileField(field: CustomerProfileField): boolean {
+    return field.key === 'GENDER' || field.key === 'EMPLOYMENT_STATUS' || field.key === 'SALARY_PAYMENT_METHOD';
+  }
+
+  getProfileOptions(field: CustomerProfileField): string[] {
+    if (field.key === 'GENDER') {
+      return ['Nam', 'Nữ', 'Khác'];
+    }
+    if (field.key === 'EMPLOYMENT_STATUS') {
+      return ['Nhân viên hợp đồng', 'Chủ doanh nghiệp', 'Tự do', 'Học sinh - Sinh viên', 'Khác'];
+    }
+    if (field.key === 'SALARY_PAYMENT_METHOD') {
+      return ['Chuyển khoản', 'Tiền mặt', 'Khác'];
+    }
+    return [];
+  }
+
+  isCardDeliveryAddressField(field: CustomerProfileField): boolean {
+    return field.key === 'CARD_DELIVERY_ADDRESS';
+  }
+
+  onCardDeliveryMethodChange(method: 'BRANCH' | 'DELIVERY'): void {
+    this.cardDeliveryMethod = method;
+    this.syncCardDeliveryAddress(true);
+  }
+
+  getBranchPickupAddress(): string {
+    if (this.selectedBranch) {
+      return this.formatBranchAddress(this.selectedBranch);
+    }
+    return this.monitor?.branchName || 'Chi nhánh đã chọn';
+  }
+
+  getProfileGroupLabel(key: string): string {
+    if (['FULL_NAME', 'DATE_OF_BIRTH', 'GENDER', 'NATIONALITY', 'IDENTITY_NUMBER', 'IDENTITY_ISSUE_DATE', 'IDENTITY_ISSUE_PLACE', 'PASSPORT_NUMBER', 'VISA_NUMBER'].includes(key)) {
+      return 'Thông tin cá nhân và định danh';
+    }
+    if (['MOBILE_PHONE', 'EMAIL_ADDRESS', 'PERMANENT_ADDRESS', 'CONTACT_ADDRESS'].includes(key)) {
+      return 'Thông tin liên lạc và địa chỉ';
+    }
+    if (['OCCUPATION', 'EMPLOYMENT_STATUS', 'EMPLOYER_NAME', 'WORK_PHONE', 'JOB_TITLE', 'MONTHLY_INCOME', 'SALARY_PAYMENT_METHOD'].includes(key)) {
+      return 'Thông tin nghề nghiệp và tài chính';
+    }
+    return 'Thông tin tài khoản và nhận thẻ';
+  }
+
+  isFirstProfileFieldInGroup(index: number): boolean {
+    const current = this.requiredProfileFields[index];
+    const previous = this.requiredProfileFields[index - 1];
+    return !previous || this.getProfileGroupLabel(previous.key) !== this.getProfileGroupLabel(current.key);
+  }
+
+  getProfileErrorMessage(key: string): string {
+    const control = this.profileForm.get(key);
+    if (control?.hasError('pattern')) {
+      if (key === 'IDENTITY_NUMBER') {
+        return 'Số CCCD/CMND phải gồm 12 chữ số.';
+      }
+      if (['MOBILE_PHONE', 'WORK_PHONE'].includes(key)) {
+        return 'Số điện thoại chưa đúng định dạng Việt Nam.';
+      }
+    }
+    if (control?.hasError('email')) {
+      return 'Email chưa đúng định dạng.';
+    }
+    return 'Thông tin này bắt buộc.';
   }
 
   private getBranchId(): number | null {
@@ -242,30 +315,98 @@ export class ServiceSelection implements OnInit {
     const controls: Record<string, any> = {};
     this.requiredProfileFields.forEach((field) => {
       const validators: ValidatorFn[] = field.required ? [Validators.required] : [];
-      if (field.type === 'date') {
-        validators.push(Validators.pattern(/^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/));
+      if (field.key === 'IDENTITY_NUMBER') {
+        validators.push(Validators.pattern(/^\d{12}$/));
       }
-      controls[field.key] = [values[field.key] || '', validators];
+      if (['MOBILE_PHONE', 'WORK_PHONE'].includes(field.key)) {
+        validators.push(Validators.pattern(/^0\d{9,10}$/));
+      }
+      if (field.key === 'EMAIL_ADDRESS') {
+        validators.push(Validators.email);
+      }
+      controls[field.key] = [this.getInitialProfileValue(field, values[field.key]), validators];
     });
     this.profileForm = this.fb.group(controls);
+    this.cardDeliveryMethod = values['CARD_DELIVERY_ADDRESS']?.trim() ? 'DELIVERY' : 'BRANCH';
     this.applyAddressDefaults();
     this.profileForm.get('PERMANENT_ADDRESS')?.valueChanges.subscribe(() => this.applyAddressDefaults());
     this.profileForm.get('CONTACT_ADDRESS')?.valueChanges.subscribe(() => this.applyAddressDefaults());
   }
 
+  private getInitialProfileValue(field: CustomerProfileField, value?: string): string {
+    if (value) {
+      return field.type === 'date' ? this.toDateInputValue(value) : value;
+    }
+    return field.key === 'NATIONALITY' ? 'Việt Nam' : '';
+  }
+
+  private toDateInputValue(value: string): string {
+    const trimmed = value.trim();
+    const vietnameseDate = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (vietnameseDate) {
+      return `${vietnameseDate[3]}-${vietnameseDate[2]}-${vietnameseDate[1]}`;
+    }
+    return trimmed;
+  }
+
   private applyAddressDefaults(): void {
     const permanentAddress = this.profileForm.get('PERMANENT_ADDRESS')?.value?.trim();
     const contactAddressControl = this.profileForm.get('CONTACT_ADDRESS');
-    const cardAddressControl = this.profileForm.get('CARD_DELIVERY_ADDRESS');
 
     if (permanentAddress && contactAddressControl && !contactAddressControl.value?.trim()) {
       contactAddressControl.setValue(permanentAddress, { emitEvent: false });
     }
 
-    const contactAddress = contactAddressControl?.value?.trim() || permanentAddress;
-    if (contactAddress && cardAddressControl && !cardAddressControl.value?.trim()) {
+    this.syncCardDeliveryAddress();
+  }
+
+  private syncCardDeliveryAddress(force = false): void {
+    const cardAddressControl = this.profileForm.get('CARD_DELIVERY_ADDRESS');
+    if (!cardAddressControl) {
+      return;
+    }
+
+    const branchAddress = this.getBranchPickupAddress();
+    const permanentAddress = this.profileForm.get('PERMANENT_ADDRESS')?.value?.trim();
+    const contactAddress = this.profileForm.get('CONTACT_ADDRESS')?.value?.trim() || permanentAddress || '';
+    const currentAddress = cardAddressControl.value?.trim() || '';
+
+    if (this.cardDeliveryMethod === 'BRANCH') {
+      cardAddressControl.setValue(branchAddress, { emitEvent: false });
+      return;
+    }
+
+    if (force || !currentAddress || currentAddress === branchAddress) {
       cardAddressControl.setValue(contactAddress, { emitEvent: false });
     }
+  }
+
+  private loadSelectedBranch(branchId: number): void {
+    this.branchService.getBranches().subscribe({
+      next: (branches) => {
+        this.selectedBranch = (branches || []).find((branch) => branch.branchId === branchId) || null;
+        this.syncCardDeliveryAddress();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.selectedBranch = null;
+        this.syncCardDeliveryAddress();
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private formatBranchAddress(branch: Branch): string {
+    return [
+      branch.bankName,
+      branch.branchName,
+      branch.address,
+      branch.ward,
+      branch.district,
+      branch.province,
+    ]
+      .filter(Boolean)
+      .join(', ');
   }
 
   private issueTicket(branchId: number, service: Service): void {

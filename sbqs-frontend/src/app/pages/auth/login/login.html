@@ -30,14 +30,24 @@
 
       <label>
         Mật khẩu
-        <input
-          appPreventAutofill
-          type="password"
-          formControlName="password"
-          name="sbqs-login-secret"
-          placeholder="Nhập mật khẩu"
-          autocomplete="off"
-        />
+        <span class="password-input">
+          <input
+            appPreventAutofill
+            [type]="showPassword ? 'text' : 'password'"
+            formControlName="password"
+            name="sbqs-login-secret"
+            placeholder="Nhập mật khẩu"
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            class="password-input__toggle"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
+          >
+            <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18" />
+          </button>
+        </span>
         <small *ngIf="loginForm.controls.password.touched && loginForm.controls.password.invalid">
           Vui lòng nhập mật khẩu.
         </small>

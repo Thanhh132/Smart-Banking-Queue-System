@@ -45,6 +45,7 @@ export class AuthService {
     fullName: string;
     email: string;
     password: string;
+    confirmPassword: string;
     phone: string;
   }) {
     return this.http.post(`${this.apiUrl}/register`, payload);
@@ -54,10 +55,11 @@ export class AuthService {
     return this.http.post<void>(`${this.apiUrl}/forgot-password`, { email });
   }
 
-  resetPassword(token: string, newPassword: string) {
+  resetPassword(token: string, newPassword: string, confirmPassword: string) {
     return this.http.post<void>(`${this.apiUrl}/reset-password`, {
       token,
       newPassword,
+      confirmPassword,
     });
   }
 
