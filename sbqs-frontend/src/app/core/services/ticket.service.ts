@@ -44,6 +44,10 @@ export class TicketService {
     );
   }
 
+  createPreparedTicket(branchId: number, serviceId: number, values: Record<string, unknown>) {
+    return this.http.post(`${this.apiUrl}/prepared`, { branchId, serviceId, values });
+  }
+
   cancelTicket(ticketId: number) {
     return this.http.post(`${this.apiUrl}/${ticketId}/cancel`, {});
   }

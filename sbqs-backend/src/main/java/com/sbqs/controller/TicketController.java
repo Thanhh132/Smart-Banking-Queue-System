@@ -3,6 +3,8 @@ package com.sbqs.controller;
 import com.sbqs.entity.Ticket;
 import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
+import com.sbqs.dto.CreatePreparedTicketRequest;
+import jakarta.validation.Valid;
 import com.sbqs.service.TicketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -55,6 +57,12 @@ public class TicketController {
             @RequestParam Long counterId) {
 
         return ResponseEntity.ok(ticketService.callNextTicket(counterId));
+    }
+
+    @PostMapping("/prepared")
+    public ResponseEntity<Ticket> createPreparedTicket(
+            @Valid @RequestBody CreatePreparedTicketRequest request) {
+        return ResponseEntity.ok(ticketService.createPreparedTicket(request));
     }
 
     @GetMapping("/{ticketId}/staff-view")

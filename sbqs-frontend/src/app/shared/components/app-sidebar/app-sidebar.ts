@@ -30,7 +30,7 @@ export class AppSidebar {
     BRANCH_ADMIN: [
       { label: 'Tổng quan', icon: 'dashboard', route: '/admin' },
       { label: 'Vận hành', icon: 'settings', route: '/admin/operations' },
-      { label: 'Dịch vụ', icon: 'briefcase', route: '/admin/services' },
+      { label: 'Phiếu khai báo', icon: 'briefcase', route: '/admin/services' },
       { label: 'Gán dịch vụ', icon: 'list-checks', route: '/admin/mappings' },
       { label: 'Nhân viên', icon: 'users', route: '/admin/users' },
       { label: 'Màn hình hàng đợi', icon: 'monitor', route: '/monitor' },

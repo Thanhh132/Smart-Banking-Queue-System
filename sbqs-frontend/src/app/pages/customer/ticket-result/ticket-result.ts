@@ -75,7 +75,7 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    const data = localStorage.getItem('currentTicket');
+    const data = sessionStorage.getItem('currentTicket');
 
     if (data) {
       this.ticket = JSON.parse(data);
@@ -157,7 +157,7 @@ export class TicketResult implements OnInit, OnDestroy {
     this.ticketService.cancelTicket(this.ticket.ticketId).subscribe({
       next: (ticket: any) => {
         this.ticket = ticket;
-        localStorage.setItem('currentTicket', JSON.stringify(ticket));
+        sessionStorage.setItem('currentTicket', JSON.stringify(ticket));
         this.isCancelling = false;
         this.loadHistory();
         this.cdr.detectChanges();
@@ -191,7 +191,7 @@ export class TicketResult implements OnInit, OnDestroy {
     const branchId = Number(
       this.ticket?.branch?.branchId ||
         this.ticket?.branchId ||
-        localStorage.getItem('selectedBranchId')
+        sessionStorage.getItem('selectedBranchId')
     );
 
     if (!branchId) {
@@ -224,16 +224,16 @@ export class TicketResult implements OnInit, OnDestroy {
         this.ticket = ticket || null;
 
         if (ticket) {
-          localStorage.setItem('currentTicket', JSON.stringify(ticket));
+          sessionStorage.setItem('currentTicket', JSON.stringify(ticket));
         } else {
-          localStorage.removeItem('currentTicket');
+          sessionStorage.removeItem('currentTicket');
         }
 
         this.loadMonitor();
         this.cdr.detectChanges();
       },
       error: () => {
-        localStorage.removeItem('currentTicket');
+        sessionStorage.removeItem('currentTicket');
         this.ticket = null;
         this.cdr.detectChanges();
       },

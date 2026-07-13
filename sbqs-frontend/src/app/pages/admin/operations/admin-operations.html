@@ -1,7 +1,7 @@
 <app-dashboard-layout title="Vận hành chi nhánh">
   <div class="page-section operations-page">
     <section class="page-heading">
-      <span class="page-kicker">Branch Admin</span>
+      <span class="page-kicker">Quản trị chi nhánh</span>
       <h1>Vận hành chi nhánh</h1>
       <p>Quản lý máy bốc số và quầy giao dịch theo đúng cấu trúc thực tế của chi nhánh.</p>
     </section>
@@ -243,7 +243,16 @@
             <tr *ngFor="let counter of counters">
               <td><strong>{{ counter.counterCode }}</strong></td>
               <td>{{ counter.counterName }}</td>
-              <td>{{ counter.queueMachine?.machineName || '-' }}</td>
+              <td>
+                <select class="table-select" [ngModel]="counter.queueMachine?.queueMachineId || null"
+                  (ngModelChange)="assignQueueMachine(counter, $event)"
+                  [disabled]="updatingCounterId === counter.counterId">
+                  <option [ngValue]="null">Chưa gán máy</option>
+                  <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
+                    {{ machine.machineName }}
+                  </option>
+                </select>
+              </td>
               <td>
                 <span class="status-chip" [ngClass]="counter.status === 'ACTIVE' ? 'status-chip--active' : 'status-chip--inactive'">
                   {{ counter.status === 'ACTIVE' ? 'Đang hoạt động' : 'Chưa hoạt động' }}

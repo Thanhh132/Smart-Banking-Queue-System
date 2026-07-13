@@ -24,7 +24,7 @@ export class AdminOperations implements OnInit {
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
-  branchId = Number(localStorage.getItem('selectedBranchId')) || null;
+  branchId = Number(sessionStorage.getItem('selectedBranchId')) || null;
   queueMachines: any[] = [];
   counters: any[] = [];
 
@@ -52,6 +52,7 @@ export class AdminOperations implements OnInit {
   isLoadingCounters = false;
   isSubmittingMachine = false;
   isSubmittingCounter = false;
+  updatingCounterId: number | null = null;
   successMessage = '';
   errorMessage = '';
 
@@ -326,6 +327,32 @@ export class AdminOperations implements OnInit {
     });
   }
 
+  assignQueueMachine(counter: any, queueMachineId: number | null): void {
+    const payload: CounterPayload = {
+      counterCode: counter.counterCode,
+      counterName: counter.counterName,
+      status: counter.status,
+      branch: { branchId: this.branchId! },
+      queueMachine: queueMachineId ? { queueMachineId: Number(queueMachineId) } : null,
+    };
+    this.updatingCounterId = counter.counterId;
+    this.errorMessage = '';
+    this.operationsService.updateCounter(counter.counterId, payload).subscribe({
+      next: (saved) => {
+        const index = this.counters.findIndex((item) => item.counterId === saved.counterId);
+        if (index >= 0) this.counters[index] = saved;
+        this.successMessage = queueMachineId ? 'Đã gán máy bốc số vào quầy.' : 'Đã gỡ máy khỏi quầy.';
+        this.updatingCounterId = null;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.errorMessage = this.apiError.getMessage(err, 'Không cập nhật được máy của quầy.');
+        this.updatingCounterId = null;
+        this.loadCounters();
+      },
+    });
+  }
+
   deleteMachine(machine: any): void {
     if (!confirm(`Xóa hẳn máy bốc số "${machine.machineName}"?`)) {
       return;
@@ -388,7 +415,7 @@ export class AdminOperations implements OnInit {
   private ensureBranch(): this is this & { branchId: number } {
     if (!this.branchId) {
       this.errorMessage =
-        'Tài khoản Branch Admin này chưa được gán chi nhánh. Hãy dùng tài khoản do Super Admin cấp cho chi nhánh.';
+        'Tài khoản quản trị này chưa được gán chi nhánh. Hãy dùng tài khoản do quản trị viên hệ thống cấp.';
       this.cdr.detectChanges();
       return false;
     }

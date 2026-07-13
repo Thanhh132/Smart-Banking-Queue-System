@@ -8,7 +8,7 @@ describe('CustomerLiveTrackingService', () => {
   let service: CustomerLiveTrackingService;
 
   beforeEach(() => {
-    localStorage.clear();
+    sessionStorage.clear();
     sessionStorage.clear();
     TestBed.configureTestingModule({
       providers: [

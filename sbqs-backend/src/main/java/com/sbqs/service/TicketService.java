@@ -8,6 +8,9 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
+import com.sbqs.entity.FormFieldDefinition;
+import com.sbqs.entity.TransactionDraft;
+import com.sbqs.dto.CreatePreparedTicketRequest;
 import com.sbqs.dto.TicketPaperlessFieldResponse;
 import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
@@ -21,6 +24,7 @@ import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.repository.TransactionDraftRepository;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -32,6 +36,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketService {
@@ -48,6 +55,7 @@ public class TicketService {
     private final CounterSessionRepository counterSessionRepository;
     private final TicketWorkflowService ticketWorkflowService;
     private final DomainEventPublisher eventPublisher;
+    private final TransactionDraftRepository transactionDraftRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -61,7 +69,8 @@ public class TicketService {
             CurrentUserService currentUserService,
             CounterSessionRepository counterSessionRepository,
             TicketWorkflowService ticketWorkflowService,
-            DomainEventPublisher eventPublisher) {
+            DomainEventPublisher eventPublisher,
+            TransactionDraftRepository transactionDraftRepository) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -75,6 +84,31 @@ public class TicketService {
         this.counterSessionRepository = counterSessionRepository;
         this.ticketWorkflowService = ticketWorkflowService;
         this.eventPublisher = eventPublisher;
+        this.transactionDraftRepository = transactionDraftRepository;
+    }
+
+    @Transactional
+    public Ticket createPreparedTicket(CreatePreparedTicketRequest request) {
+        Services service = serviceRepository.findById(request.serviceId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
+        Map<String, Object> sanitizedValues = validateAndSanitizeForm(service, request.values());
+
+        Ticket ticket = new Ticket();
+        Branch branch = new Branch();
+        branch.setBranchId(request.branchId());
+        ticket.setBranch(branch);
+        ticket.setService(service);
+        Ticket savedTicket = createTicket(ticket);
+
+        TransactionDraft draft = new TransactionDraft();
+        draft.setTicket(savedTicket);
+        draft.setServiceId(service.getServiceId());
+        draft.setServiceName(service.getServiceName());
+        draft.setSchemaSnapshot(new java.util.ArrayList<>(service.getFormSchema()));
+        draft.setValues(sanitizedValues);
+        draft.setCreatedBy(savedTicket.getCustomerEmail());
+        transactionDraftRepository.save(draft);
+        return savedTicket;
     }
 
     public List<Ticket> getAllTickets() {
@@ -465,6 +499,19 @@ public class TicketService {
 
     private TicketStaffViewResponse toStaffView(Ticket ticket) {
         Services service = ticket.getService();
+        TransactionDraft draft = transactionDraftRepository.findByTicketTicketId(ticket.getTicketId()).orElse(null);
+        if (draft != null) {
+            List<TicketPaperlessFieldResponse> draftFields = draft.getSchemaSnapshot().stream()
+                    .map(field -> new TicketPaperlessFieldResponse(
+                            field.key(), field.label(), displayDraftValue(draft.getValues().get(field.key()))))
+                    .toList();
+            return new TicketStaffViewResponse(
+                    ticket.getTicketId(), ticket.getTicketNumber(), ticket.getStatus(),
+                    ticket.getCustomerEmail(), ticket.getServingStartedAt(),
+                    service == null ? null : new TicketStaffViewResponse.ServiceSummary(
+                            service.getServiceId(), service.getServiceCode(), service.getServiceName(), service.getServiceType()),
+                    draftFields, !draftFields.isEmpty());
+        }
         List<String> requiredFields = service == null || service.getRequiredCustomerFields() == null
                 ? List.of()
                 : service.getRequiredCustomerFields();
@@ -493,6 +540,41 @@ public class TicketService {
                         service.getServiceType()),
                 paperlessFields,
                 !paperlessFields.isEmpty());
+    }
+
+    private Map<String, Object> validateAndSanitizeForm(Services service, Map<String, Object> submitted) {
+        List<FormFieldDefinition> schema = service.getFormSchema() == null ? List.of() : service.getFormSchema();
+        Set<String> allowedKeys = schema.stream().map(FormFieldDefinition::key).collect(Collectors.toSet());
+        if (!allowedKeys.containsAll(submitted.keySet())) {
+            throw new RuntimeException("Bieu mau chua truong du lieu khong duoc phep");
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (FormFieldDefinition field : schema) {
+            Object raw = submitted.get(field.key());
+            String value = raw == null ? "" : String.valueOf(raw).trim();
+            if (field.required() && value.isBlank()) {
+                throw new RuntimeException("Vui long nhap: " + field.label());
+            }
+            if (value.length() > 500) {
+                throw new RuntimeException("Du lieu qua dai tai truong: " + field.label());
+            }
+            if (!value.isBlank() && List.of("SELECT", "RADIO").contains(field.type())
+                    && (field.options() == null || !field.options().contains(value))) {
+                throw new RuntimeException("Gia tri khong hop le tai truong: " + field.label());
+            }
+            if (!value.isBlank() && "NUMBER".equals(field.type()) && !value.matches("^\\d{1,18}$")) {
+                throw new RuntimeException("Gia tri so khong hop le tai truong: " + field.label());
+            }
+            result.put(field.key(), "CHECKBOX".equals(field.type()) ? Boolean.parseBoolean(value) : value);
+        }
+        return result;
+    }
+
+    private String displayDraftValue(Object value) {
+        if (value == null || String.valueOf(value).isBlank()) return "-";
+        if (value instanceof Boolean flag) return flag ? "Có" : "Không";
+        return String.valueOf(value);
     }
 
     private String getPaperlessLabel(String field) {

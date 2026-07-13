@@ -67,7 +67,7 @@ export class CustomerLiveTrackingService {
     if (cachedTicket?.ticketId) {
       return this.ticketService.getTracking(cachedTicket.ticketId).pipe(
         catchError(() => {
-          localStorage.removeItem('currentTicket');
+          sessionStorage.removeItem('currentTicket');
           return this.loadCurrentTicketTracking();
         })
       );
@@ -82,7 +82,7 @@ export class CustomerLiveTrackingService {
         if (!ticket?.ticketId) {
           return of(null);
         }
-        localStorage.setItem('currentTicket', JSON.stringify(ticket));
+        sessionStorage.setItem('currentTicket', JSON.stringify(ticket));
         return this.ticketService.getTracking(ticket.ticketId);
       }),
       catchError(() => of(null))
@@ -152,21 +152,21 @@ export class CustomerLiveTrackingService {
   }
 
   private readCachedTicket(): any | null {
-    const raw = localStorage.getItem('currentTicket');
+    const raw = sessionStorage.getItem('currentTicket');
     if (!raw) {
       return null;
     }
     try {
       return JSON.parse(raw);
     } catch {
-      localStorage.removeItem('currentTicket');
+      sessionStorage.removeItem('currentTicket');
       return null;
     }
   }
 
   private updateCachedTicket(tracking: TicketTracking): void {
     const cachedTicket = this.readCachedTicket() || {};
-    localStorage.setItem('currentTicket', JSON.stringify({
+    sessionStorage.setItem('currentTicket', JSON.stringify({
       ...cachedTicket,
       ticketId: tracking.ticketId,
       ticketNumber: tracking.ticketNumber,

@@ -77,7 +77,7 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
   }
 
   loadMonitor(): void {
-    const branchId = localStorage.getItem('selectedBranchId');
+    const branchId = sessionStorage.getItem('selectedBranchId');
 
     if (!branchId) {
       this.errorMessage = 'Chưa chọn chi nhánh.';

@@ -1,5 +1,8 @@
 package com.sbqs.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,9 +27,19 @@ public class CacheConfig implements CachingConfigurer {
 
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration(
-            @Value("${sbqs.cache.default-ttl-minutes:5}") long ttlMinutes) {
+            @Value("${sbqs.cache.default-ttl-minutes:5}") long ttlMinutes,
+            ObjectMapper objectMapper) {
 
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer();
+        ObjectMapper cacheObjectMapper = objectMapper.copy();
+        cacheObjectMapper.activateDefaultTyping(
+                BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("com.sbqs.")
+                        .allowIfSubType("java.util.")
+                        .build(),
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY);
+        GenericJackson2JsonRedisSerializer serializer =
+                new GenericJackson2JsonRedisSerializer(cacheObjectMapper);
 
         return RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(ttlMinutes))
@@ -37,17 +50,18 @@ public class CacheConfig implements CachingConfigurer {
     }
 
     @Bean
-    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
+    public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer(
+            RedisCacheConfiguration defaultConfiguration) {
         return builder -> builder
                 .withCacheConfiguration(
                         "queueMonitor",
-                        redisCacheConfiguration(1))
+                        defaultConfiguration.entryTtl(Duration.ofMinutes(1)))
                 .withCacheConfiguration(
                         "branches",
-                        redisCacheConfiguration(10))
+                        defaultConfiguration.entryTtl(Duration.ofMinutes(10)))
                 .withCacheConfiguration(
                         "services",
-                        redisCacheConfiguration(5));
+                        defaultConfiguration.entryTtl(Duration.ofMinutes(5)));
     }
 
     @Override
@@ -55,22 +69,22 @@ public class CacheConfig implements CachingConfigurer {
         return new CacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis cache get failed cache={} key={}", cache.getName(), key);
+                log.warn("Redis cache get failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
             }
 
             @Override
             public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
-                log.warn("Redis cache put failed cache={} key={}", cache.getName(), key);
+                log.warn("Redis cache put failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
             }
 
             @Override
             public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis cache evict failed cache={} key={}", cache.getName(), key);
+                log.warn("Redis cache evict failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
             }
 
             @Override
             public void handleCacheClearError(RuntimeException exception, Cache cache) {
-                log.warn("Redis cache clear failed cache={}", cache.getName());
+                log.warn("Redis cache clear failed cache={} cause={}", cache.getName(), exception.getMessage());
             }
         };
     }

@@ -1,27 +1,14 @@
-<aside class="sidebar">
-  <div class="sidebar__brand">
-    <div class="sidebar__logo">SB</div>
-
-    <div>
-      <h2>SBQS</h2>
-      <p>Smart Banking Queue</p>
-    </div>
-  </div>
-
-  <nav class="sidebar__nav">
-    <a
-      *ngFor="let item of menuItems"
-      [routerLink]="item.route"
-      routerLinkActive="active"
-      class="sidebar__link"
-    >
-      <span class="sidebar__icon"><app-icon [name]="item.icon" [size]="18" /></span>
-      <span>{{ item.label }}</span>
+<header class="main-navigation">
+  <a class="main-navigation__brand" [routerLink]="menuItems[0]?.route || '/'">
+    <span>SB</span>
+    <div><strong>SBQS</strong><small>Hệ thống xếp hàng ngân hàng</small></div>
+  </a>
+  <nav class="main-navigation__links" aria-label="Điều hướng chính">
+    <a *ngFor="let item of menuItems" [routerLink]="item.route" routerLinkActive="active" class="main-navigation__link">
+      <app-icon [name]="item.icon" [size]="17" /><span>{{ item.label }}</span>
     </a>
   </nav>
-
-  <button type="button" class="sidebar__logout" (click)="logout()">
-    <app-icon name="logout" [size]="18" />
-    Đăng xuất
+  <button type="button" class="main-navigation__logout" (click)="logout()" title="Đăng xuất">
+    <app-icon name="logout" [size]="18" /><span>Đăng xuất</span>
   </button>
-</aside>
+</header>

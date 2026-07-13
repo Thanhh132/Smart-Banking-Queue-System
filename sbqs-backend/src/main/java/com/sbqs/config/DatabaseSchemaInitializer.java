@@ -21,6 +21,9 @@ public class DatabaseSchemaInitializer {
     public void initialize() {
         createCoreTablesIfMissing();
 
+        executeIfPossible("drop table if exists service_form_revisions");
+        executeIfPossible("alter table services drop column if exists form_version");
+
         executeIfPossible("alter table branches add column if not exists province varchar(255)");
         executeIfPossible("alter table branches add column if not exists district varchar(255)");
         executeIfPossible("alter table branches add column if not exists ward varchar(255)");
@@ -32,11 +35,14 @@ public class DatabaseSchemaInitializer {
         executeIfPossible("alter table tickets add column if not exists service_id bigint");
         executeIfPossible("alter table tickets add column if not exists queue_machine_id bigint");
         executeIfPossible("alter table tickets add column if not exists ticket_number integer");
+        executeIfPossible("alter table tickets alter column ticket_no drop not null");
         executeIfPossible("alter table tickets add column if not exists serving_started_at timestamp");
         executeIfPossible("alter table tickets add column if not exists created_at timestamp not null default current_timestamp");
         executeIfPossible("alter table tickets alter column appointment_id drop not null");
         executeIfPossible("alter table tickets alter column service_id drop not null");
         executeIfPossible("alter table services add column if not exists required_customer_fields varchar(1000)");
+        executeIfPossible("alter table services add column if not exists form_schema text not null default '[]'");
+        executeIfPossible("alter table appointments alter column service_id drop not null");
         executeIfPossible("alter table users add column if not exists date_of_birth varchar(30)");
         executeIfPossible("alter table users add column if not exists gender varchar(30)");
         executeIfPossible("alter table users add column if not exists nationality varchar(100)");
@@ -224,6 +230,20 @@ public class DatabaseSchemaInitializer {
                 """);
         jdbcTemplate.execute("create index if not exists idx_auth_audits_email_created_at on authentication_audits(email, created_at desc)");
         jdbcTemplate.execute("create index if not exists idx_auth_audits_ip_created_at on authentication_audits(ip_address, created_at desc)");
+
+        jdbcTemplate.execute("""
+                create table if not exists transaction_drafts (
+                    draft_id bigserial primary key,
+                    ticket_id bigint not null unique references tickets(ticket_id) on delete cascade,
+                    service_id bigint,
+                    service_name varchar(255) not null,
+                    schema_snapshot text not null,
+                    values_payload text not null,
+                    created_by varchar(255) not null,
+                    created_at timestamp not null default current_timestamp
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_transaction_drafts_ticket on transaction_drafts(ticket_id)");
 
         executeIfPossible("""
                 create table if not exists account_change_tokens (

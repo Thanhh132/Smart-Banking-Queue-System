@@ -23,7 +23,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(authorizedRequest).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status !== 401 || !localStorage.getItem('refreshToken')) {
+      if (error.status !== 401 || !sessionStorage.getItem('refreshToken')) {
         return throwError(() => error);
       }
 

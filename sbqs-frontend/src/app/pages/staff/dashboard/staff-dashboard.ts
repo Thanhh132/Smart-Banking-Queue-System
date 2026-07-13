@@ -87,7 +87,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
 
         if (this.counters.length === 0) {
           this.errorMessage =
-            'Chi nhánh này chưa có quầy giao dịch. Branch Admin cần tạo quầy trước.';
+            'Chi nhánh này chưa có quầy giao dịch. Quản trị viên chi nhánh cần tạo quầy trước.';
         }
 
         this.cdr.detectChanges();

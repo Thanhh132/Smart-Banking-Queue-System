@@ -28,7 +28,7 @@ export class AdminMappings implements OnInit {
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
-  branchId = Number(localStorage.getItem('selectedBranchId')) || null;
+  branchId = Number(sessionStorage.getItem('selectedBranchId')) || null;
   queueMachines: any[] = [];
   services: any[] = [];
   mappings: any[] = [];
@@ -168,7 +168,7 @@ export class AdminMappings implements OnInit {
   private ensureBranch(): this is this & { branchId: number } {
     if (!this.branchId) {
       this.errorMessage =
-        'Tài khoản Branch Admin này chưa được gán chi nhánh. Hãy dùng tài khoản do Super Admin cấp cho chi nhánh.';
+        'Tài khoản quản trị này chưa được gán chi nhánh. Hãy dùng tài khoản do quản trị viên hệ thống cấp.';
       this.cdr.detectChanges();
       return false;
     }

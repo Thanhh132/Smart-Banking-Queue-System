@@ -12,5 +12,5 @@ import { AppIcon } from '../../../shared/components/app-icon/app-icon';
   styleUrl: './customer.scss',
 })
 export class Customer {
-  fullName = localStorage.getItem('fullName') || 'Khách hàng';
+  fullName = sessionStorage.getItem('fullName') || 'Khách hàng';
 }

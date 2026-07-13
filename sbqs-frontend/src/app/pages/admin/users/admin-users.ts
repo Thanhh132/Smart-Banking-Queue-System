@@ -67,7 +67,7 @@ export class AdminUsers implements OnInit {
   }
 
   loadUsers(): void {
-    const branchId = Number(localStorage.getItem('selectedBranchId'));
+    const branchId = Number(sessionStorage.getItem('selectedBranchId'));
 
     if (!branchId) {
       this.errorMessage = 'Chưa chọn chi nhánh.';
@@ -115,7 +115,7 @@ export class AdminUsers implements OnInit {
       return;
     }
 
-    const selectedBranchId = Number(localStorage.getItem('selectedBranchId'));
+    const selectedBranchId = Number(sessionStorage.getItem('selectedBranchId'));
 
     if (!selectedBranchId) {
       this.errorMessage = 'Chưa chọn chi nhánh.';

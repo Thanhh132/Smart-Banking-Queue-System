@@ -60,4 +60,9 @@ public class Services {
     @Convert(converter = StringListConverter.class)
     @Column(name = "required_customer_fields", length = 1000)
     private List<String> requiredCustomerFields = new ArrayList<>();
+
+    @Convert(converter = FormSchemaConverter.class)
+    @Column(name = "form_schema", nullable = false, columnDefinition = "text")
+    private List<FormFieldDefinition> formSchema = new ArrayList<>();
+
 }

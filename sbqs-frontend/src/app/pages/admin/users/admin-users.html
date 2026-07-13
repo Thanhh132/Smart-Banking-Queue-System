@@ -2,7 +2,7 @@
   <div class="admin-users-page">
     <div class="page-heading">
       <div>
-        <p class="page-kicker">Admin chi nhánh</p>
+        <p class="page-kicker">Quản trị chi nhánh</p>
         <h2>Quản lý nhân viên</h2>
         <p>Tạo tài khoản nhân viên, quản lý thông tin liên hệ và theo dõi danh sách người dùng của chi nhánh.</p>
       </div>
@@ -25,7 +25,7 @@
       <app-card>
         <div class="summary-card">
           <span class="summary-card__label">Vai trò</span>
-          <strong>STAFF</strong>
+          <strong>Nhân viên</strong>
           <p>Nhân viên giao dịch</p>
         </div>
       </app-card>
@@ -138,8 +138,8 @@
 
           <div class="role-note">
             <span>Vai trò</span>
-            <strong>STAFF</strong>
-            <p>Branch Admin chỉ được tạo tài khoản nhân viên cho chi nhánh hiện tại.</p>
+            <strong>Nhân viên giao dịch</strong>
+            <p>Quản trị viên chỉ được tạo tài khoản nhân viên cho chi nhánh hiện tại.</p>
           </div>
 
           <div class="admin-actions">
@@ -184,7 +184,7 @@
                 <td><strong>{{ user.fullName || '-' }}</strong></td>
                 <td>{{ user.email || '-' }}</td>
                 <td>{{ user.phone || '-' }}</td>
-                <td><span class="admin-badge badge-info">{{ user.role || 'STAFF' }}</span></td>
+                <td><span class="admin-badge badge-info">Nhân viên giao dịch</span></td>
                 <td>
                   <span class="admin-badge" [ngClass]="user.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
                     {{ user.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}

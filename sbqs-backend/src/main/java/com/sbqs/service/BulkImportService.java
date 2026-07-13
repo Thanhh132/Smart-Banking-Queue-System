@@ -51,6 +51,7 @@ public class BulkImportService {
                 request.setEmail(row.email().toLowerCase(Locale.ROOT));
                 request.setPhone(row.phone());
                 request.setPassword(row.password());
+                request.setConfirmPassword(row.password());
                 userService.createStaff(request);
                 successCount++;
             } catch (RuntimeException ex) {

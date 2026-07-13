@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import com.sbqs.entity.FormFieldDefinition;
 
 @Service
 public class ServicesService {
@@ -76,7 +78,9 @@ public class ServicesService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    @Transactional
     public Services createService(Services service) {
+        validateFormSchema(service.getFormSchema());
         currentUserService.requireBranch(service.getBranch().getBranchId());
         service.setBranch(currentUserService.requireUser().getBranch());
         if (serviceRepository.existsByBranchAndServiceCode(
@@ -107,7 +111,9 @@ public class ServicesService {
             @CacheEvict(cacheNames = "services", allEntries = true),
             @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
     })
+    @Transactional
     public Services updateService(Long serviceId, Services updatedService) {
+        validateFormSchema(updatedService.getFormSchema());
         Services existingService = serviceRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
 
@@ -135,6 +141,7 @@ public class ServicesService {
         existingService.setStatus(updatedService.getStatus());
         existingService.setBranch(updatedService.getBranch());
         existingService.setRequiredCustomerFields(updatedService.getRequiredCustomerFields());
+        existingService.setFormSchema(updatedService.getFormSchema());
 
         Services savedService = serviceRepository.save(existingService);
         eventPublisher.publish(
@@ -192,6 +199,31 @@ public class ServicesService {
     private void requireOperationalBranchAccess(Long branchId) {
         if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
             currentUserService.requireBranch(branchId);
+        }
+    }
+
+    private void validateFormSchema(List<FormFieldDefinition> fields) {
+        if (fields == null || fields.size() > 50) {
+            throw new RuntimeException("Bieu mau chi duoc phep toi da 50 truong");
+        }
+        Set<String> supportedTypes = Set.of("TEXT", "TEXTAREA", "NUMBER", "DATE", "SELECT", "RADIO", "CHECKBOX");
+        Set<String> keys = new java.util.HashSet<>();
+        for (FormFieldDefinition field : fields) {
+            if (field.key() == null || !field.key().matches("^[A-Za-z][A-Za-z0-9_]{0,49}$") || !keys.add(field.key())) {
+                throw new RuntimeException("Ma truong bieu mau khong hop le hoac bi trung");
+            }
+            if (field.label() == null || field.label().isBlank() || field.label().length() > 150
+                    || field.section() == null || field.section().length() > 100
+                    || !supportedTypes.contains(field.type())) {
+                throw new RuntimeException("Cau hinh truong bieu mau khong hop le");
+            }
+            List<String> options = field.options() == null ? List.of() : field.options();
+            if (options.size() > 30 || options.stream().anyMatch(option -> option == null || option.isBlank() || option.length() > 100)) {
+                throw new RuntimeException("Danh sach lua chon khong hop le");
+            }
+            if (Set.of("SELECT", "RADIO").contains(field.type()) && options.isEmpty()) {
+                throw new RuntimeException("Truong lua chon phai co it nhat mot gia tri");
+            }
         }
     }
 }

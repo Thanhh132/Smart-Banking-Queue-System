@@ -5,6 +5,7 @@ import com.sbqs.dto.ChangePasswordRequest;
 import com.sbqs.dto.UpdateAccountProfileRequest;
 import com.sbqs.repository.AccountChangeTokenRepository;
 import com.sbqs.entity.User;
+import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +23,7 @@ class AccountServiceTest {
         KeycloakService keycloakService = mock(KeycloakService.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         AccountChangeTokenRepository changeTokenRepository = mock(AccountChangeTokenRepository.class);
+        ServiceRepository serviceRepository = mock(ServiceRepository.class);
         AuthenticationMailService mailService = mock(AuthenticationMailService.class);
         User user = user();
         when(currentUserService.requireUser()).thenReturn(user);
@@ -29,7 +31,7 @@ class AccountServiceTest {
 
         AccountService service = new AccountService(
                 currentUserService, userRepository, keycloakService, passwordEncoder,
-                changeTokenRepository, mailService, new AccountChangeProperties());
+                changeTokenRepository, serviceRepository, mailService, new AccountChangeProperties());
         service.changePassword(new ChangePasswordRequest("CurrentPassword1!", "NewPassword2@"));
 
         verify(keycloakService).login(user.getEmail(), "CurrentPassword1!");
@@ -45,13 +47,14 @@ class AccountServiceTest {
         KeycloakService keycloakService = mock(KeycloakService.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         AccountChangeTokenRepository changeTokenRepository = mock(AccountChangeTokenRepository.class);
+        ServiceRepository serviceRepository = mock(ServiceRepository.class);
         AuthenticationMailService mailService = mock(AuthenticationMailService.class);
         User user = user();
         when(currentUserService.requireUser()).thenReturn(user);
 
         AccountService service = new AccountService(
                 currentUserService, userRepository, keycloakService, passwordEncoder,
-                changeTokenRepository, mailService, new AccountChangeProperties());
+                changeTokenRepository, serviceRepository, mailService, new AccountChangeProperties());
 
         assertThrows(RuntimeException.class, () -> service.requestProfileChange(
                 new UpdateAccountProfileRequest("Nguyen Van B", "new@example.com", "0909999999")));

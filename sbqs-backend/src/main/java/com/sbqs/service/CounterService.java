@@ -5,9 +5,11 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Counter;
 import com.sbqs.entity.CounterSession;
 import com.sbqs.entity.User;
+import com.sbqs.entity.QueueMachine;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.CounterSessionRepository;
 import com.sbqs.repository.UserRepository;
+import com.sbqs.repository.QueueMachineRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -25,6 +27,7 @@ public class CounterService {
     private final CounterRepository counterRepository;
     private final CounterSessionRepository sessionRepository;
     private final UserRepository userRepository;
+    private final QueueMachineRepository queueMachineRepository;
     private final CurrentUserService currentUserService;
     private final DomainEventPublisher eventPublisher;
 
@@ -32,12 +35,14 @@ public class CounterService {
             CounterRepository counterRepository,
             CounterSessionRepository sessionRepository,
             UserRepository userRepository,
+            QueueMachineRepository queueMachineRepository,
             CurrentUserService currentUserService,
             DomainEventPublisher eventPublisher) {
 
         this.counterRepository = counterRepository;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
+        this.queueMachineRepository = queueMachineRepository;
         this.currentUserService = currentUserService;
         this.eventPublisher = eventPublisher;
     }
@@ -64,6 +69,7 @@ public class CounterService {
     public Counter createCounter(Counter counter) {
         currentUserService.requireBranch(counter.getBranch().getBranchId());
         counter.setBranch(currentUserService.requireUser().getBranch());
+        counter.setQueueMachine(resolveQueueMachine(counter.getQueueMachine(), counter.getBranch().getBranchId()));
         if (counterRepository.existsByBranchAndCounterCode(
                 counter.getBranch(),
                 counter.getCounterCode())) {
@@ -101,8 +107,8 @@ public class CounterService {
 
         counter.setCounterCode(request.getCounterCode());
         counter.setCounterName(request.getCounterName());
-        counter.setBranch(request.getBranch());
-        counter.setQueueMachine(request.getQueueMachine());
+        counter.setBranch(currentUserService.requireUser().getBranch());
+        counter.setQueueMachine(resolveQueueMachine(request.getQueueMachine(), counter.getBranch().getBranchId()));
 
         if (request.getStatus() != null && !request.getStatus().isBlank()) {
             counter.setStatus(request.getStatus());
@@ -120,6 +126,19 @@ public class CounterService {
                         "status", savedCounter.getStatus()));
 
         return savedCounter;
+    }
+
+    private QueueMachine resolveQueueMachine(QueueMachine requestedMachine, Long branchId) {
+        if (requestedMachine == null) return null;
+        if (requestedMachine.getQueueMachineId() == null) {
+            throw new RuntimeException("Chua chon may boc so");
+        }
+        QueueMachine machine = queueMachineRepository.findById(requestedMachine.getQueueMachineId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
+        if (machine.getBranch() == null || !branchId.equals(machine.getBranch().getBranchId())) {
+            throw new RuntimeException("May boc so va quay phai thuoc cung chi nhanh");
+        }
+        return machine;
     }
 
     @CacheEvict(cacheNames = "queueMonitor", allEntries = true)

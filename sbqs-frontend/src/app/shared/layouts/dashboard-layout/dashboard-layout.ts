@@ -16,7 +16,7 @@ export class DashboardLayout implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private liveTracking = inject(CustomerLiveTrackingService);
   private customerTrackingStarted = false;
-  @Input() title = 'Dashboard';
+  @Input() title = 'Tổng quan';
 
   get isFallbackSession(): boolean {
     return this.authService.isFallbackSession();

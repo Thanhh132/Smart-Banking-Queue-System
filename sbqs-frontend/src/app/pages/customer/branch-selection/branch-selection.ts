@@ -25,7 +25,7 @@ export class BranchSelection implements OnInit {
   popup: { type: 'success' | 'error' | 'info'; title: string; message: string } | null = null;
   searchTerm = '';
   selectedBank = 'ALL';
-  customerLocationLabel = localStorage.getItem('customerAddress') || '';
+  customerLocationLabel = sessionStorage.getItem('customerAddress') || '';
   isLocating = false;
   private distances = new Map<number, number>();
   private popupTimer: ReturnType<typeof setTimeout> | null = null;
@@ -51,8 +51,8 @@ export class BranchSelection implements OnInit {
     this.branchService.getBranches().subscribe({
       next: (data) => {
         this.branches = (data || []).filter((branch) => branch.status === 'ACTIVE');
-        const latitude = Number(localStorage.getItem('customerLatitude'));
-        const longitude = Number(localStorage.getItem('customerLongitude'));
+        const latitude = Number(sessionStorage.getItem('customerLatitude'));
+        const longitude = Number(sessionStorage.getItem('customerLongitude'));
         if (latitude && longitude) {
           this.setCustomerLocation(latitude, longitude, this.customerLocationLabel || 'Vị trí hiện tại');
         }
@@ -108,14 +108,14 @@ export class BranchSelection implements OnInit {
   }
 
   selectBranch(branchId: number): void {
-    localStorage.setItem('selectedBranchId', String(branchId));
+    sessionStorage.setItem('selectedBranchId', String(branchId));
     this.router.navigate(['/services']);
   }
 
   private setCustomerLocation(latitude: number, longitude: number, address: string): void {
-    localStorage.setItem('customerAddress', address);
-    localStorage.setItem('customerLatitude', String(latitude));
-    localStorage.setItem('customerLongitude', String(longitude));
+    sessionStorage.setItem('customerAddress', address);
+    sessionStorage.setItem('customerLatitude', String(latitude));
+    sessionStorage.setItem('customerLongitude', String(longitude));
     this.distances.clear();
     for (const branch of this.branches) {
       if (branch.latitude != null && branch.longitude != null) {

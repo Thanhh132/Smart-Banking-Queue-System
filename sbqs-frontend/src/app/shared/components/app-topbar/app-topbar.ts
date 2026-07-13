@@ -9,16 +9,16 @@ import { Component, Input } from '@angular/core';
 })
 export class AppTopbar {
   @Input() title = 'Tổng quan';
-  @Input() username = localStorage.getItem('fullName') || 'Người dùng SBQS';
+  @Input() username = sessionStorage.getItem('fullName') || 'Người dùng';
 
   get subtitle(): string {
-    return localStorage.getItem('userRole') === 'CUSTOMER'
+    return sessionStorage.getItem('userRole') === 'CUSTOMER'
       ? 'Lấy số và theo dõi lượt giao dịch của bạn'
-      : 'Quản lý hệ thống SBQS';
+      : 'Theo dõi và xử lý công việc tại chi nhánh';
   }
 
   get roleLabel(): string {
-    const role = localStorage.getItem('userRole');
+    const role = sessionStorage.getItem('userRole');
 
     switch (role) {
       case 'SUPER_ADMIN':

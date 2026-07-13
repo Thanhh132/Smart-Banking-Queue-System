@@ -14,5 +14,5 @@ import { AppIcon } from '../../../shared/components/app-icon/app-icon';
   styleUrl: './admin-dashboard.scss',
 })
 export class AdminDashboard {
-  fullName = localStorage.getItem('fullName') || 'Admin Branch';
+  fullName = sessionStorage.getItem('fullName') || 'Quản trị viên chi nhánh';
 }

@@ -30,7 +30,7 @@ export class AuthService {
   }
 
   refresh() {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
 
     return this.http.post<LoginResponse>(`${this.apiUrl}/refresh`, {
       refreshToken,
@@ -74,7 +74,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     this.clearSession();
 
     if (!refreshToken) {
@@ -87,58 +87,58 @@ export class AuthService {
   }
 
   getAccessToken(): string {
-    return localStorage.getItem('accessToken') || '';
+    return sessionStorage.getItem('accessToken') || '';
   }
 
   private saveSession(response: LoginResponse, clearFirst: boolean): void {
-    const selectedBranchId = localStorage.getItem('selectedBranchId');
+    const selectedBranchId = sessionStorage.getItem('selectedBranchId');
 
     if (clearFirst) {
       this.clearSession();
     }
 
-    localStorage.setItem('accessToken', response.accessToken);
+    sessionStorage.setItem('accessToken', response.accessToken);
     if (response.refreshToken) {
-      localStorage.setItem('refreshToken', response.refreshToken);
+      sessionStorage.setItem('refreshToken', response.refreshToken);
     } else {
-      localStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('refreshToken');
     }
-    localStorage.setItem('userRole', response.role);
-    localStorage.setItem('fullName', response.fullName);
-    localStorage.setItem('email', response.email);
-    localStorage.setItem('authenticationSource', response.authenticationSource);
+    sessionStorage.setItem('userRole', response.role);
+    sessionStorage.setItem('fullName', response.fullName);
+    sessionStorage.setItem('email', response.email);
+    sessionStorage.setItem('authenticationSource', response.authenticationSource);
 
     if (response.branchId) {
-      localStorage.setItem('selectedBranchId', String(response.branchId));
+      sessionStorage.setItem('selectedBranchId', String(response.branchId));
     } else if (!clearFirst && selectedBranchId) {
-      localStorage.setItem('selectedBranchId', selectedBranchId);
+      sessionStorage.setItem('selectedBranchId', selectedBranchId);
     }
   }
 
   private clearSession(): void {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('fullName');
-    localStorage.removeItem('email');
-    localStorage.removeItem('authenticationSource');
-    localStorage.removeItem('selectedBranchId');
-    localStorage.removeItem('currentTicket');
-    localStorage.removeItem('customerAddress');
-    localStorage.removeItem('customerLatitude');
-    localStorage.removeItem('customerLongitude');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('userRole');
+    sessionStorage.removeItem('fullName');
+    sessionStorage.removeItem('email');
+    sessionStorage.removeItem('authenticationSource');
+    sessionStorage.removeItem('selectedBranchId');
+    sessionStorage.removeItem('currentTicket');
+    sessionStorage.removeItem('customerAddress');
+    sessionStorage.removeItem('customerLatitude');
+    sessionStorage.removeItem('customerLongitude');
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem('accessToken');
+    return !!sessionStorage.getItem('accessToken');
   }
 
   getRole(): string {
-    return localStorage.getItem('userRole') || '';
+    return sessionStorage.getItem('userRole') || '';
   }
 
   updateDisplayName(fullName: string): void {
-    localStorage.setItem('fullName', fullName);
+    sessionStorage.setItem('fullName', fullName);
   }
 
   clearLocalSession(): void {
@@ -146,7 +146,7 @@ export class AuthService {
   }
 
   isFallbackSession(): boolean {
-    return localStorage.getItem('authenticationSource') === 'FALLBACK';
+    return sessionStorage.getItem('authenticationSource') === 'FALLBACK';
   }
 
   getHomeRoute(role: string): string {

@@ -1,159 +1,73 @@
-<app-dashboard-layout title="Chọn dịch vụ">
-  <div class="customer-page">
-    <header class="customer-page__intro">
-      <span class="customer-kicker">Bước 2/3</span>
-      <h1>Chọn dịch vụ giao dịch</h1>
-      <p>Danh sách chỉ gồm các dịch vụ đã được cấu hình cho máy bốc số tại chi nhánh.</p>
+<app-dashboard-layout title="Chuẩn bị giao dịch">
+  <main class="preparation-page">
+    <header class="preparation-hero">
+      <div>
+        <span class="eyebrow">Đăng ký giao dịch tại quầy</span>
+        <h1>Bạn cần thực hiện giao dịch gì?</h1>
+        <p>Chọn dịch vụ và điền trước thông tin cần thiết.</p>
+      </div>
+      <div class="branch-status" *ngIf="monitor">
+        <small>Chi nhánh đang chọn</small>
+        <strong>{{ monitor.branchName }}</strong>
+        <span>{{ monitor.waitingCount }} khách đang chờ</span>
+      </div>
     </header>
 
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-    <section class="customer-section paperless-profile" *ngIf="showPaperlessForm && selectedService">
-      <div class="customer-section__header">
-        <div>
-          <h2>Bổ sung hồ sơ cho {{ selectedService.serviceName }}</h2>
-          <p>Thông tin này chỉ cần điền một lần, lần sau hệ thống sẽ tự động điền vào giấy tờ online.</p>
-        </div>
+    <section class="dynamic-form-shell" *ngIf="selectedService">
+      <div class="form-heading">
+        <div><span>Thông tin cần khai</span><h2>{{ selectedService.serviceName }}</h2><p>Vui lòng điền các mục bên dưới trước khi lấy số.</p></div>
+        <button type="button" class="icon-close" (click)="closeForm()" aria-label="Đóng">×</button>
       </div>
-
-      <form class="paperless-form" [formGroup]="profileForm" (ngSubmit)="submitPaperlessProfile()">
-        <ng-container *ngFor="let field of requiredProfileFields; let i = index">
-        <h3 class="paperless-group-title" *ngIf="isFirstProfileFieldInGroup(i)">
-          {{ getProfileGroupLabel(field.key) }}
-        </h3>
-        <ng-container *ngIf="isCardDeliveryAddressField(field); else normalProfileField">
-          <fieldset class="paperless-field paperless-field--full paperless-delivery">
-            <legend>{{ field.label }}</legend>
-            <div class="paperless-delivery__options">
-              <label>
-                <input
-                  type="radio"
-                  name="cardDeliveryMethod"
-                  [checked]="cardDeliveryMethod === 'BRANCH'"
-                  (change)="onCardDeliveryMethodChange('BRANCH')"
-                />
-                Nhận tại chi nhánh
+      <form [formGroup]="transactionForm" (ngSubmit)="submit()">
+        <section class="form-section" *ngFor="let section of sections">
+          <h3>{{ section }}</h3>
+          <div class="dynamic-grid">
+            <ng-container *ngFor="let field of fieldsInSection(section)">
+              <label class="dynamic-field" [class.dynamic-field--wide]="field.type === 'TEXTAREA'" *ngIf="field.type !== 'RADIO' && field.type !== 'CHECKBOX'">
+                <span>{{ field.label }} <em *ngIf="field.required">*</em></span>
+                <textarea *ngIf="field.type === 'TEXTAREA'; else standardControl" rows="3" [formControlName]="field.key" [placeholder]="field.placeholder"></textarea>
+                <ng-template #standardControl>
+                  <select *ngIf="field.type === 'SELECT'; else standardInput" [formControlName]="field.key">
+                    <option value="">Chọn một giá trị</option><option *ngFor="let option of field.options" [value]="option">{{ option }}</option>
+                  </select>
+                  <ng-template #standardInput>
+                    <input *ngIf="field.type !== 'NUMBER'" [type]="field.type === 'DATE' ? 'date' : 'text'" [formControlName]="field.key" [placeholder]="field.placeholder" />
+                    <input *ngIf="field.type === 'NUMBER'" type="text" inputmode="numeric" autocomplete="off"
+                      [value]="formatAmount(transactionForm.get(field.key)?.value)" [placeholder]="field.placeholder"
+                      (input)="onAmountInput(field.key, $event)" (blur)="transactionForm.get(field.key)?.markAsTouched()" />
+                  </ng-template>
+                </ng-template>
+                <small *ngIf="isInvalid(field.key)">Vui lòng nhập thông tin này.</small>
               </label>
-              <label>
-                <input
-                  type="radio"
-                  name="cardDeliveryMethod"
-                  [checked]="cardDeliveryMethod === 'DELIVERY'"
-                  (change)="onCardDeliveryMethodChange('DELIVERY')"
-                />
-                Giao về địa chỉ liên hệ
-              </label>
-            </div>
-            <textarea
-              rows="3"
-              [formControlName]="field.key"
-              [placeholder]="cardDeliveryMethod === 'BRANCH' ? 'Tự lấy địa chỉ chi nhánh đã chọn' : 'Tự điền theo địa chỉ liên hệ nếu để trống'"
-              [readOnly]="cardDeliveryMethod === 'BRANCH'"
-            ></textarea>
-            <small *ngIf="cardDeliveryMethod === 'BRANCH'">Hệ thống sẽ dùng địa chỉ chi nhánh: {{ getBranchPickupAddress() }}</small>
-            <span *ngIf="isProfileFieldInvalid(field.key)">{{ getProfileErrorMessage(field.key) }}</span>
-          </fieldset>
-        </ng-container>
-        <ng-template #normalProfileField>
-          <label class="paperless-field">
-            {{ field.label }}
-            <textarea
-              *ngIf="field.type === 'textarea'; else regularField"
-              rows="3"
-              [formControlName]="field.key"
-              [placeholder]="getProfilePlaceholder(field)"
-            ></textarea>
-            <ng-template #regularField>
-              <select *ngIf="isSelectProfileField(field); else inputField" [formControlName]="field.key">
-                <option value="" disabled>Chọn {{ field.label | lowercase }}</option>
-                <option *ngFor="let option of getProfileOptions(field)" [value]="option">{{ option }}</option>
-              </select>
-              <ng-template #inputField>
-                <input
-                  [type]="getProfileInputType(field)"
-                  [formControlName]="field.key"
-                  [placeholder]="getProfilePlaceholder(field)"
-                />
-              </ng-template>
-            </ng-template>
-            <span *ngIf="isProfileFieldInvalid(field.key)">{{ getProfileErrorMessage(field.key) }}</span>
-          </label>
-        </ng-template>
-        </ng-container>
 
-        <div class="paperless-actions">
-          <button class="btn-primary" type="submit" [disabled]="isSavingProfile || isCreatingTicket">
-            <app-icon *ngIf="!isSavingProfile" name="save" [size]="16" />
-            {{ isSavingProfile ? 'Đang lưu...' : 'Lưu hồ sơ và lấy số' }}
-          </button>
-          <button class="btn-secondary" type="button" (click)="cancelPaperlessForm()" [disabled]="isSavingProfile">
-            Hủy
-          </button>
-        </div>
+              <fieldset class="choice-field dynamic-field--wide" *ngIf="field.type === 'RADIO'">
+                <legend>{{ field.label }} <em *ngIf="field.required">*</em></legend>
+                <div class="choice-list"><label *ngFor="let option of field.options"><input type="radio" [formControlName]="field.key" [value]="option" /><span>{{ option }}</span></label></div>
+                <small *ngIf="isInvalid(field.key)">Vui lòng chọn một giá trị.</small>
+              </fieldset>
+
+              <label class="checkbox-field dynamic-field--wide" *ngIf="field.type === 'CHECKBOX'">
+                <input type="checkbox" [formControlName]="field.key" /><span><strong>{{ field.label }}</strong><small>Tích chọn nếu khách hàng có nhu cầu</small></span>
+              </label>
+            </ng-container>
+          </div>
+        </section>
+        <footer class="form-actions"><button type="button" class="btn btn-secondary" (click)="closeForm()">Quay lại</button><button type="submit" class="btn btn-primary" [disabled]="isSubmitting">{{ isSubmitting ? 'Đang tạo giao dịch...' : 'Xác nhận và lấy số' }}</button></footer>
       </form>
     </section>
 
-    <section class="customer-summary-grid" *ngIf="monitor">
-      <div class="customer-summary-item">
-        <span>Chi nhánh đã chọn</span>
-        <strong>{{ monitor.branchName }}</strong>
-        <p>{{ monitor.waitingCount }} khách đang chờ</p>
-      </div>
-      <div class="customer-summary-item">
-        <span>Quầy đang phục vụ</span>
-        <strong>{{ servingCounterCount }}</strong>
-        <p>Cập nhật theo thời gian thực</p>
-      </div>
-    </section>
-
-    <section class="customer-section">
-      <div class="customer-section__header">
-        <div>
-          <h2>Dịch vụ khả dụng</h2>
-          <p>Chọn một dịch vụ để nhận số thứ tự.</p>
-        </div>
-      </div>
-
-      <div class="customer-state" *ngIf="isLoading">Đang tải danh sách dịch vụ...</div>
-      <div class="customer-state" *ngIf="!isLoading && services.length === 0 && !errorMessage">
-        Chi nhánh chưa cấu hình dịch vụ cho máy bốc số.
-      </div>
-
-      <div class="customer-option-grid" *ngIf="!isLoading && services.length > 0">
-        <button
-          type="button"
-          class="customer-option service-option"
-          *ngFor="let service of services"
-          (click)="selectService(service)"
-          [disabled]="isCreatingTicket || isLoadingProfile"
-        >
-          <span class="customer-option__eyebrow">{{ service.serviceType || 'Dịch vụ' }}</span>
-          <strong>{{ service.serviceName }}</strong>
-          <p>{{ service.description || 'Dịch vụ giao dịch tại quầy' }}</p>
-          <small>Thời gian dự kiến: {{ service.estimatedTime || 10 }} phút</small>
-          <span class="customer-option__action">
-            <app-icon name="ticket" [size]="16" />
-            Lấy số dịch vụ này
-          </span>
+    <section *ngIf="!selectedService">
+      <div class="section-title"><div><span>Danh sách dịch vụ</span><h2>Chọn một dịch vụ để tiếp tục</h2></div></div>
+      <div *ngIf="isLoading" class="customer-state">Đang tải dịch vụ...</div>
+      <div class="service-grid" *ngIf="!isLoading">
+        <button type="button" class="service-card" *ngFor="let service of services; let index = index" (click)="selectService(service)">
+          <span class="service-index">{{ (index + 1).toString().padStart(2, '0') }}</span>
+          <div><small>{{ serviceTypeLabel(service.serviceType) }}</small><h3>{{ service.serviceName }}</h3><p>{{ service.description }}</p></div>
+          <strong>Chọn dịch vụ <span>→</span></strong>
         </button>
       </div>
     </section>
-
-    <section class="customer-section" *ngIf="monitor?.servingCounters?.length">
-      <div class="customer-section__header">
-        <div>
-          <h2>Bảng gọi số tại chi nhánh</h2>
-          <p>Tham khảo trạng thái các khu vực đang hoạt động.</p>
-        </div>
-      </div>
-      <div class="customer-queue-grid">
-        <div class="customer-counter" *ngFor="let counter of monitor?.servingCounters" [ngClass]="getCounterStatusClass(counter.status)">
-          <span>{{ counter.counterName }}</span>
-          <strong>{{ counter.ticketNumber || '-' }}</strong>
-          <p>{{ getCounterStatusLabel(counter.status) }}</p>
-          <small>{{ counter.queueMachineName || 'Máy bốc số' }}</small>
-        </div>
-      </div>
-    </section>
-  </div>
+  </main>
 </app-dashboard-layout>

@@ -38,7 +38,7 @@ export class StaffService {
   }
 
   getCounters() {
-    const branchId = Number(localStorage.getItem('selectedBranchId'));
+    const branchId = Number(sessionStorage.getItem('selectedBranchId'));
     const url = branchId
       ? `http://localhost:8081/api/counters?branchId=${branchId}`
       : 'http://localhost:8081/api/counters';

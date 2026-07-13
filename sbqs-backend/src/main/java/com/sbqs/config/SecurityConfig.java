@@ -175,7 +175,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/tickets/{ticketId}/complete").hasRole("STAFF")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/*/staff-view").hasRole("STAFF")
                         .requestMatchers(HttpMethod.POST, "/api/tickets/{ticketId}/cancel").hasRole("CUSTOMER")
-                        .requestMatchers(HttpMethod.POST, "/api/tickets").hasRole("CUSTOMER")
+                        .requestMatchers(HttpMethod.POST, "/api/tickets", "/api/tickets/prepared").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/current").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/*/tracking").hasRole("CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/tickets/status/**")
