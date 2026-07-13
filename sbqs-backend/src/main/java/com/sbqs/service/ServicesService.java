@@ -1,14 +1,17 @@
 package com.sbqs.service;
 
 import com.sbqs.event.DomainEventPublisher;
+import com.sbqs.dto.service.ServiceRequest;
 import com.sbqs.entity.Appointment;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
 import com.sbqs.repository.AppointmentRepository;
+import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
+import com.sbqs.mapper.ServiceDtoMapper;
 import jakarta.transaction.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,6 +30,8 @@ public class ServicesService {
     private final QueueMachineServiceMappingRepository mappingRepository;
     private final TicketRepository ticketRepository;
     private final AppointmentRepository appointmentRepository;
+    private final BranchRepository branchRepository;
+    private final ServiceDtoMapper serviceDtoMapper;
     private final CurrentUserService currentUserService;
     private final DomainEventPublisher eventPublisher;
 
@@ -35,6 +40,8 @@ public class ServicesService {
             QueueMachineServiceMappingRepository mappingRepository,
             TicketRepository ticketRepository,
             AppointmentRepository appointmentRepository,
+            BranchRepository branchRepository,
+            ServiceDtoMapper serviceDtoMapper,
             CurrentUserService currentUserService,
             DomainEventPublisher eventPublisher) {
 
@@ -42,12 +49,35 @@ public class ServicesService {
         this.mappingRepository = mappingRepository;
         this.ticketRepository = ticketRepository;
         this.appointmentRepository = appointmentRepository;
+        this.branchRepository = branchRepository;
+        this.serviceDtoMapper = serviceDtoMapper;
         this.currentUserService = currentUserService;
         this.eventPublisher = eventPublisher;
     }
 
     public List<Services> getAllServices() {
         return serviceRepository.findByBranch(currentUserService.requireUser().getBranch());
+    }
+
+    public List<Services> getServices(Long branchId, String serviceType, boolean mappedOnly) {
+        if (branchId == null) return getAllServices();
+        if (mappedOnly) return getMappedServicesByBranch(branchId);
+
+        Branch branch = requireBranch(branchId);
+        if (serviceType != null && !serviceType.isBlank()) {
+            return getServicesByBranchAndType(branch, serviceType);
+        }
+        return getServicesByBranch(branch);
+    }
+
+    public Services createService(ServiceRequest request) {
+        Branch branch = requireBranch(request.branch().branchId());
+        return createService(serviceDtoMapper.toEntity(request, branch));
+    }
+
+    public Services updateService(Long serviceId, ServiceRequest request) {
+        Services updatedService = serviceDtoMapper.toEntity(request, requireBranch(request.branch().branchId()));
+        return updateService(serviceId, updatedService);
     }
 
     @Cacheable(cacheNames = "services", key = "'branch:' + #branch.branchId")
@@ -66,12 +96,7 @@ public class ServicesService {
     /** Chỉ trả dịch vụ đang được ít nhất một máy bốc số của chi nhánh cung cấp. */
     public List<Services> getMappedServicesByBranch(Long branchId) {
         requireOperationalBranchAccess(branchId);
-        return mappingRepository.findByQueueMachineBranchBranchId(branchId)
-                .stream()
-                .map(mapping -> mapping.getService())
-                .filter(service -> "ACTIVE".equalsIgnoreCase(service.getStatus()))
-                .distinct()
-                .toList();
+        return mappingRepository.findActiveMappedServicesByBranchId(branchId);
     }
 
     @Caching(evict = {
@@ -81,6 +106,7 @@ public class ServicesService {
     @Transactional
     public Services createService(Services service) {
         validateFormSchema(service.getFormSchema());
+        service.setRequiredCustomerFields(CustomerProfilePolicy.includeDefaults(service.getRequiredCustomerFields()));
         currentUserService.requireBranch(service.getBranch().getBranchId());
         service.setBranch(currentUserService.requireUser().getBranch());
         if (serviceRepository.existsByBranchAndServiceCode(
@@ -140,7 +166,8 @@ public class ServicesService {
         existingService.setEstimatedTime(updatedService.getEstimatedTime());
         existingService.setStatus(updatedService.getStatus());
         existingService.setBranch(updatedService.getBranch());
-        existingService.setRequiredCustomerFields(updatedService.getRequiredCustomerFields());
+        existingService.setRequiredCustomerFields(
+                CustomerProfilePolicy.includeDefaults(updatedService.getRequiredCustomerFields()));
         existingService.setFormSchema(updatedService.getFormSchema());
 
         Services savedService = serviceRepository.save(existingService);
@@ -200,6 +227,11 @@ public class ServicesService {
         if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
             currentUserService.requireBranch(branchId);
         }
+    }
+
+    private Branch requireBranch(Long branchId) {
+        return branchRepository.findById(branchId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
     }
 
     private void validateFormSchema(List<FormFieldDefinition> fields) {

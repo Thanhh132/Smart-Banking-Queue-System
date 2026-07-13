@@ -24,7 +24,7 @@ class EmailVerificationServiceTest {
     void activatesLocalAndKeycloakAccountsForAValidToken() throws Exception {
         EmailVerificationTokenRepository tokenRepository = mock(EmailVerificationTokenRepository.class);
         UserRepository userRepository = mock(UserRepository.class);
-        KeycloakService keycloakService = mock(KeycloakService.class);
+        KeycloakAdminService keycloakService = mock(KeycloakAdminService.class);
         AuthenticationMailService mailService = mock(AuthenticationMailService.class);
 
         User user = new User();
@@ -60,7 +60,7 @@ class EmailVerificationServiceTest {
     void treatsRepeatedVerificationAsSuccessWhenAccountIsAlreadyActive() throws Exception {
         EmailVerificationTokenRepository tokenRepository = mock(EmailVerificationTokenRepository.class);
         UserRepository userRepository = mock(UserRepository.class);
-        KeycloakService keycloakService = mock(KeycloakService.class);
+        KeycloakAdminService keycloakService = mock(KeycloakAdminService.class);
         AuthenticationMailService mailService = mock(AuthenticationMailService.class);
 
         User user = new User();

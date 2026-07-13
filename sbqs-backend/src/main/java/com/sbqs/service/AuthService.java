@@ -2,14 +2,12 @@ package com.sbqs.service;
 
 import com.sbqs.dto.LoginRequest;
 import com.sbqs.dto.LoginResponse;
-import com.sbqs.dto.RegisterRequest;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbqs.entity.User;
 import com.sbqs.repository.UserRepository;
 import com.sbqs.config.FallbackAuthProperties;
 import com.sbqs.exception.KeycloakUnavailableException;
-import com.sbqs.util.PasswordPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,70 +31,28 @@ public class AuthService {
 
         private final UserRepository userRepository;
         private final KeycloakService keycloakService;
+        private final KeycloakAdminService keycloakAdminService;
         private final ObjectMapper objectMapper;
-        private final PasswordResetService passwordResetService;
         private final PasswordEncoder passwordEncoder;
         private final FallbackTokenService fallbackTokenService;
         private final FallbackAuthProperties fallbackProperties;
-        private final EmailVerificationService emailVerificationService;
 
         public AuthService(
                         UserRepository userRepository,
                         KeycloakService keycloakService,
+                        KeycloakAdminService keycloakAdminService,
                         ObjectMapper objectMapper,
-                        PasswordResetService passwordResetService,
                         PasswordEncoder passwordEncoder,
                         FallbackTokenService fallbackTokenService,
-                        FallbackAuthProperties fallbackProperties,
-                        EmailVerificationService emailVerificationService) {
+                        FallbackAuthProperties fallbackProperties) {
 
                 this.userRepository = userRepository;
                 this.keycloakService = keycloakService;
+                this.keycloakAdminService = keycloakAdminService;
                 this.objectMapper = objectMapper;
-                this.passwordResetService = passwordResetService;
                 this.passwordEncoder = passwordEncoder;
                 this.fallbackTokenService = fallbackTokenService;
                 this.fallbackProperties = fallbackProperties;
-                this.emailVerificationService = emailVerificationService;
-        }
-
-        /** Đăng ký CUSTOMER: tạo user khóa trên Keycloak, lưu hash fallback và gửi mail kích hoạt. */
-        public User register(
-                        RegisterRequest request) {
-
-                String email = normalizeEmail(request.getEmail());
-                if (userRepository.existsByEmailIgnoreCase(email)) {
-                        throw new RuntimeException("Email đã tồn tại. Vui lòng sử dụng email khác");
-                }
-
-                if (userRepository.existsByPhone(request.getPhone())) {
-                        throw new RuntimeException("Số điện thoại đã tồn tại. Vui lòng sử dụng số khác");
-                }
-
-                validatePasswordConfirmation(request.getPassword(), request.getConfirmPassword());
-                PasswordPolicy.validate(request.getPassword());
-
-                String keycloakUserId = keycloakService.createUser(
-                                request.getFullName(),
-                                email,
-                                request.getPassword(),
-                                "CUSTOMER",
-                                false,
-                                false);
-
-                User user = new User();
-
-                user.setFullName(request.getFullName());
-                user.setEmail(email);
-                user.setPhone(request.getPhone());
-                user.setRole("CUSTOMER");
-                user.setStatus("PENDING");
-                user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-                user.setKeycloakUserId(keycloakUserId);
-
-                User savedUser = userRepository.save(user);
-                emailVerificationService.sendVerification(savedUser);
-                return savedUser;
         }
 
         /**
@@ -132,7 +88,7 @@ public class AuthService {
                                         && existingUser.get().getKeycloakUserId() != null) {
                                 User user = existingUser.get();
                                 log.info("Clearing Keycloak required actions for email={}", email);
-                                keycloakService.repairUserPasswordLogin(
+                                keycloakAdminService.repairUserPasswordLogin(
                                                 user.getKeycloakUserId(),
                                                 user.getFullName(),
                                                 user.getEmail(),
@@ -281,25 +237,6 @@ public class AuthService {
                                 user.getEmail(),
                                 user.getBranch() == null ? null : user.getBranch().getBranchId(),
                                 "KEYCLOAK");
-        }
-
-        public void requestPasswordReset(String email) {
-                passwordResetService.requestReset(email);
-        }
-
-        public void resetPassword(String token, String newPassword) {
-                passwordResetService.resetPassword(token, newPassword);
-        }
-
-        public void resetPassword(String token, String newPassword, String confirmPassword) {
-                validatePasswordConfirmation(newPassword, confirmPassword);
-                passwordResetService.resetPassword(token, newPassword);
-        }
-
-        private void validatePasswordConfirmation(String password, String confirmPassword) {
-                if (confirmPassword == null || !confirmPassword.equals(password)) {
-                        throw new RuntimeException("Mat khau xac nhan khong khop");
-                }
         }
 
         private String valueAsString(Object value) {

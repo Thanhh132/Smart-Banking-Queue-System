@@ -6,6 +6,8 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.QueueMachine;
 import com.sbqs.entity.Services;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -26,4 +28,20 @@ public interface QueueMachineServiceMappingRepository
     List<QueueMachineServiceMapping> findByQueueMachine(QueueMachine queueMachine);
 
     List<QueueMachineServiceMapping> findByQueueMachineBranchBranchId(Long branchId);
+
+    @Query("""
+            select distinct mapping.service
+            from QueueMachineServiceMapping mapping
+            where mapping.queueMachine.branch.branchId = :branchId
+              and upper(mapping.service.status) = 'ACTIVE'
+            """)
+    List<Services> findActiveMappedServicesByBranchId(@Param("branchId") Long branchId);
+
+    @Query("""
+            select mapping
+            from QueueMachineServiceMapping mapping
+            where mapping.queueMachine.branch.branchId = :branchId
+               or mapping.service.branch.branchId = :branchId
+            """)
+    List<QueueMachineServiceMapping> findAllRelatedToBranch(@Param("branchId") Long branchId);
 }

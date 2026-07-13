@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Subscription, catchError, exhaustMap, of, switchMap, timer } from 'rxjs';
+import { Subscription, catchError, exhaustMap, filter, of, switchMap, timer } from 'rxjs';
 
 import { TicketService, TicketTracking } from './ticket.service';
 
@@ -12,6 +12,7 @@ export interface LiveTicketNotice {
 
 @Injectable({ providedIn: 'root' })
 export class CustomerLiveTrackingService {
+  private static readonly POLLING_INTERVAL_MS = 2000;
   private ticketService = inject(TicketService);
   private pollingSubscription: Subscription | null = null;
   private consumers = 0;
@@ -29,8 +30,11 @@ export class CustomerLiveTrackingService {
       return;
     }
 
-    this.pollingSubscription = timer(0, 1000)
-      .pipe(exhaustMap(() => this.loadTracking()))
+    this.pollingSubscription = timer(0, CustomerLiveTrackingService.POLLING_INTERVAL_MS)
+      .pipe(
+        filter(() => document.visibilityState === 'visible'),
+        exhaustMap(() => this.loadTracking())
+      )
       .subscribe((tracking) => {
         if (tracking) {
           this.applyTracking(tracking);

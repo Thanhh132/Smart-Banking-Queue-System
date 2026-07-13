@@ -15,6 +15,12 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   styleUrl: './admin-services.scss',
 })
 export class AdminServices implements OnInit {
+  readonly defaultProfileFields = [
+    { key: 'FULL_NAME', label: 'Họ và tên', note: 'Tự động lấy từ thông tin tài khoản, khách không sửa tại biểu mẫu.' },
+    { key: 'MOBILE_PHONE', label: 'Số điện thoại', note: 'Tự động lấy từ thông tin tài khoản, khách không sửa tại biểu mẫu.' },
+    { key: 'PERMANENT_ADDRESS', label: 'Địa chỉ thường trú', note: 'Tự điền từ hồ sơ; khách có thể cập nhật và hệ thống sẽ ghi nhớ.' },
+    { key: 'CONTACT_ADDRESS', label: 'Địa chỉ tạm trú / nơi ở hiện tại', note: 'Tự điền từ hồ sơ; khách có thể cập nhật và hệ thống sẽ ghi nhớ.' },
+  ];
   private readonly serviceOrder = [
     'DEBIT_CARD_NEW', 'DEBIT_CARD_REISSUE', 'ACCOUNT_OPEN', 'DIGITAL_BANKING',
     'CASH_DEPOSIT', 'CASH_WITHDRAW', 'SAVINGS', 'INTERNATIONAL_TRANSFER',
@@ -82,7 +88,14 @@ export class AdminServices implements OnInit {
     const keys = this.draftFields.map((field) => field.key);
     if (new Set(keys).size !== keys.length) { this.errorMessage = 'Mã trường không được trùng nhau.'; return; }
     this.isSaving = true;
-    const payload = { ...this.selectedService, formSchema: this.draftFields, requiredCustomerFields: [] };
+    const payload = {
+      ...this.selectedService,
+      formSchema: this.draftFields,
+      requiredCustomerFields: [...new Set([
+        ...this.defaultProfileFields.map((field) => field.key),
+        ...(this.selectedService.requiredCustomerFields || []),
+      ])],
+    };
     this.serviceApi.updateService(this.selectedService.serviceId, payload).subscribe({
       next: (saved: any) => { const index = this.services.findIndex((item) => item.serviceId === saved.serviceId); this.services[index] = saved; this.selectedService = saved; this.draftFields = saved.formSchema || []; this.successMessage = 'Đã lưu và áp dụng biểu mẫu.'; this.errorMessage = ''; this.isSaving = false; this.cdr.detectChanges(); },
       error: (error) => { this.errorMessage = this.apiError.getMessage(error, 'Không lưu được biểu mẫu.'); this.isSaving = false; this.cdr.detectChanges(); },

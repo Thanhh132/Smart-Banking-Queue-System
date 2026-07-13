@@ -18,12 +18,15 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 
 import java.time.Duration;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Configuration
 @EnableCaching
 public class CacheConfig implements CachingConfigurer {
 
     private static final Logger log = LoggerFactory.getLogger(CacheConfig.class);
+    private static final long CACHE_WARNING_INTERVAL_MS = Duration.ofMinutes(1).toMillis();
+    private final ConcurrentHashMap<String, Long> lastCacheWarnings = new ConcurrentHashMap<>();
 
     @Bean
     public RedisCacheConfiguration redisCacheConfiguration(
@@ -69,23 +72,41 @@ public class CacheConfig implements CachingConfigurer {
         return new CacheErrorHandler() {
             @Override
             public void handleCacheGetError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis cache get failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                if (shouldLogCacheWarning("get", cache)) {
+                    log.warn("Redis cache get failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                }
             }
 
             @Override
             public void handleCachePutError(RuntimeException exception, Cache cache, Object key, Object value) {
-                log.warn("Redis cache put failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                if (shouldLogCacheWarning("put", cache)) {
+                    log.warn("Redis cache put failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                }
             }
 
             @Override
             public void handleCacheEvictError(RuntimeException exception, Cache cache, Object key) {
-                log.warn("Redis cache evict failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                if (shouldLogCacheWarning("evict", cache)) {
+                    log.warn("Redis cache evict failed cache={} key={} cause={}", cache.getName(), key, exception.getMessage());
+                }
             }
 
             @Override
             public void handleCacheClearError(RuntimeException exception, Cache cache) {
-                log.warn("Redis cache clear failed cache={} cause={}", cache.getName(), exception.getMessage());
+                if (shouldLogCacheWarning("clear", cache)) {
+                    log.warn("Redis cache clear failed cache={} cause={}", cache.getName(), exception.getMessage());
+                }
             }
         };
+    }
+
+    /** Khi Redis tắt, mỗi loại lỗi/cache chỉ ghi log tối đa một lần mỗi phút. */
+    private boolean shouldLogCacheWarning(String operation, Cache cache) {
+        long now = System.currentTimeMillis();
+        String warningKey = operation + ":" + cache.getName();
+        return lastCacheWarnings.compute(warningKey, (key, lastLoggedAt) ->
+                lastLoggedAt == null || now - lastLoggedAt >= CACHE_WARNING_INTERVAL_MS
+                        ? now
+                        : lastLoggedAt) == now;
     }
 }

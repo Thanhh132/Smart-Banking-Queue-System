@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
@@ -8,7 +9,7 @@ export class UserManagementService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:8081/api/users';
+  private apiUrl = `${inject(API_BASE_URL)}/users`;
 
   getUsersByBranch(branchId: number) {
     return this.http.get<any[]>(

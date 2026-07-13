@@ -80,6 +80,11 @@
   gap: 16px;
 }
 
+.account-form textarea {
+  width: 100%;
+  resize: vertical;
+}
+
 .account-card--locked .account-form input:disabled {
   cursor: default;
   background: #f8fafc;

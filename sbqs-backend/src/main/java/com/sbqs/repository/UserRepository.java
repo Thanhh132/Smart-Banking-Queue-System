@@ -16,9 +16,17 @@ public interface UserRepository
 
     List<User> findByBranch(Branch branch);
 
+    List<User> findByBranchAndStatusNotIgnoreCase(Branch branch, String status);
+
+    List<User> findByStatusNotIgnoreCase(String status);
+
     List<User> findByRole(String role);
 
+    List<User> findByRoleAndStatusNotIgnoreCase(String role, String status);
+
     List<User> findByBranchAndRole(Branch branch, String role);
+
+    List<User> findByBranchAndRoleAndStatusNotIgnoreCase(Branch branch, String role, String status);
 
     boolean existsByPhone(String phone);
 

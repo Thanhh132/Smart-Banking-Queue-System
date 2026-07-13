@@ -21,6 +21,34 @@
         <button type="button" class="icon-close" (click)="closeForm()" aria-label="Đóng">×</button>
       </div>
       <form [formGroup]="transactionForm" (ngSubmit)="submit()">
+        <section class="form-section profile-section" [formGroup]="profileForm">
+          <div class="profile-section__heading">
+            <div><h3>Hồ sơ mặc định</h3><p>Thông tin được dùng chung và tự động điền cho các giao dịch sau.</p></div>
+            <span>4 mục bắt buộc</span>
+          </div>
+          <div class="dynamic-grid">
+            <label class="dynamic-field readonly-field">
+              <span>Họ và tên *</span>
+              <input formControlName="fullName" />
+              <small>Muốn thay đổi, vui lòng sửa tại Tài khoản của tôi.</small>
+            </label>
+            <label class="dynamic-field readonly-field">
+              <span>Số điện thoại *</span>
+              <input formControlName="phone" />
+              <small>Muốn thay đổi, vui lòng sửa tại Tài khoản của tôi.</small>
+            </label>
+            <label class="dynamic-field dynamic-field--wide">
+              <span>Địa chỉ thường trú *</span>
+              <textarea rows="2" formControlName="permanentAddress" placeholder="Địa chỉ ghi trên CCCD"></textarea>
+              <small *ngIf="profileForm.get('permanentAddress')?.touched && profileForm.get('permanentAddress')?.invalid">Vui lòng nhập địa chỉ thường trú.</small>
+            </label>
+            <label class="dynamic-field dynamic-field--wide">
+              <span>Địa chỉ tạm trú / nơi ở hiện tại *</span>
+              <textarea rows="2" formControlName="contactAddress" placeholder="Nơi đang ở thực tế"></textarea>
+              <small *ngIf="profileForm.get('contactAddress')?.touched && profileForm.get('contactAddress')?.invalid">Vui lòng nhập nơi ở hiện tại.</small>
+            </label>
+          </div>
+        </section>
         <section class="form-section" *ngFor="let section of sections">
           <h3>{{ section }}</h3>
           <div class="dynamic-grid">

@@ -25,6 +25,18 @@
 
         <div class="editor-content">
           <div class="question-editor">
+            <section class="default-profile-card">
+              <header>
+                <div><span>Hồ sơ mặc định</span><strong>Luôn áp dụng cho mọi dịch vụ</strong></div>
+                <em>Không thể xóa</em>
+              </header>
+              <div class="default-profile-list">
+                <div *ngFor="let field of defaultProfileFields">
+                  <span>✓</span>
+                  <p><strong>{{ field.label }}</strong><small>{{ field.note }}</small></p>
+                </div>
+              </div>
+            </section>
             <article class="question-card" *ngFor="let field of draftFields; let index = index">
               <header><span>Mục {{ index + 1 }}</span><div><button type="button" (click)="move(index,-1)" [disabled]="index === 0" title="Đưa lên">↑</button><button type="button" (click)="move(index,1)" [disabled]="index === draftFields.length-1" title="Đưa xuống">↓</button><button type="button" class="delete-question" (click)="removeField(index)">Xóa</button></div></header>
               <div class="question-fields">
@@ -44,6 +56,10 @@
             <div class="customer-preview__heading"><span>Xem trước</span><strong>Màn hình khách hàng</strong><small>Cập nhật ngay khi bạn chỉnh sửa</small></div>
             <div class="preview-form">
               <div class="preview-title"><small>Thông tin cần chuẩn bị</small><h3>{{ selectedService.serviceName }}</h3></div>
+              <div class="preview-defaults">
+                <strong>Hồ sơ tự động</strong>
+                <span *ngFor="let field of defaultProfileFields">✓ {{ field.label }}</span>
+              </div>
               <div class="preview-item" *ngFor="let field of draftFields">
                 <label>{{ field.label }} <em *ngIf="field.required">*</em></label>
                 <div class="preview-input" *ngIf="!needsOptions(field) && field.type !== 'CHECKBOX'">{{ field.placeholder || fieldTypeLabel(field) }}</div>

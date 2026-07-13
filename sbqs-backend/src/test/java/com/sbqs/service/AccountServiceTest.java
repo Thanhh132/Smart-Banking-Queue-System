@@ -3,8 +3,8 @@ package com.sbqs.service;
 import com.sbqs.config.AccountChangeProperties;
 import com.sbqs.dto.ChangePasswordRequest;
 import com.sbqs.dto.UpdateAccountProfileRequest;
-import com.sbqs.repository.AccountChangeTokenRepository;
 import com.sbqs.entity.User;
+import com.sbqs.repository.AccountChangeTokenRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -21,21 +21,20 @@ class AccountServiceTest {
         CurrentUserService currentUserService = mock(CurrentUserService.class);
         UserRepository userRepository = mock(UserRepository.class);
         KeycloakService keycloakService = mock(KeycloakService.class);
+        KeycloakAdminService keycloakAdminService = mock(KeycloakAdminService.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
-        AccountChangeTokenRepository changeTokenRepository = mock(AccountChangeTokenRepository.class);
         ServiceRepository serviceRepository = mock(ServiceRepository.class);
-        AuthenticationMailService mailService = mock(AuthenticationMailService.class);
         User user = user();
         when(currentUserService.requireUser()).thenReturn(user);
         when(passwordEncoder.encode("NewPassword2@")).thenReturn("new-hash");
 
         AccountService service = new AccountService(
-                currentUserService, userRepository, keycloakService, passwordEncoder,
-                changeTokenRepository, serviceRepository, mailService, new AccountChangeProperties());
+                currentUserService, userRepository, keycloakService, keycloakAdminService, passwordEncoder,
+                serviceRepository);
         service.changePassword(new ChangePasswordRequest("CurrentPassword1!", "NewPassword2@"));
 
         verify(keycloakService).login(user.getEmail(), "CurrentPassword1!");
-        verify(keycloakService).resetUserPassword(user.getKeycloakUserId(), "NewPassword2@");
+        verify(keycloakAdminService).resetUserPassword(user.getKeycloakUserId(), "NewPassword2@");
         verify(userRepository).save(user);
         assertEquals("new-hash", user.getPasswordHash());
     }
@@ -44,17 +43,15 @@ class AccountServiceTest {
     void rejectsSelfServiceProfileChangesForCompanyManagedRoles() {
         CurrentUserService currentUserService = mock(CurrentUserService.class);
         UserRepository userRepository = mock(UserRepository.class);
-        KeycloakService keycloakService = mock(KeycloakService.class);
-        PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
+        KeycloakAdminService keycloakService = mock(KeycloakAdminService.class);
         AccountChangeTokenRepository changeTokenRepository = mock(AccountChangeTokenRepository.class);
-        ServiceRepository serviceRepository = mock(ServiceRepository.class);
         AuthenticationMailService mailService = mock(AuthenticationMailService.class);
         User user = user();
         when(currentUserService.requireUser()).thenReturn(user);
 
-        AccountService service = new AccountService(
-                currentUserService, userRepository, keycloakService, passwordEncoder,
-                changeTokenRepository, serviceRepository, mailService, new AccountChangeProperties());
+        AccountChangeService service = new AccountChangeService(
+                currentUserService, userRepository, keycloakService, changeTokenRepository,
+                mailService, new AccountChangeProperties());
 
         assertThrows(RuntimeException.class, () -> service.requestProfileChange(
                 new UpdateAccountProfileRequest("Nguyen Van B", "new@example.com", "0909999999")));

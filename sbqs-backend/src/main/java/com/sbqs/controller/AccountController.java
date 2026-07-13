@@ -6,6 +6,7 @@ import com.sbqs.dto.ChangePasswordRequest;
 import com.sbqs.dto.CustomerPaperlessProfileResponse;
 import com.sbqs.dto.UpdateAccountProfileRequest;
 import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
+import com.sbqs.service.AccountChangeService;
 import com.sbqs.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin("*")
 public class AccountController {
     private final AccountService accountService;
+    private final AccountChangeService accountChangeService;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService, AccountChangeService accountChangeService) {
         this.accountService = accountService;
+        this.accountChangeService = accountChangeService;
     }
 
     @GetMapping
@@ -45,7 +48,7 @@ public class AccountController {
     /** Nhận thông tin CUSTOMER muốn sửa và gửi link xác nhận, chưa cập nhật ngay. */
     public ResponseEntity<Void> requestProfileChange(
             @Valid @RequestBody UpdateAccountProfileRequest request) {
-        accountService.requestProfileChange(request);
+        accountChangeService.requestProfileChange(request);
         return ResponseEntity.accepted().build();
     }
 
@@ -53,7 +56,7 @@ public class AccountController {
     /** Endpoint công khai được gọi từ link email; token hợp lệ chính là bằng chứng xác nhận. */
     public ResponseEntity<AccountChangeConfirmationResponse> confirmProfileChange(
             @RequestParam String token) {
-        return ResponseEntity.ok(accountService.confirmProfileChange(token));
+        return ResponseEntity.ok(accountChangeService.confirmProfileChange(token));
     }
 
     @PutMapping("/password")

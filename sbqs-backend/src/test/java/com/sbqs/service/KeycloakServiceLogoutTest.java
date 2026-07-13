@@ -25,7 +25,7 @@ class KeycloakServiceLogoutTest {
         properties.setRealm("SBQS");
         properties.setClientId("sbqs-frontend");
         properties.setClientSecret("client-secret");
-        KeycloakService service = new KeycloakService(restTemplate, properties);
+        KeycloakService service = new KeycloakService(properties, new KeycloakFormClient(restTemplate));
 
         when(restTemplate.postForEntity(
                 eq("http://localhost:8080/realms/SBQS/protocol/openid-connect/logout"),

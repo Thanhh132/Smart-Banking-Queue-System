@@ -164,11 +164,7 @@ public class BranchService {
 
         appointmentRepository.deleteAll(appointmentRepository.findByBranch(branch));
 
-        List<QueueMachineServiceMapping> mappings = mappingRepository.findAll()
-                .stream()
-                .filter(mapping -> mapping.getQueueMachine().getBranch().getBranchId().equals(branchId)
-                        || mapping.getService().getBranch().getBranchId().equals(branchId))
-                .toList();
+        List<QueueMachineServiceMapping> mappings = mappingRepository.findAllRelatedToBranch(branchId);
         mappingRepository.deleteAll(mappings);
 
         List<Counter> counters = counterRepository.findByBranch(branch);

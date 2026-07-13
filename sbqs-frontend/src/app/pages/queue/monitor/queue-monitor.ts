@@ -21,6 +21,7 @@ import { QueueMonitorService } from '../../../core/services/queue-monitor.servic
   styleUrl: './queue-monitor.scss',
 })
 export class QueueMonitorComponent implements OnInit, OnDestroy {
+  private static readonly REFRESH_INTERVAL_MS = 3000;
   private monitorService = inject(QueueMonitorService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
@@ -66,8 +67,10 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
     this.loadMonitor();
 
     this.intervalId = setInterval(() => {
-      this.loadMonitor();
-    }, 1000);
+      if (document.visibilityState === 'visible') {
+        this.loadMonitor();
+      }
+    }, QueueMonitorComponent.REFRESH_INTERVAL_MS);
   }
 
   ngOnDestroy(): void {

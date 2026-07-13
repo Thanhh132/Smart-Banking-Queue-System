@@ -29,7 +29,7 @@ public class PasswordResetService {
 
     private final UserRepository userRepository;
     private final PasswordResetTokenRepository tokenRepository;
-    private final KeycloakService keycloakService;
+    private final KeycloakAdminService keycloakService;
     private final PasswordResetProperties properties;
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final PasswordEncoder passwordEncoder;
@@ -37,7 +37,7 @@ public class PasswordResetService {
     public PasswordResetService(
             UserRepository userRepository,
             PasswordResetTokenRepository tokenRepository,
-            KeycloakService keycloakService,
+            KeycloakAdminService keycloakService,
             PasswordResetProperties properties,
             ObjectProvider<JavaMailSender> mailSenderProvider,
             PasswordEncoder passwordEncoder) {
@@ -176,6 +176,13 @@ public class PasswordResetService {
         userRepository.save(token.getUser());
         token.setUsedAt(LocalDateTime.now());
         tokenRepository.save(token);
+    }
+
+    public void resetPassword(String rawToken, String newPassword, String confirmPassword) {
+        if (confirmPassword == null || !confirmPassword.equals(newPassword)) {
+            throw new RuntimeException("Mat khau xac nhan khong khop");
+        }
+        resetPassword(rawToken, newPassword);
     }
 
     private void validatePassword(String password) {

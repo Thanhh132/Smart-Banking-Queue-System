@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseSchemaInitializer {
+    private static final String SCHEMA_VERSION = "database-schema-v3";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -19,6 +20,20 @@ public class DatabaseSchemaInitializer {
      * Production nên chuyển các câu lệnh này thành migration có version để audit dễ hơn.
      */
     public void initialize() {
+        jdbcTemplate.execute("""
+                create table if not exists system_settings (
+                    setting_key varchar(100) primary key,
+                    setting_value varchar(500) not null
+                )
+                """);
+        Integer applied = jdbcTemplate.queryForObject(
+                "select count(*) from system_settings where setting_key = ?",
+                Integer.class,
+                SCHEMA_VERSION);
+        if (applied != null && applied > 0) {
+            return;
+        }
+
         createCoreTablesIfMissing();
 
         executeIfPossible("drop table if exists service_form_revisions");
@@ -231,6 +246,14 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.execute("create index if not exists idx_auth_audits_email_created_at on authentication_audits(email, created_at desc)");
         jdbcTemplate.execute("create index if not exists idx_auth_audits_ip_created_at on authentication_audits(ip_address, created_at desc)");
 
+        // Các chỉ mục phục vụ trực tiếp màn hình hàng đợi và lịch sử thường xuyên được polling.
+        jdbcTemplate.execute("create index if not exists idx_tickets_branch_status on tickets(branch_id, status)");
+        jdbcTemplate.execute("create index if not exists idx_tickets_machine_status on tickets(queue_machine_id, status)");
+        jdbcTemplate.execute("create index if not exists idx_tickets_customer_status_created on tickets(customer_email, status, created_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_histories_branch_completed on service_histories(branch_id, completed_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_histories_staff_completed on service_histories(staff_id, completed_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_histories_customer_completed on service_histories(customer_email, completed_at desc)");
+
         jdbcTemplate.execute("""
                 create table if not exists transaction_drafts (
                     draft_id bigserial primary key,
@@ -361,6 +384,10 @@ public class DatabaseSchemaInitializer {
                     end if;
                 end $$;
                 """);
+
+        jdbcTemplate.update(
+                "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
+                SCHEMA_VERSION);
     }
 
     /** Chạy migration tương thích dữ liệu legacy; lỗi do dữ liệu cũ không làm backend dừng khởi động. */

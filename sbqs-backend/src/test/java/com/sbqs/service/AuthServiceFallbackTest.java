@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 class AuthServiceFallbackTest {
     private UserRepository userRepository;
     private KeycloakService keycloakService;
+    private KeycloakAdminService keycloakAdminService;
     private FallbackTokenService fallbackTokenService;
     private AuthService authService;
     private PasswordEncoder passwordEncoder;
@@ -33,6 +34,7 @@ class AuthServiceFallbackTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         keycloakService = mock(KeycloakService.class);
+        keycloakAdminService = mock(KeycloakAdminService.class);
         fallbackTokenService = mock(FallbackTokenService.class);
         passwordEncoder = new BCryptPasswordEncoder();
 
@@ -44,12 +46,11 @@ class AuthServiceFallbackTest {
         authService = new AuthService(
                 userRepository,
                 keycloakService,
+                keycloakAdminService,
                 new ObjectMapper(),
-                mock(PasswordResetService.class),
                 passwordEncoder,
                 fallbackTokenService,
-                properties,
-                mock(EmailVerificationService.class));
+                properties);
     }
 
     @Test

@@ -8,8 +8,10 @@ import com.sbqs.dto.ResetPasswordRequest;
 import com.sbqs.entity.User;
 import com.sbqs.service.AuthService;
 import com.sbqs.service.AuthenticationAuditService;
+import com.sbqs.service.CustomerRegistrationService;
 import com.sbqs.service.EmailVerificationService;
 import com.sbqs.service.LoginRateLimitService;
+import com.sbqs.service.PasswordResetService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -23,17 +25,23 @@ import java.util.Locale;
 public class AuthController {
 
     private final AuthService authService;
+    private final CustomerRegistrationService registrationService;
+    private final PasswordResetService passwordResetService;
     private final LoginRateLimitService loginRateLimitService;
     private final AuthenticationAuditService authenticationAuditService;
     private final EmailVerificationService emailVerificationService;
 
     public AuthController(
             AuthService authService,
+            CustomerRegistrationService registrationService,
+            PasswordResetService passwordResetService,
             LoginRateLimitService loginRateLimitService,
             AuthenticationAuditService authenticationAuditService,
             EmailVerificationService emailVerificationService) {
 
         this.authService = authService;
+        this.registrationService = registrationService;
+        this.passwordResetService = passwordResetService;
         this.loginRateLimitService = loginRateLimitService;
         this.authenticationAuditService = authenticationAuditService;
         this.emailVerificationService = emailVerificationService;
@@ -44,7 +52,7 @@ public class AuthController {
             @Valid @RequestBody RegisterRequest request) {
 
         return ResponseEntity.ok(
-                authService.register(request));
+                registrationService.register(request));
     }
 
     @PostMapping("/login")
@@ -94,7 +102,7 @@ public class AuthController {
     public ResponseEntity<Void> forgotPassword(
             @RequestBody ForgotPasswordRequest request) {
 
-        authService.requestPasswordReset(request.getEmail());
+        passwordResetService.requestReset(request.getEmail());
         return ResponseEntity.accepted().build();
     }
 
@@ -102,7 +110,7 @@ public class AuthController {
     public ResponseEntity<Void> resetPassword(
             @RequestBody ResetPasswordRequest request) {
 
-        authService.resetPassword(
+        passwordResetService.resetPassword(
                 request.getToken(),
                 request.getNewPassword(),
                 request.getConfirmPassword());

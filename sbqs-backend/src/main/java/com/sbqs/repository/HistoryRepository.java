@@ -7,6 +7,14 @@ import java.util.List;
 
 public interface HistoryRepository extends JpaRepository<History, Long> {
 
+    List<History> findTop200ByOrderByCompletedAtDesc();
+
+    List<History> findTop200ByBranchIdOrderByCompletedAtDesc(Long branchId);
+
+    List<History> findTop200ByCustomerEmailIgnoreCaseOrderByCompletedAtDesc(String customerEmail);
+
+    List<History> findTop200ByStaffIdOrderByCompletedAtDesc(Long staffId);
+
     List<History> findByBranchId(Long branchId);
 
     List<History> findByCustomerEmailIgnoreCase(String customerEmail);

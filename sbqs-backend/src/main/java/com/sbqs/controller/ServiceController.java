@@ -1,8 +1,9 @@
 package com.sbqs.controller;
 
-import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
-import com.sbqs.repository.BranchRepository;
+import com.sbqs.dto.service.ServiceRequest;
+import com.sbqs.dto.service.ServiceResponse;
+import com.sbqs.mapper.ServiceDtoMapper;
 import com.sbqs.service.ServicesService;
 
 import jakarta.validation.Valid;
@@ -17,52 +18,33 @@ import java.util.List;
 public class ServiceController {
 
     private final ServicesService serviceService;
-    private final BranchRepository branchRepository;
+    private final ServiceDtoMapper serviceDtoMapper;
 
-    public ServiceController(ServicesService serviceService, BranchRepository branchRepository) {
+    public ServiceController(ServicesService serviceService, ServiceDtoMapper serviceDtoMapper) {
         this.serviceService = serviceService;
-        this.branchRepository = branchRepository;
+        this.serviceDtoMapper = serviceDtoMapper;
     }
 
     @GetMapping
-    public ResponseEntity<List<Services>> getServices(
+    public ResponseEntity<List<ServiceResponse>> getServices(
             @RequestParam(required = false) Long branchId,
             @RequestParam(required = false) String serviceType,
             @RequestParam(defaultValue = "false") boolean mappedOnly) {
-        if (branchId == null) {
-            return ResponseEntity.ok(serviceService.getAllServices());
-        }
-
-        if (mappedOnly) {
-            return ResponseEntity.ok(serviceService.getMappedServicesByBranch(branchId));
-        }
-
-        Branch branch = branchRepository.findById(branchId).orElse(null);
-        if (branch == null) {
-            return ResponseEntity.notFound().build();
-        }
-
-        if (serviceType != null && !serviceType.isBlank()) {
-            return ResponseEntity.ok(serviceService.getServicesByBranchAndType(branch, serviceType));
-        }
-
-        return ResponseEntity.ok(serviceService.getServicesByBranch(branch));
+        return ResponseEntity.ok(serviceService.getServices(branchId, serviceType, mappedOnly)
+                .stream().map(serviceDtoMapper::toResponse).toList());
     }
 
     @PostMapping
-    public ResponseEntity<Services> createService(
-            @Valid @RequestBody Services service) {
-        Services saved = serviceService.createService(service);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<ServiceResponse> createService(
+            @Valid @RequestBody ServiceRequest request) {
+        return ResponseEntity.ok(serviceDtoMapper.toResponse(serviceService.createService(request)));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Services> updateService(
+    public ResponseEntity<ServiceResponse> updateService(
             @PathVariable Long id,
-            @RequestBody Services service) {
-
-        return ResponseEntity.ok(
-                serviceService.updateService(id, service));
+            @Valid @RequestBody ServiceRequest request) {
+        return ResponseEntity.ok(serviceDtoMapper.toResponse(serviceService.updateService(id, request)));
     }
 
     @DeleteMapping("/{id}")

@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { API_BASE_URL } from '../config/api.config';
 
 export interface AccountProfile {
   userId: number;
@@ -37,7 +38,7 @@ export interface CustomerPaperlessProfile {
 @Injectable({ providedIn: 'root' })
 export class AccountService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8081/api/account';
+  private apiUrl = `${inject(API_BASE_URL)}/account`;
 
   getProfile() {
     return this.http.get<AccountProfile>(this.apiUrl);

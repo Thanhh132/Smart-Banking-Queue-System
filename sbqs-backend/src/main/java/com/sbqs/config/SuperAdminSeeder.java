@@ -2,7 +2,7 @@ package com.sbqs.config;
 
 import com.sbqs.entity.User;
 import com.sbqs.repository.UserRepository;
-import com.sbqs.service.KeycloakService;
+import com.sbqs.service.KeycloakAdminService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
@@ -16,13 +16,13 @@ public class SuperAdminSeeder implements ApplicationRunner {
 
     private final SuperAdminSeedProperties properties;
     private final UserRepository userRepository;
-    private final KeycloakService keycloakService;
+    private final KeycloakAdminService keycloakService;
     private final PasswordEncoder passwordEncoder;
 
     public SuperAdminSeeder(
             SuperAdminSeedProperties properties,
             UserRepository userRepository,
-            KeycloakService keycloakService,
+            KeycloakAdminService keycloakService,
             PasswordEncoder passwordEncoder) {
 
         this.properties = properties;

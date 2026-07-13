@@ -3,6 +3,7 @@ package com.sbqs.repository;
 import com.sbqs.entity.Counter;
 import com.sbqs.entity.Branch;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -25,8 +26,10 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
 
     List<Counter> findByStatus(String status);
 
+    @EntityGraph(attributePaths = {"currentTicket", "queueMachine"})
     List<Counter> findByBranchBranchId(Long branchId);
 
+    @EntityGraph(attributePaths = {"currentTicket", "queueMachine"})
     List<Counter> findByBranchBranchIdAndQueueMachineQueueMachineId(
             Long branchId,
             Long queueMachineId);

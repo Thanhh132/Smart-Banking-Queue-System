@@ -28,6 +28,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   styleUrl: './staff-dashboard.scss',
 })
 export class StaffDashboard implements OnInit, OnDestroy {
+  private static readonly LIVE_REFRESH_INTERVAL_MS = 2000;
   private staffService = inject(StaffService);
   private historyService = inject(HistoryService);
   private apiError = inject(ApiErrorService);
@@ -49,7 +50,11 @@ export class StaffDashboard implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadDashboard();
-    this.liveIntervalId = setInterval(() => this.refreshLiveState(), 1000);
+    this.liveIntervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        this.refreshLiveState();
+      }
+    }, StaffDashboard.LIVE_REFRESH_INTERVAL_MS);
   }
 
   ngOnDestroy(): void {

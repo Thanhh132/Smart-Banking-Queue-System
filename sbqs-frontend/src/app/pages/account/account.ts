@@ -36,10 +36,13 @@ export class Account {
   profile: AccountProfile | null = null;
   isLoading = true;
   isSavingProfile = false;
+  isSavingAddresses = false;
   isChangingPassword = false;
   loadError = '';
   profileMessage = '';
   profileError = '';
+  addressMessage = '';
+  addressError = '';
   passwordMessage = '';
   passwordError = '';
   isEditingProfile = false;
@@ -51,6 +54,11 @@ export class Account {
     fullName: ['', [Validators.required, Validators.maxLength(150)]],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, Validators.maxLength(30)]],
+  });
+
+  addressForm = this.fb.group({
+    permanentAddress: ['', [Validators.required, Validators.maxLength(500)]],
+    contactAddress: ['', [Validators.required, Validators.maxLength(500)]],
   });
 
   passwordForm = this.fb.group({
@@ -95,10 +103,56 @@ export class Account {
         });
         this.isEditingProfile = false;
         this.profileForm.disable();
+        if (profile.role === 'CUSTOMER') this.loadAddresses();
         this.cdr.detectChanges();
       },
       error: (error) => {
         this.loadError = this.apiError.getMessage(error, 'Không tải được thông tin tài khoản.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  loadAddresses(): void {
+    this.accountService.getPaperlessProfile().subscribe({
+      next: (paperlessProfile) => {
+        this.addressForm.patchValue({
+          permanentAddress: paperlessProfile.values['PERMANENT_ADDRESS'] || '',
+          contactAddress: paperlessProfile.values['CONTACT_ADDRESS'] || '',
+        });
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.addressError = this.apiError.getMessage(error, 'Không tải được địa chỉ hồ sơ.');
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  saveAddresses(): void {
+    this.addressMessage = '';
+    this.addressError = '';
+    if (this.addressForm.invalid || this.isSavingAddresses) {
+      this.addressForm.markAllAsTouched();
+      return;
+    }
+    const values = this.addressForm.getRawValue();
+    this.isSavingAddresses = true;
+    this.accountService.updatePaperlessProfile({
+      values: {
+        PERMANENT_ADDRESS: values.permanentAddress || '',
+        CONTACT_ADDRESS: values.contactAddress || '',
+      },
+    }).pipe(finalize(() => {
+      this.isSavingAddresses = false;
+      this.cdr.detectChanges();
+    })).subscribe({
+      next: () => {
+        this.addressMessage = 'Đã lưu địa chỉ dùng chung cho các biểu mẫu.';
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.addressError = this.apiError.getMessage(error, 'Không lưu được địa chỉ hồ sơ.');
         this.cdr.detectChanges();
       },
     });

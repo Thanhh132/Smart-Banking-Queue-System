@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { API_BASE_URL } from '../config/api.config';
 
 export type ImportType = 'staff' | 'services';
 
@@ -19,7 +20,7 @@ export interface ImportResult {
 @Injectable({ providedIn: 'root' })
 export class BulkImportService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8081/api/import';
+  private apiUrl = `${inject(API_BASE_URL)}/import`;
 
   downloadTemplate(type: ImportType) {
     return this.http.get(`${this.apiUrl}/templates/${type}`, { responseType: 'blob' });

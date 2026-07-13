@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
   providedIn: 'root'
@@ -7,9 +8,9 @@ import { HttpClient } from '@angular/common/http';
 export class StaffService {
 
   private http = inject(HttpClient);
+  private apiBaseUrl = inject(API_BASE_URL);
 
-  private apiUrl =
-    'http://localhost:8081/api/tickets';
+  private apiUrl = `${this.apiBaseUrl}/tickets`;
 
   callNext(counterId: number) {
     return this.http.post(
@@ -33,15 +34,15 @@ export class StaffService {
 
   getPendingApprovalTasks() {
     return this.http.get<any[]>(
-      'http://localhost:8081/api/workflows/tickets/pending-approval'
+      `${this.apiBaseUrl}/workflows/tickets/pending-approval`
     );
   }
 
   getCounters() {
     const branchId = Number(sessionStorage.getItem('selectedBranchId'));
     const url = branchId
-      ? `http://localhost:8081/api/counters?branchId=${branchId}`
-      : 'http://localhost:8081/api/counters';
+      ? `${this.apiBaseUrl}/counters?branchId=${branchId}`
+      : `${this.apiBaseUrl}/counters`;
 
     return this.http.get<any[]>(
       url
@@ -50,20 +51,20 @@ export class StaffService {
 
   getAssignedCounter() {
     return this.http.get<any>(
-      'http://localhost:8081/api/counters/assigned'
+      `${this.apiBaseUrl}/counters/assigned`
     );
   }
 
   assignCounter(counterId: number) {
     return this.http.post(
-      `http://localhost:8081/api/counters/${counterId}/assign`,
+      `${this.apiBaseUrl}/counters/${counterId}/assign`,
       {}
     );
   }
 
   unassignCounter(counterId: number) {
     return this.http.post(
-      `http://localhost:8081/api/counters/${counterId}/unassign`,
+      `${this.apiBaseUrl}/counters/${counterId}/unassign`,
       {}
     );
   }

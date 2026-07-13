@@ -25,6 +25,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   styleUrl: './ticket-result.scss',
 })
 export class TicketResult implements OnInit, OnDestroy {
+  private static readonly MONITOR_INTERVAL_MS = 3000;
   private monitorService = inject(QueueMonitorService);
   private ticketService = inject(TicketService);
   private historyService = inject(HistoryService);
@@ -84,7 +85,11 @@ export class TicketResult implements OnInit, OnDestroy {
     this.loadCurrentTicket();
     this.loadHistory();
     this.loadMonitor();
-    this.intervalId = setInterval(() => this.loadMonitor(), 1000);
+    this.intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        this.loadMonitor();
+      }
+    }, TicketResult.MONITOR_INTERVAL_MS);
   }
 
   ngOnDestroy(): void {

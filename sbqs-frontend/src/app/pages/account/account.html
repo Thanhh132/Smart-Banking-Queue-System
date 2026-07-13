@@ -73,6 +73,31 @@
           </form>
         </article>
 
+        <article class="account-card" *ngIf="canEditProfile">
+          <div class="card-heading">
+            <div>
+              <h2>Địa chỉ hồ sơ giao dịch</h2>
+              <p>Chỉ cần khai một lần, hệ thống sẽ tự điền vào giấy tờ sau này.</p>
+            </div>
+          </div>
+          <form [formGroup]="addressForm" (ngSubmit)="saveAddresses()" class="account-form">
+            <label>
+              Địa chỉ thường trú
+              <textarea rows="3" formControlName="permanentAddress" autocomplete="street-address" placeholder="Địa chỉ ghi trên CCCD"></textarea>
+            </label>
+            <label>
+              Địa chỉ tạm trú / nơi ở hiện tại
+              <textarea rows="3" formControlName="contactAddress" placeholder="Nơi đang ở thực tế"></textarea>
+            </label>
+            <div *ngIf="addressMessage" class="message message--success">{{ addressMessage }}</div>
+            <div *ngIf="addressError" class="message message--error">{{ addressError }}</div>
+            <button type="submit" [disabled]="isSavingAddresses">
+              <app-icon name="save" [size]="18" />
+              {{ isSavingAddresses ? 'Đang lưu...' : 'Lưu địa chỉ' }}
+            </button>
+          </form>
+        </article>
+
         <article class="account-card">
           <div class="card-heading">
             <div>

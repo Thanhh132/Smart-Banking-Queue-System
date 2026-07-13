@@ -2,6 +2,8 @@ package com.sbqs.service;
 
 import com.sbqs.dto.HistoryResponse;
 import com.sbqs.entity.History;
+import com.sbqs.entity.Counter;
+import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
 import com.sbqs.repository.HistoryRepository;
 import org.springframework.stereotype.Service;
@@ -29,27 +31,57 @@ public class HistoryService {
         User currentUser = currentUserService.requireUser();
 
         if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-            return historyRepository.findByBranchId(branchId)
+            return historyRepository.findTop200ByBranchIdOrderByCompletedAtDesc(branchId)
                     .stream()
-                    .sorted(this::newestFirst)
                     .map(this::convertToResponse)
                     .toList();
         }
 
         currentUserService.requireBranch(branchId);
-        return historyRepository.findByBranchId(branchId)
+        return historyRepository.findTop200ByBranchIdOrderByCompletedAtDesc(branchId)
                 .stream()
-                .sorted(this::newestFirst)
                 .map(this::convertToResponse)
                 .toList();
     }
 
+    public void recordCompleted(Ticket ticket, Counter counter, User staff) {
+        History history = snapshot(ticket);
+        history.setCounterId(counter.getCounterId());
+        history.setCounterName(counter.getCounterName());
+        history.setStaffId(staff.getUserId());
+        history.setStaffName(staff.getFullName());
+        history.setStartedAt(ticket.getServingStartedAt());
+        history.setStatus("COMPLETED");
+        history.setStaffNote("Hoàn thành phục vụ khách hàng");
+        historyRepository.save(history);
+    }
+
+    public void recordCancelled(Ticket ticket) {
+        History history = snapshot(ticket);
+        history.setStartedAt(ticket.getCreatedAt());
+        history.setStatus("CANCELLED");
+        history.setStaffNote("Khách hàng hủy phiếu trước khi được phục vụ");
+        historyRepository.save(history);
+    }
+
     public List<HistoryResponse> getAllHistory() {
-        return findScopedHistory(currentUserService.requireUser())
+        return findRecentScopedHistory(currentUserService.requireUser())
                 .stream()
-                .sorted(this::newestFirst)
                 .map(this::convertToResponse)
                 .toList();
+    }
+
+    /** Giới hạn lịch sử màn hình ở 200 bản ghi gần nhất để không tải toàn bộ bảng vào bộ nhớ. */
+    private List<History> findRecentScopedHistory(User currentUser) {
+        return switch (currentUser.getRole()) {
+            case "SUPER_ADMIN" -> historyRepository.findTop200ByOrderByCompletedAtDesc();
+            case "BRANCH_ADMIN" -> historyRepository.findTop200ByBranchIdOrderByCompletedAtDesc(
+                    currentUserService.requireBranchId());
+            case "STAFF" -> historyRepository.findTop200ByStaffIdOrderByCompletedAtDesc(currentUser.getUserId());
+            case "CUSTOMER" -> historyRepository.findTop200ByCustomerEmailIgnoreCaseOrderByCompletedAtDesc(
+                    currentUser.getEmail());
+            default -> List.of();
+        };
     }
 
     public List<HistoryResponse> getHistoryByDateRange(LocalDate from, LocalDate to) {
@@ -114,6 +146,23 @@ public class HistoryService {
         response.setStaffName(history.getStaffName());
 
         return response;
+    }
+
+    private History snapshot(Ticket ticket) {
+        History history = new History();
+        history.setTicketId(ticket.getTicketId());
+        history.setBranchId(ticket.getBranch().getBranchId());
+        history.setBranchName(ticket.getBranch().getBranchName());
+        history.setQueueMachineId(ticket.getQueueMachine() == null
+                ? null : ticket.getQueueMachine().getQueueMachineId());
+        history.setQueueMachineName(ticket.getQueueMachine() == null
+                ? null : ticket.getQueueMachine().getMachineName());
+        history.setServiceId(ticket.getService().getServiceId());
+        history.setServiceName(ticket.getService().getServiceName());
+        history.setCustomerEmail(ticket.getCustomerEmail());
+        history.setTicketNumber(ticket.getTicketNumber());
+        history.setCompletedAt(LocalDateTime.now());
+        return history;
     }
 
     private int newestFirst(History left, History right) {

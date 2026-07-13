@@ -22,14 +22,14 @@ public class UserService {
 
         private final UserRepository userRepository;
         private final BranchRepository branchRepository;
-        private final KeycloakService keycloakService;
+        private final KeycloakAdminService keycloakService;
         private final CurrentUserService currentUserService;
         private final PasswordEncoder passwordEncoder;
 
         public UserService(
                         UserRepository userRepository,
                         BranchRepository branchRepository,
-                        KeycloakService keycloakService,
+                        KeycloakAdminService keycloakService,
                         CurrentUserService currentUserService,
                         PasswordEncoder passwordEncoder) {
 
@@ -47,40 +47,26 @@ public class UserService {
                 Branch branch = branchRepository.findById(branchId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
-                return userRepository.findByBranch(branch)
-                                .stream()
-                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
-                                .toList();
+                return userRepository.findByBranchAndStatusNotIgnoreCase(branch, "DELETED");
         }
 
         public List<User> getAllUsers() {
                 User currentUser = currentUserService.requireUser();
                 if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-                        return userRepository.findAll()
-                                        .stream()
-                                        .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
-                                        .toList();
+                        return userRepository.findByStatusNotIgnoreCase("DELETED");
                 }
 
-                return userRepository.findByBranch(currentUser.getBranch())
-                                .stream()
-                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
-                                .toList();
+                return userRepository.findByBranchAndStatusNotIgnoreCase(currentUser.getBranch(), "DELETED");
         }
 
         public List<User> getUsersByRole(String role) {
                 User currentUser = currentUserService.requireUser();
                 if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-                        return userRepository.findByRole(role)
-                                        .stream()
-                                        .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
-                                        .toList();
+                        return userRepository.findByRoleAndStatusNotIgnoreCase(role, "DELETED");
                 }
 
-                return userRepository.findByBranchAndRole(currentUser.getBranch(), role)
-                                .stream()
-                                .filter(user -> !"DELETED".equalsIgnoreCase(user.getStatus()))
-                                .toList();
+                return userRepository.findByBranchAndRoleAndStatusNotIgnoreCase(
+                                currentUser.getBranch(), role, "DELETED");
         }
 
         public User createStaff(CreateStaffRequest request) {

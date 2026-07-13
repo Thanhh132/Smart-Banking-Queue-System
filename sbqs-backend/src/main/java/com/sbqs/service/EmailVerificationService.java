@@ -18,14 +18,14 @@ import java.util.UUID;
 public class EmailVerificationService {
     private final EmailVerificationTokenRepository tokenRepository;
     private final UserRepository userRepository;
-    private final KeycloakService keycloakService;
+    private final KeycloakAdminService keycloakService;
     private final EmailVerificationProperties properties;
     private final AuthenticationMailService mailService;
 
     public EmailVerificationService(
             EmailVerificationTokenRepository tokenRepository,
             UserRepository userRepository,
-            KeycloakService keycloakService,
+            KeycloakAdminService keycloakService,
             EmailVerificationProperties properties,
             AuthenticationMailService mailService) {
         this.tokenRepository = tokenRepository;

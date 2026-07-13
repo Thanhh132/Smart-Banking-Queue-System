@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { API_BASE_URL } from '../config/api.config';
 
 export interface GeocodeResult {
   formattedAddress: string;
@@ -13,7 +14,7 @@ export interface GeocodeResult {
 @Injectable({ providedIn: 'root' })
 export class LocationService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8081/api/locations';
+  private apiUrl = `${inject(API_BASE_URL)}/locations`;
 
   geocode(address: string) {
     const params = new HttpParams().set('address', address);

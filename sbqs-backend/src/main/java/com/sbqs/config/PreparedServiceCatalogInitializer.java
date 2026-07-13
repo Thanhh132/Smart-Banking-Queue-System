@@ -17,6 +17,9 @@ public class PreparedServiceCatalogInitializer {
     private static final String CATALOG_VERSION = "prepared-service-catalog-v2";
     private static final String MANUAL_MAPPING_VERSION = "prepared-service-manual-mapping-v1";
     private static final String CASH_FORM_VERSION = "prepared-service-cash-form-v4";
+    private static final String DEFAULT_PROFILE_VERSION = "prepared-service-default-profile-v1";
+    private static final String DEFAULT_PROFILE_FIELDS =
+            "FULL_NAME,MOBILE_PHONE,PERMANENT_ADDRESS,CONTACT_ADDRESS";
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -60,6 +63,7 @@ public class PreparedServiceCatalogInitializer {
                 }
             }
             synchronizeCashForms();
+            synchronizeDefaultProfileFields();
         });
         Cache servicesCache = cacheManager.getCache("services");
         if (servicesCache != null) servicesCache.clear();
@@ -78,9 +82,25 @@ public class PreparedServiceCatalogInitializer {
             jdbc.queryForObject("""
                     insert into services(service_code, service_name, branch_id, service_type, description,
                                          estimated_time, status, required_customer_fields, form_schema)
-                    values (?, ?, ?, ?, ?, ?, 'ACTIVE', '', ?) returning service_id
-                    """, Long.class, item.code(), item.name(), branchId, item.type(), item.description(), item.minutes(), schema);
+                    values (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?) returning service_id
+                    """, Long.class, item.code(), item.name(), branchId, item.type(), item.description(), item.minutes(),
+                    DEFAULT_PROFILE_FIELDS, schema);
         }
+    }
+
+    private void synchronizeDefaultProfileFields() {
+        Integer synchronizedCount = jdbc.queryForObject(
+                "select count(*) from system_settings where setting_key = ?", Integer.class, DEFAULT_PROFILE_VERSION);
+        if (synchronizedCount != null && synchronizedCount > 0) return;
+
+        jdbc.update("""
+                update services
+                set required_customer_fields = case
+                    when required_customer_fields is null or trim(required_customer_fields) = '' then ?
+                    else concat(?, ',', required_customer_fields)
+                end
+                """, DEFAULT_PROFILE_FIELDS, DEFAULT_PROFILE_FIELDS);
+        jdbc.update("insert into system_settings(setting_key, setting_value) values (?, 'completed')", DEFAULT_PROFILE_VERSION);
     }
 
     private void synchronizeCashForms() {

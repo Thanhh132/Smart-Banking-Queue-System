@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { switchMap } from 'rxjs';
 
 import { QueueMonitor } from '../../../core/models/queue-monitor.model';
 import { FormFieldDefinition, Service } from '../../../core/models/service.model';
@@ -17,7 +18,7 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, DashboardLayout],
   templateUrl: './service-selection.html',
-  styleUrl: './service-selection.scss',
+  styleUrls: ['./service-selection.scss', './service-selection-profile.scss'],
 })
 export class ServiceSelection implements OnInit {
   private readonly serviceOrder = [
@@ -38,14 +39,21 @@ export class ServiceSelection implements OnInit {
   monitor: QueueMonitor | null = null;
   selectedService: Service | null = null;
   transactionForm: FormGroup = this.fb.group({});
+  profileForm: FormGroup = this.fb.group({
+    fullName: [{ value: '', disabled: true }, Validators.required],
+    phone: [{ value: '', disabled: true }, Validators.required],
+    permanentAddress: ['', Validators.required],
+    contactAddress: ['', Validators.required],
+  });
   errorMessage = '';
   isLoading = true;
   isSubmitting = false;
   private profileValues: Record<string, string> = {};
 
   get fields(): FormFieldDefinition[] { return this.selectedService?.formSchema || []; }
-  get sections(): string[] { return [...new Set(this.fields.map((field) => field.section || 'Thông tin giao dịch'))]; }
-  fieldsInSection(section: string): FormFieldDefinition[] { return this.fields.filter((field) => (field.section || 'Thông tin giao dịch') === section); }
+  get visibleFields(): FormFieldDefinition[] { return this.fields.filter((field) => !this.isProfileAlias(field.key)); }
+  get sections(): string[] { return [...new Set(this.visibleFields.map((field) => field.section || 'Thông tin giao dịch'))]; }
+  fieldsInSection(section: string): FormFieldDefinition[] { return this.visibleFields.filter((field) => (field.section || 'Thông tin giao dịch') === section); }
   serviceTypeLabel(type?: string): string {
     const labels: Record<string, string> = { CARD: 'Dịch vụ thẻ', ACCOUNT: 'Tài khoản', CASH: 'Tiền mặt', SAVINGS: 'Tiết kiệm', TRANSFER: 'Chuyển tiền', KYC: 'Cập nhật thông tin' };
     return labels[type || ''] || 'Dịch vụ tại quầy';
@@ -62,6 +70,12 @@ export class ServiceSelection implements OnInit {
     this.accountService.getPaperlessProfile().subscribe({
       next: (profile) => {
         this.profileValues = profile.values || {};
+        this.profileForm.patchValue({
+          fullName: this.profileValues['FULL_NAME'] || '',
+          phone: this.profileValues['MOBILE_PHONE'] || '',
+          permanentAddress: this.profileValues['PERMANENT_ADDRESS'] || '',
+          contactAddress: this.profileValues['CONTACT_ADDRESS'] || '',
+        });
         if (this.selectedService) this.applyProfileDefaults();
       },
     });
@@ -99,8 +113,13 @@ export class ServiceSelection implements OnInit {
   closeForm(): void { this.selectedService = null; this.transactionForm = this.fb.group({}); }
 
   submit(): void {
-    if (!this.selectedService || this.transactionForm.invalid || this.isSubmitting) {
+    if (!this.selectedService || this.transactionForm.invalid || this.profileForm.invalid || this.isSubmitting) {
       this.transactionForm.markAllAsTouched();
+      this.profileForm.markAllAsTouched();
+      if (this.profileForm.invalid) {
+        this.errorMessage = 'Vui lòng bổ sung đầy đủ địa chỉ thường trú và nơi ở hiện tại.';
+        return;
+      }
       const missing = this.fields
         .filter((field) => this.transactionForm.get(field.key)?.invalid)
         .map((field) => field.label);
@@ -111,7 +130,21 @@ export class ServiceSelection implements OnInit {
     }
     const branchId = Number(sessionStorage.getItem('selectedBranchId'));
     this.isSubmitting = true;
-    this.ticketService.createPreparedTicket(branchId, this.selectedService.serviceId, this.transactionForm.getRawValue()).subscribe({
+    const profile = this.profileForm.getRawValue();
+    const values = this.transactionValues(profile);
+    this.accountService.updatePaperlessProfile({
+      serviceId: this.selectedService.serviceId,
+      values: {
+        PERMANENT_ADDRESS: profile.permanentAddress || '',
+        CONTACT_ADDRESS: profile.contactAddress || '',
+      },
+    }).pipe(
+      switchMap(() => this.ticketService.createPreparedTicket(
+        branchId,
+        this.selectedService!.serviceId,
+        values,
+      )),
+    ).subscribe({
       next: (ticket) => { sessionStorage.setItem('currentTicket', JSON.stringify(ticket)); this.router.navigate(['/ticket']); },
       error: (error) => { this.errorMessage = this.apiError.getMessage(error, 'Không thể tạo giao dịch nháp.'); this.isSubmitting = false; this.cdr.detectChanges(); },
     });
@@ -140,6 +173,25 @@ export class ServiceSelection implements OnInit {
       if (control && !control.value && value) control.setValue(value, { emitEvent: false });
     }
     this.cdr.detectChanges();
+  }
+
+  private isProfileAlias(fieldKey: string): boolean {
+    return ['fullname', 'accountholder', 'phone', 'address'].includes(fieldKey.toLowerCase());
+  }
+
+  private transactionValues(profile: Record<string, string | null | undefined>): Record<string, unknown> {
+    const values = { ...this.transactionForm.getRawValue() };
+    const aliases: Record<string, string> = {
+      fullname: profile['fullName'] || '',
+      accountholder: profile['fullName'] || '',
+      phone: profile['phone'] || '',
+      address: profile['permanentAddress'] || '',
+    };
+    for (const field of this.fields) {
+      const value = aliases[field.key.toLowerCase()];
+      if (value !== undefined) values[field.key] = value;
+    }
+    return values;
   }
 
   private profileDefault(fieldKey: string): string {
