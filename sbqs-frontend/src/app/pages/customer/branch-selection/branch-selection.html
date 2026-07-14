@@ -34,7 +34,7 @@
       <div class="location-panel__filters">
         <label>
           Ngân hàng
-          <select [(ngModel)]="selectedBank">
+          <select [(ngModel)]="selectedBank" (ngModelChange)="onBankChange()">
             <option value="ALL">Tất cả ngân hàng</option>
             <option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option>
           </select>
@@ -52,7 +52,12 @@
           <h2>Chi nhánh đang hoạt động</h2>
           <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
         </div>
+        <span class="routing-refresh" *ngIf="customerLocationLabel">
+          {{ isRouting ? 'Đang cập nhật tải...' : 'Tải hàng đợi trực tiếp' }}
+        </span>
       </div>
+
+      <p class="routing-error" *ngIf="routingError">{{ routingError }}</p>
 
       <div *ngIf="branches.length === 0" class="customer-state">
         Đang tải danh sách chi nhánh...
@@ -62,14 +67,39 @@
       </div>
 
       <div class="branch-result-grid" *ngIf="filteredBranches.length > 0">
-        <article class="branch-result" *ngFor="let branch of filteredBranches">
+        <article class="branch-result"
+          *ngFor="let branch of filteredBranches"
+          [class.branch-result--recommended]="recommendationFor(branch.branchId)?.recommended">
+          <div class="recommendation-banner" *ngIf="recommendationFor(branch.branchId)?.recommended">
+            <app-icon name="check-circle" [size]="16" />
+            Đề xuất tối ưu
+          </div>
           <div class="branch-result__heading">
             <span>{{ branch.bankName }}</span>
-            <strong *ngIf="distanceLabel(branch)">{{ distanceLabel(branch) }}</strong>
+            <strong *ngIf="distanceLabel(branch)">
+              <ng-container *ngIf="recommendationFor(branch.branchId) as routing">#{{ routing.rank }} · </ng-container>{{ distanceLabel(branch) }}
+            </strong>
           </div>
           <h3>{{ branch.branchName }}</h3>
           <p>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</p>
           <small>{{ branch.ward || '' }}{{ branch.ward ? ', ' : '' }}{{ branch.district || '-' }}, {{ branch.province || '-' }}</small>
+          <div class="routing-metrics" *ngIf="recommendationFor(branch.branchId) as routing">
+            <div>
+              <span>Đang chờ</span>
+              <strong>{{ routing.waitingTickets }} khách</strong>
+            </div>
+            <div>
+              <span>Quầy hoạt động</span>
+              <strong>{{ routing.activeCounters }}</strong>
+            </div>
+            <div>
+              <span>Chờ dự kiến</span>
+              <strong>~{{ routing.estimatedWaitMinutes }} phút</strong>
+            </div>
+          </div>
+          <p class="routing-explanation" *ngIf="recommendationFor(branch.branchId) as routing">
+            {{ routing.explanation }}
+          </p>
           <div class="branch-result__actions">
             <button type="button" class="btn btn-primary" (click)="selectBranch(branch.branchId)">
               <app-icon name="arrow-right" [size]="16" />

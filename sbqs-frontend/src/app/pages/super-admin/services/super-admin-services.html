@@ -1,0 +1,19 @@
+<app-dashboard-layout title="Danh mục dịch vụ">
+  <main class="catalog-page">
+    <header><div><span>QUẢN TRỊ HỆ THỐNG</span><h1>Danh mục dịch vụ dùng chung</h1><p>Tạo dịch vụ một lần để mọi chi nhánh có thể lựa chọn và cấu hình riêng.</p></div><button type="button" class="btn btn-secondary" (click)="loadCatalog()" [disabled]="isLoading">Làm mới</button></header>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <section class="catalog-grid">
+      <form class="catalog-panel catalog-form" (ngSubmit)="create()">
+        <div class="panel-heading"><span>TẠO MỚI</span><h2>Thêm dịch vụ toàn hệ thống</h2></div>
+        <label><span>Mã dịch vụ</span><input name="serviceCode" [(ngModel)]="form.serviceCode" placeholder="PHYSICAL_CARD_REGISTRATION" required /></label>
+        <label><span>Tên dịch vụ</span><input name="serviceName" [(ngModel)]="form.serviceName" placeholder="Đăng ký làm thẻ vật lý" required /></label>
+        <label><span>Nhóm dịch vụ</span><select name="serviceType" [(ngModel)]="form.serviceType"><option value="CARD">Thẻ</option><option value="ACCOUNT">Tài khoản</option><option value="CASH">Tiền mặt</option><option value="TRANSFER">Chuyển tiền</option><option value="SAVINGS">Tiết kiệm</option><option value="KYC">Định danh</option><option value="BASIC">Khác</option></select></label>
+        <label><span>Thời gian dự kiến (phút)</span><input name="estimatedTime" type="number" min="1" [(ngModel)]="form.estimatedTime" required /></label>
+        <label class="full"><span>Mô tả</span><textarea name="description" rows="4" [(ngModel)]="form.description"></textarea></label>
+        <button type="submit" class="btn btn-primary" [disabled]="isSaving">{{ isSaving ? 'Đang tạo...' : 'Tạo dịch vụ dùng chung' }}</button>
+      </form>
+      <section class="catalog-panel"><div class="panel-heading"><span>DANH SÁCH</span><h2>{{ catalog.length }} dịch vụ có thể chọn</h2></div><div *ngIf="isLoading" class="admin-empty">Đang tải danh mục...</div><div class="catalog-list" *ngIf="!isLoading"><article *ngFor="let item of catalog"><div><strong>{{ item.serviceName }}</strong><small>{{ item.serviceCode }} · {{ item.serviceType }}</small></div><span>{{ item.estimatedTime }} phút</span><p>{{ item.description || 'Chưa có mô tả' }}</p></article></div></section>
+    </section>
+  </main>
+</app-dashboard-layout>

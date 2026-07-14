@@ -38,6 +38,18 @@ public interface QueueMachineServiceMappingRepository
     List<Services> findActiveMappedServicesByBranchId(@Param("branchId") Long branchId);
 
     @Query("""
+            select distinct mapping.queueMachine.branch.branchId
+            from QueueMachineServiceMapping mapping
+            where mapping.queueMachine.branch.branchId in :branchIds
+              and upper(mapping.queueMachine.status) = 'ACTIVE'
+              and upper(mapping.service.status) = 'ACTIVE'
+              and upper(mapping.service.serviceCode) = upper(:serviceCode)
+            """)
+    List<Long> findBranchIdsProvidingServiceCode(
+            @Param("branchIds") List<Long> branchIds,
+            @Param("serviceCode") String serviceCode);
+
+    @Query("""
             select mapping
             from QueueMachineServiceMapping mapping
             where mapping.queueMachine.branch.branchId = :branchId

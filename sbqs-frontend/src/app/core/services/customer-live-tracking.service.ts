@@ -24,6 +24,10 @@ export class CustomerLiveTrackingService {
   readonly notice = signal<LiveTicketNotice | null>(null);
   readonly lastUpdatedAt = signal<Date | null>(null);
 
+  /**
+   * Đăng ký một consumer theo dõi phiếu. Bộ đếm giúp nhiều component dùng chung
+   * service mà không tạo nhiều vòng polling song song.
+   */
   start(): void {
     this.consumers++;
     if (this.pollingSubscription) {
@@ -42,6 +46,7 @@ export class CustomerLiveTrackingService {
       });
   }
 
+  /** Chỉ dừng polling và xóa state khi consumer cuối cùng đã rời màn hình. */
   stop(): void {
     this.consumers = Math.max(0, this.consumers - 1);
     if (this.consumers > 0) {
@@ -66,6 +71,7 @@ export class CustomerLiveTrackingService {
     sessionStorage.removeItem('sbqs:last-live-notice');
   }
 
+  /** Ưu tiên ticket cache để giảm một API call; cache hỏng sẽ tự phục hồi từ server. */
   private loadTracking() {
     const cachedTicket = this.readCachedTicket();
     if (cachedTicket?.ticketId) {
@@ -93,6 +99,10 @@ export class CustomerLiveTrackingService {
     );
   }
 
+  /**
+   * So sánh snapshot mới với trạng thái trước đó để chỉ phát thông báo tại thời điểm
+   * chuyển trạng thái hoặc khi số người phía trước vừa giảm xuống ngưỡng cảnh báo.
+   */
   private applyTracking(tracking: TicketTracking): void {
     if (this.previousTicketId !== tracking.ticketId) {
       this.previousTicketId = tracking.ticketId;
@@ -147,6 +157,7 @@ export class CustomerLiveTrackingService {
     this.previousPeopleAhead = tracking.peopleAhead;
   }
 
+  /** Chống hiện lại cùng một thông báo khi component bị dựng lại trong cùng tab. */
   private showNotice(notice: LiveTicketNotice): void {
     if (sessionStorage.getItem('sbqs:last-live-notice') === notice.key) {
       return;

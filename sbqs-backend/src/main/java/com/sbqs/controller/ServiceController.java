@@ -25,6 +25,10 @@ public class ServiceController {
         this.serviceDtoMapper = serviceDtoMapper;
     }
 
+    /**
+     * Lọc danh mục theo chi nhánh/loại dịch vụ; mappedOnly chỉ trả các dịch vụ đã
+     * được gắn vào máy bốc số và vì vậy khách hàng có thể lấy số thực tế.
+     */
     @GetMapping
     public ResponseEntity<List<ServiceResponse>> getServices(
             @RequestParam(required = false) Long branchId,
@@ -34,6 +38,7 @@ public class ServiceController {
                 .stream().map(serviceDtoMapper::toResponse).toList());
     }
 
+    /** Tạo dịch vụ kèm schema biểu mẫu giao dịch sau khi DTO và nghiệp vụ được kiểm tra. */
     @PostMapping
     public ResponseEntity<ServiceResponse> createService(
             @Valid @RequestBody ServiceRequest request) {

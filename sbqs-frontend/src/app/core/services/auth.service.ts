@@ -30,6 +30,7 @@ export class AuthService {
     );
   }
 
+  /** Đổi refresh token lấy phiên mới và giữ nguyên ngữ cảnh chi nhánh đang chọn. */
   refresh() {
     const refreshToken = sessionStorage.getItem('refreshToken');
 
@@ -74,6 +75,10 @@ export class AuthService {
     return this.http.post<void>(`${this.apiUrl}/resend-verification`, { email });
   }
 
+  /**
+   * Xóa dữ liệu nhạy cảm ở trình duyệt ngay lập tức; lỗi thu hồi token phía server
+   * không được giữ người dùng lại trong một phiên local đã yêu cầu đăng xuất.
+   */
   logout(): Observable<void> {
     const refreshToken = sessionStorage.getItem('refreshToken');
     this.clearSession();
@@ -91,6 +96,10 @@ export class AuthService {
     return sessionStorage.getItem('accessToken') || '';
   }
 
+  /**
+   * Chuẩn hóa response của Keycloak và fallback vào cùng một sessionStorage.
+   * Khi refresh, selectedBranchId của CUSTOMER được giữ nếu token không mang branchId.
+   */
   private saveSession(response: LoginResponse, clearFirst: boolean): void {
     const selectedBranchId = sessionStorage.getItem('selectedBranchId');
 
@@ -116,6 +125,7 @@ export class AuthService {
     }
   }
 
+  /** Xóa cả token lẫn dữ liệu hành trình khách hàng để tài khoản kế tiếp không dùng nhầm. */
   private clearSession(): void {
     sessionStorage.removeItem('accessToken');
     sessionStorage.removeItem('refreshToken');
@@ -150,6 +160,7 @@ export class AuthService {
     return sessionStorage.getItem('authenticationSource') === 'FALLBACK';
   }
 
+  /** Ánh xạ role thành landing page dùng chung cho login, guard và redirect. */
   getHomeRoute(role: string): string {
     switch (role) {
       case 'SUPER_ADMIN':

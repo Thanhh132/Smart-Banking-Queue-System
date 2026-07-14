@@ -56,12 +56,7 @@ public class PreparedServiceCatalogInitializer {
             }
             jdbc.update("update tickets set status = 'CANCELLED' where service_id is null and status in ('WAITING', 'SERVING')");
 
-            List<Long> branchIds = jdbc.queryForList("select branch_id from branches", Long.class);
-            for (Long branchId : branchIds) {
-                for (CatalogItem item : catalog()) {
-                    ensureService(branchId, item);
-                }
-            }
+            for (CatalogItem item : catalog()) ensureCatalogItem(item);
             synchronizeCashForms();
             synchronizeDefaultProfileFields();
         });
@@ -69,9 +64,9 @@ public class PreparedServiceCatalogInitializer {
         if (servicesCache != null) servicesCache.clear();
     }
 
-    private void ensureService(Long branchId, CatalogItem item) {
+    private void ensureCatalogItem(CatalogItem item) {
         List<Long> ids = jdbc.queryForList(
-                "select service_id from services where branch_id = ? and service_code = ?", Long.class, branchId, item.code());
+                "select catalog_id from service_catalog where service_code = ?", Long.class, item.code());
         if (ids.isEmpty()) {
             String schema;
             try {
@@ -80,11 +75,10 @@ public class PreparedServiceCatalogInitializer {
                 throw new IllegalStateException("Khong the khoi tao bieu mau dich vu", exception);
             }
             jdbc.queryForObject("""
-                    insert into services(service_code, service_name, branch_id, service_type, description,
-                                         estimated_time, status, required_customer_fields, form_schema)
-                    values (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?) returning service_id
-                    """, Long.class, item.code(), item.name(), branchId, item.type(), item.description(), item.minutes(),
-                    DEFAULT_PROFILE_FIELDS, schema);
+                    insert into service_catalog(service_code, service_name, service_type, description,
+                                                estimated_time, status, form_schema)
+                    values (?, ?, ?, ?, ?, 'ACTIVE', ?) returning catalog_id
+                    """, Long.class, item.code(), item.name(), item.type(), item.description(), item.minutes(), schema);
         }
     }
 

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Branch } from '../models/branch.model';
+import { Branch, SmartBranchRecommendation } from '../models/branch.model';
 import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
@@ -16,6 +16,15 @@ export class BranchService {
 
   getBranches(): Observable<Branch[]> {
     return this.http.get<Branch[]>(this.apiUrl);
+  }
+
+  getSmartRecommendations(bankName: string, latitude: number, longitude: number, serviceCode?: string) {
+    let params = new HttpParams()
+      .set('bankName', bankName)
+      .set('latitude', latitude)
+      .set('longitude', longitude);
+    if (serviceCode) params = params.set('serviceCode', serviceCode);
+    return this.http.get<SmartBranchRecommendation[]>(`${this.apiUrl}/recommendations`, { params });
   }
 
   createBranch(payload: any): Observable<Branch> {

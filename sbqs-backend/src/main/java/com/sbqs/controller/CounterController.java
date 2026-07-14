@@ -55,11 +55,13 @@ public class CounterController {
         return ResponseEntity.ok(counterService.updateCounter(id, counter));
     }
 
+    /** Mở ca làm việc và khóa quầy cho đúng nhân viên hiện tại. */
     @PostMapping("/{id}/assign")
     public ResponseEntity<Counter> assignCounter(@PathVariable Long id) {
         return ResponseEntity.ok(counterService.assignCounter(id));
     }
 
+    /** Chỉ kết thúc ca khi nhân viên đang sở hữu quầy và không còn phiếu đang phục vụ. */
     @PostMapping("/{id}/unassign")
     public ResponseEntity<Counter> unassignCounter(@PathVariable Long id) {
         return ResponseEntity.ok(counterService.unassignCounter(id));

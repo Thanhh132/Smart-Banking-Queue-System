@@ -55,6 +55,10 @@ public class AuthController {
                 registrationService.register(request));
     }
 
+    /**
+     * Điều phối toàn bộ lớp bảo vệ đăng nhập: rate limit theo email/IP, gọi cơ chế
+     * xác thực chính hoặc fallback và ghi audit cho cả trường hợp thành công lẫn thất bại.
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
             @Valid @RequestBody LoginRequest request,
@@ -98,6 +102,7 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    /** Luôn trả ACCEPTED để không làm lộ email nào đang tồn tại trong hệ thống. */
     @PostMapping("/forgot-password")
     public ResponseEntity<Void> forgotPassword(
             @RequestBody ForgotPasswordRequest request) {

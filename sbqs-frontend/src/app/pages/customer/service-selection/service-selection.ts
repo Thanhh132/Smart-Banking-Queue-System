@@ -91,6 +91,10 @@ export class ServiceSelection implements OnInit {
     });
   }
 
+  /**
+   * Dựng Reactive Form từ schema do backend cấu hình và chuyển về phiếu hiện tại nếu
+   * khách đã có một lượt WAITING/SERVING, tránh tạo hành trình cấp số song song.
+   */
   selectService(service: Service): void {
     const current = sessionStorage.getItem('currentTicket');
     if (current) {
@@ -112,6 +116,10 @@ export class ServiceSelection implements OnInit {
 
   closeForm(): void { this.selectedService = null; this.transactionForm = this.fb.group({}); }
 
+  /**
+   * Lưu phần hồ sơ dùng chung trước, rồi mới tạo giao dịch nháp và cấp số. switchMap
+   * bảo đảm bước cấp phiếu không chạy nếu cập nhật hồ sơ thất bại.
+   */
   submit(): void {
     if (!this.selectedService || this.transactionForm.invalid || this.profileForm.invalid || this.isSubmitting) {
       this.transactionForm.markAllAsTouched();
@@ -179,6 +187,7 @@ export class ServiceSelection implements OnInit {
     return ['fullname', 'accountholder', 'phone', 'address'].includes(fieldKey.toLowerCase());
   }
 
+  /** Ghép các alias ẩn trong schema với hồ sơ thật trước khi gửi dữ liệu lên backend. */
   private transactionValues(profile: Record<string, string | null | undefined>): Record<string, unknown> {
     const values = { ...this.transactionForm.getRawValue() };
     const aliases: Record<string, string> = {

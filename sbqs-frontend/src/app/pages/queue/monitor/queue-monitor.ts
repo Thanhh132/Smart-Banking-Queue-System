@@ -63,6 +63,7 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
     return 'counter-card--inactive';
   }
 
+  /** Tải ngay lần đầu và tạm ngừng refresh khi tab bị ẩn. */
   ngOnInit(): void {
     this.loadMonitor();
 
@@ -79,6 +80,7 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Luôn lấy branchId từ phiên chọn chi nhánh để không hiển thị nhầm hàng đợi. */
   loadMonitor(): void {
     const branchId = sessionStorage.getItem('selectedBranchId');
 

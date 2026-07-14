@@ -4,6 +4,7 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.QueueMachine;
 import com.sbqs.entity.Services;
 import com.sbqs.entity.Ticket;
+import com.sbqs.dto.BranchQueueLoad;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +27,19 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     long countByQueueMachineQueueMachineIdAndStatus(
             Long queueMachineId,
             String status);
+
+    @Query("""
+            select new com.sbqs.dto.BranchQueueLoad(
+                t.branch.branchId,
+                count(t),
+                coalesce(sum(coalesce(s.estimatedTime, 15)), 0))
+            from Ticket t
+            left join t.service s
+            where t.branch.branchId in :branchIds
+              and t.status = 'WAITING'
+            group by t.branch.branchId
+            """)
+    List<BranchQueueLoad> findWaitingLoadsByBranchIds(@Param("branchIds") List<Long> branchIds);
 
     Ticket findTopByOrderByTicketIdDesc();
 

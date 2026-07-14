@@ -84,6 +84,7 @@ public class HistoryService {
         };
     }
 
+    /** Lọc theo ngày nhưng vẫn áp dụng scope riêng của SUPER_ADMIN, admin, staff và customer. */
     public List<HistoryResponse> getHistoryByDateRange(LocalDate from, LocalDate to) {
         User currentUser = currentUserService.requireUser();
         LocalDateTime fromDateTime = from.atStartOfDay();
@@ -148,6 +149,10 @@ public class HistoryService {
         return response;
     }
 
+    /**
+     * Sao chép tên và mã liên quan thay vì chỉ giữ khóa ngoại, bảo toàn nội dung báo
+     * cáo ngay cả khi chi nhánh, dịch vụ hoặc máy bốc số được đổi tên sau này.
+     */
     private History snapshot(Ticket ticket) {
         History history = new History();
         history.setTicketId(ticket.getTicketId());

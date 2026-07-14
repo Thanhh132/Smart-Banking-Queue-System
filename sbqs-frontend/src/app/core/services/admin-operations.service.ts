@@ -26,6 +26,15 @@ export interface CounterPayload {
   } | null;
 }
 
+export interface BranchHours {
+  dayOfWeek: number;
+  closed: boolean;
+  morningOpen: string | null;
+  morningClose: string | null;
+  afternoonOpen: string | null;
+  afternoonClose: string | null;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -35,6 +44,15 @@ export class AdminOperationsService {
 
   private queueMachineApi = `${this.apiBaseUrl}/queue-machines`;
   private counterApi = `${this.apiBaseUrl}/counters`;
+  private branchHoursApi = `${this.apiBaseUrl}/branch-hours`;
+
+  getBranchHours(branchId: number): Observable<BranchHours[]> {
+    return this.http.get<BranchHours[]>(`${this.branchHoursApi}/${branchId}`);
+  }
+
+  updateBranchHours(hours: BranchHours[]): Observable<BranchHours[]> {
+    return this.http.put<BranchHours[]>(`${this.branchHoursApi}/current`, hours);
+  }
 
   getQueueMachines(): Observable<any[]> {
     return this.http.get<any[]>(this.queueMachineApi);

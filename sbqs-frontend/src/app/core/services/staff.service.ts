@@ -68,4 +68,12 @@ export class StaffService {
       {}
     );
   }
+
+  verifyDelegation(referenceCode: string, delegateIdentityNumber: string) {
+    return this.http.post<any>(`${this.apiBaseUrl}/delegations/verify`, { referenceCode, delegateIdentityNumber });
+  }
+
+  markDelegationUsed(delegationId: number) {
+    return this.http.post<any>(`${this.apiBaseUrl}/delegations/${delegationId}/use`, {});
+  }
 }

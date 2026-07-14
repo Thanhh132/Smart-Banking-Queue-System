@@ -1,0 +1,52 @@
+<app-dashboard-layout title="Ủy quyền giao dịch">
+  <main class="delegation-page">
+    <header class="delegation-hero"><div><span>ỦY QUYỀN GIAO DỊCH SỐ</span><h1>Giao dịch tại quầy thay chủ tài khoản</h1><p>Tạo hồ sơ có phạm vi, thời hạn và người thực hiện rõ ràng.</p></div><div class="security-note"><strong>CCCD được bảo vệ</strong><small>Chỉ lưu bản mã hóa và 4 số cuối</small></div></header>
+    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div><div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <nav class="delegation-steps"><span class="active"><b>1</b> Nghiệp vụ</span><span [class.active]="recommendations.length || selectedBranch"><b>2</b> Chi nhánh đề xuất</span><span [class.active]="selectedBranch"><b>3</b> Người được ủy quyền</span></nav>
+
+    <section class="delegation-workspace">
+      <div class="delegation-main">
+        <section class="flow-card">
+          <div class="flow-heading"><div><span>BƯỚC 1</span><h2>Chọn việc cần làm thay</h2></div></div>
+          <label class="service-select"><span>Nghiệp vụ ngân hàng</span><select [(ngModel)]="selectedCatalogId" (ngModelChange)="serviceChanged()"><option [ngValue]="null">Chọn nghiệp vụ cần ủy quyền</option><option *ngFor="let item of catalog" [ngValue]="item.catalogId">{{ item.serviceName }}</option></select></label>
+          <div class="policy-note policy-note--blocked" *ngIf="selectedCatalog && !canDelegateSelected"><strong>Nghiệp vụ yêu cầu chính chủ</strong><p>Mở tài khoản, phát hành thẻ mới, ngân hàng số, cập nhật định danh/chữ ký và thẻ tín dụng cần chính chủ hoặc người đại diện hợp pháp xác minh. Ủy quyền thông thường không áp dụng.</p></div>
+          <div class="policy-note" *ngIf="canDelegateSelected"><strong>Ủy quyền thực hiện giao dịch, không chỉ bốc số</strong><p>Người được ủy quyền có thể làm thủ tục trong đúng phạm vi bạn ghi, sau khi ngân hàng kiểm tra hồ sơ và CCCD bản gốc.</p></div>
+        </section>
+
+        <section class="flow-card" *ngIf="canDelegateSelected">
+          <div class="flow-heading"><div><span>BƯỚC 2</span><h2>Chi nhánh phù hợp</h2><p>Xếp hạng theo vị trí, giờ mở cửa và hàng đợi hiện tại.</p></div><button type="button" class="btn btn-secondary btn-sm" (click)="useCurrentLocation()" [disabled]="isLocating">{{ isLocating ? 'Đang định vị...' : 'Dùng vị trí hiện tại' }}</button></div>
+          <div class="routing-loading" *ngIf="isRouting">Đang tìm chi nhánh đang mở và có dịch vụ...</div>
+          <div class="branch-options" *ngIf="!selectedBranch && recommendations.length">
+            <article *ngFor="let branch of recommendations" [class.recommended]="branch.recommended"><div class="branch-rank"><span *ngIf="branch.recommended">ĐỀ XUẤT</span><small>#{{ branch.rank }}</small></div><h3>{{ branch.branchName }}</h3><p>{{ branch.address }}</p><div class="branch-metrics"><span><b>{{ branch.distanceKm }} km</b> khoảng cách</span><span><b>~{{ branch.estimatedWaitMinutes }} phút</b> chờ dự kiến</span><span><b>{{ branch.activeCounters }}</b> quầy mở</span></div><div class="branch-actions"><button type="button" class="btn btn-primary btn-sm" (click)="selectBranch(branch)">Chọn chi nhánh</button><a class="btn btn-secondary btn-sm" [href]="mapUrl(branch)" target="_blank" rel="noopener">Bản đồ</a></div></article>
+          </div>
+          <div class="selected-branch" *ngIf="selectedBranch"><div><span>ĐÃ CHỌN</span><strong>{{ selectedBranch.branchName }}</strong><small>{{ selectedBranch.distanceKm }} km · chờ khoảng {{ selectedBranch.estimatedWaitMinutes }} phút</small></div><button type="button" class="btn btn-secondary btn-sm" (click)="changeBranch()">Đổi chi nhánh</button></div>
+          <button *ngIf="!recommendations.length && !isRouting" type="button" class="location-cta" (click)="useCurrentLocation()"><strong>⌖ Tìm chi nhánh tự động</strong><span>Cho phép vị trí để hệ thống chọn nơi phù hợp, không cần dò thủ công.</span></button>
+        </section>
+
+        <form #delegationForm="ngForm" class="flow-card compact-form" *ngIf="selectedBranch" (ngSubmit)="create()">
+          <div class="flow-heading"><div><span>BƯỚC 3</span><h2>Thông tin người được ủy quyền</h2></div></div>
+          <strong class="full">Thông tin định danh trên CCCD</strong>
+          <label>Họ tên đầy đủ<input name="delegateName" [(ngModel)]="form.delegateName" required maxlength="150" /></label>
+          <label>Số điện thoại<input name="delegatePhone" [(ngModel)]="form.delegatePhone" inputmode="tel" pattern="(0|\+84)[0-9]{9}" required /></label>
+          <label>Ngày sinh<input name="delegateDateOfBirth" type="date" [max]="today" [(ngModel)]="form.delegateDateOfBirth" required /></label>
+          <label>Mối quan hệ<input name="relationship" [(ngModel)]="form.relationship" placeholder="Con, người thân, kế toán..." required /></label>
+          <label>Số CCCD (12 chữ số)
+            <input #identityNumber="ngModel" name="identity" [(ngModel)]="form.delegateIdentityNumber" inputmode="numeric" pattern="\d{12}" minlength="12" maxlength="12" placeholder="Ví dụ: 074200006555" required />
+            <small class="field-error" *ngIf="identityNumber.invalid && (identityNumber.dirty || identityNumber.touched)">CCCD phải gồm đúng 12 chữ số, không chứa chữ hoặc khoảng trắng.</small>
+          </label>
+          <label>Ngày cấp CCCD<input name="identityIssueDate" type="date" [max]="today" [(ngModel)]="form.identityIssueDate" required /></label>
+          <label>Ngày hết hạn CCCD<input name="identityExpiryDate" type="date" [min]="today" [(ngModel)]="form.identityExpiryDate" required /><small>Đây là ngày in trên CCCD; có thể chọn năm 2028 hoặc xa hơn.</small></label>
+          <label>Nơi cấp CCCD<input name="identityIssuePlace" [(ngModel)]="form.identityIssuePlace" maxlength="150" required /></label>
+          <strong class="full">Nội dung và thời hạn lệnh ủy quyền</strong>
+          <label class="full">Lệnh ủy quyền có hiệu lực đến<input name="validUntil" type="datetime-local" [min]="minValidUntil" [max]="maxValidUntil" [(ngModel)]="form.validUntil" required /><small>Đây là hạn dùng của mã ủy quyền, tối đa 30 ngày kể từ lúc tạo.</small></label>
+          <label class="full">Phạm vi được phép thực hiện<textarea name="scope" rows="3" [(ngModel)]="form.transactionScope" minlength="10" maxlength="500" placeholder="Ví dụ: Nộp 20.000.000đ vào tài khoản 0123..., không được thực hiện giao dịch khác" required></textarea><small>Ghi cụ thể số tiền, tài khoản và nội dung để giảm rủi ro.</small></label>
+          <label class="terms full"><input type="checkbox" name="terms" [(ngModel)]="form.acceptedTerms" required /><span>Tôi xác nhận nội dung chính xác và hiểu ngân hàng có thể yêu cầu thêm văn bản/chữ ký hoặc từ chối nếu nghiệp vụ không đủ điều kiện.</span></label>
+          <button type="submit" class="btn btn-primary full" [disabled]="isSaving || delegationForm.invalid">{{ isSaving ? 'Đang tạo...' : 'Xác nhận và tạo mã ủy quyền' }}</button>
+        </form>
+      </div>
+
+      <aside class="delegation-history"><div class="history-heading"><div><span>HỒ SƠ</span><h2>Ủy quyền của tôi</h2></div><b>{{ delegations.length }}</b></div><div *ngIf="!delegations.length" class="empty-state"><strong>Chưa có ủy quyền</strong><span>Hồ sơ sau khi tạo sẽ xuất hiện tại đây.</span></div><article class="delegation-item" *ngFor="let item of delegations"><div><strong>{{ item.referenceCode }}</strong><span [attr.data-status]="item.status">{{ statusLabel(item.status) }}</span></div><h3>{{ item.delegateName }} · {{ item.maskedIdentity }}</h3><p>{{ item.serviceName }}</p><small>{{ item.branchName }}<br/>Đến {{ item.validUntil | date:'dd/MM/yyyy HH:mm' }}</small><button *ngIf="item.status === 'ACTIVE'" type="button" class="text-danger" (click)="cancel(item)">Hủy ủy quyền</button></article></aside>
+    </section>
+  </main>
+</app-dashboard-layout>

@@ -6,6 +6,7 @@ import { forkJoin } from 'rxjs';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import {
   AdminOperationsService,
+  BranchHours,
   CounterPayload,
   QueueMachinePayload,
 } from '../../../core/services/admin-operations.service';
@@ -55,6 +56,9 @@ export class AdminOperations implements OnInit {
   updatingCounterId: number | null = null;
   successMessage = '';
   errorMessage = '';
+  isSavingHours = false;
+  branchHours: BranchHours[] = [];
+  readonly dayNames = ['', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
 
   get machineFormTitle(): string {
     return this.editingMachineId ? 'Sửa máy bốc số' : 'Thêm máy bốc số';
@@ -77,6 +81,37 @@ export class AdminOperations implements OnInit {
     }
 
     this.loadOperations();
+    this.loadBranchHours();
+  }
+
+  loadBranchHours(): void {
+    if (!this.ensureBranch()) return;
+    this.operationsService.getBranchHours(this.branchId).subscribe({
+      next: (hours) => { this.branchHours = hours; this.cdr.detectChanges(); },
+      error: (err) => { this.errorMessage = this.apiError.getMessage(err, 'Không tải được giờ làm việc.'); this.cdr.detectChanges(); },
+    });
+  }
+
+  saveBranchHours(): void {
+    this.isSavingHours = true;
+    this.operationsService.updateBranchHours(this.branchHours).subscribe({
+      next: (hours) => { this.branchHours = hours; this.isSavingHours = false; this.successMessage = 'Đã cập nhật giờ phục vụ của chi nhánh.'; this.cdr.detectChanges(); },
+      error: (err) => { this.errorMessage = this.apiError.getMessage(err, 'Không lưu được giờ làm việc.'); this.isSavingHours = false; this.cdr.detectChanges(); },
+    });
+  }
+
+  applyWeekdayTemplate(): void {
+    this.branchHours = this.branchHours.map((hours) => hours.dayOfWeek <= 5
+      ? { ...hours, closed: false, morningOpen: '08:00', morningClose: '12:00', afternoonOpen: '13:00', afternoonClose: '17:00' }
+      : { ...hours, closed: true, morningOpen: null, morningClose: null, afternoonOpen: null, afternoonClose: null });
+  }
+
+  toggleDay(hours: BranchHours): void {
+    hours.closed = !hours.closed;
+    if (!hours.closed && !hours.morningOpen && !hours.afternoonOpen) {
+      hours.morningOpen = '08:00'; hours.morningClose = '12:00';
+      hours.afternoonOpen = '13:00'; hours.afternoonClose = '17:00';
+    }
   }
 
   loadOperations(): void {

@@ -12,3 +12,17 @@ export interface Branch {
   latitude?: number;
   longitude?: number;
 }
+
+export interface SmartBranchRecommendation extends Branch {
+  rank: number;
+  recommended: boolean;
+  distanceKm: number;
+  waitingTickets: number;
+  activeCounters: number;
+  estimatedWaitMinutes: number;
+  distanceScore: number;
+  waitScore: number;
+  routingScore: number;
+  explanation: string;
+  calculatedAt: string;
+}

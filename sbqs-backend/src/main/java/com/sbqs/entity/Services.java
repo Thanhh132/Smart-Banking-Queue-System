@@ -42,6 +42,10 @@ public class Services {
     @JoinColumn(name = "branch_id", nullable = false)
     private Branch branch;
 
+    @ManyToOne
+    @JoinColumn(name = "catalog_id")
+    private ServiceCatalog catalog;
+
     @NotBlank(message = "Loại dịch vụ không được để trống")
     @Column(name = "service_type", nullable = false)
     private String serviceType = "BASIC";

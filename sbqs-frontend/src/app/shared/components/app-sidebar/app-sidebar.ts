@@ -26,6 +26,7 @@ export class AppSidebar {
     SUPER_ADMIN: [
       { label: 'Tổng quan', icon: 'dashboard', route: '/super-admin' },
       { label: 'Chi nhánh', icon: 'building', route: '/super-admin/branches' },
+      { label: 'Danh mục dịch vụ', icon: 'list-checks', route: '/super-admin/services' },
     ],
     BRANCH_ADMIN: [
       { label: 'Tổng quan', icon: 'dashboard', route: '/admin' },
@@ -43,6 +44,7 @@ export class AppSidebar {
       { label: 'Tổng quan', icon: 'dashboard', route: '/customer' },
       { label: 'Lấy số', icon: 'building', route: '/branches' },
       { label: 'Phiếu của tôi', icon: 'ticket', route: '/ticket' },
+      { label: 'Ủy quyền giao dịch', icon: 'file-text', route: '/delegations' },
     ],
   };
 

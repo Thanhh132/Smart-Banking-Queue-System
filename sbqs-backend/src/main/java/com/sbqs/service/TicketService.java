@@ -45,6 +45,7 @@ public class TicketService {
     private final TicketWorkflowService ticketWorkflowService;
     private final DomainEventPublisher eventPublisher;
     private final PreparedTransactionService preparedTransactionService;
+    private final BranchOperatingHoursService operatingHoursService;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -58,7 +59,8 @@ public class TicketService {
             CounterSessionRepository counterSessionRepository,
             TicketWorkflowService ticketWorkflowService,
             DomainEventPublisher eventPublisher,
-            PreparedTransactionService preparedTransactionService) {
+            PreparedTransactionService preparedTransactionService,
+            BranchOperatingHoursService operatingHoursService) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -72,8 +74,13 @@ public class TicketService {
         this.ticketWorkflowService = ticketWorkflowService;
         this.eventPublisher = eventPublisher;
         this.preparedTransactionService = preparedTransactionService;
+        this.operatingHoursService = operatingHoursService;
     }
 
+    /**
+     * Luồng paperless: kiểm tra dữ liệu theo schema trước, sau đó cấp phiếu và lưu
+     * snapshot biểu mẫu để thay đổi cấu hình dịch vụ về sau không làm sai hồ sơ cũ.
+     */
     @Transactional
     public Ticket createPreparedTicket(CreatePreparedTicketRequest request) {
         Services service = serviceRepository.findById(request.serviceId())
@@ -125,6 +132,7 @@ public class TicketService {
 
         Branch branch = branchRepository.findById(ticket.getBranch().getBranchId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
+        operatingHoursService.requireOpen(branch.getBranchId());
         Services service = serviceRepository.findById(ticket.getService().getServiceId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
         User customer = currentUserService.requireUser();

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseSchemaInitializer {
-    private static final String SCHEMA_VERSION = "database-schema-v3";
+    private static final String SCHEMA_VERSION = "database-schema-v7-delegation-identity-expiry";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -35,6 +35,67 @@ public class DatabaseSchemaInitializer {
         }
 
         createCoreTablesIfMissing();
+
+        jdbcTemplate.execute("""
+                create table if not exists service_catalog (
+                    catalog_id bigserial primary key,
+                    service_code varchar(255) not null unique,
+                    service_name varchar(255) not null unique,
+                    service_type varchar(255) not null default 'BASIC',
+                    description text,
+                    estimated_time integer not null default 15,
+                    status varchar(255) not null default 'ACTIVE',
+                    form_schema text not null default '[]'
+                )
+                """);
+        executeIfPossible("alter table services add column if not exists catalog_id bigint references service_catalog(catalog_id)");
+
+        jdbcTemplate.execute("""
+                create table if not exists branch_operating_hours (
+                    operating_hours_id bigserial primary key,
+                    branch_id bigint not null references branches(branch_id) on delete cascade,
+                    day_of_week integer not null,
+                    closed boolean not null default false,
+                    morning_open time,
+                    morning_close time,
+                    afternoon_open time,
+                    afternoon_close time,
+                    constraint uk_branch_hours_day unique(branch_id, day_of_week),
+                    constraint ck_branch_hours_day check(day_of_week between 1 and 7)
+                )
+                """);
+        jdbcTemplate.execute("""
+                create table if not exists digital_delegations (
+                    delegation_id bigserial primary key,
+                    reference_code varchar(20) not null unique,
+                    owner_id bigint not null references users(user_id),
+                    branch_id bigint not null references branches(branch_id),
+                    service_id bigint not null references services(service_id),
+                    delegate_name varchar(150) not null,
+                    delegate_identity_hash varchar(100) not null,
+                    delegate_identity_last4 varchar(4) not null,
+                    delegate_date_of_birth date,
+                    delegate_phone varchar(15),
+                    identity_issue_date date,
+                    identity_expiry_date date,
+                    identity_issue_place varchar(150),
+                    relationship varchar(100) not null,
+                    transaction_scope varchar(500) not null,
+                    valid_from timestamp not null,
+                    valid_until timestamp not null,
+                    status varchar(30) not null,
+                    created_at timestamp not null,
+                    verified_at timestamp,
+                    used_at timestamp,
+                    verified_by bigint references users(user_id)
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_delegations_owner_created on digital_delegations(owner_id, created_at desc)");
+        executeIfPossible("alter table digital_delegations add column if not exists delegate_date_of_birth date");
+        executeIfPossible("alter table digital_delegations add column if not exists delegate_phone varchar(15)");
+        executeIfPossible("alter table digital_delegations add column if not exists identity_issue_date date");
+        executeIfPossible("alter table digital_delegations add column if not exists identity_expiry_date date");
+        executeIfPossible("alter table digital_delegations add column if not exists identity_issue_place varchar(150)");
 
         executeIfPossible("drop table if exists service_form_revisions");
         executeIfPossible("alter table services drop column if exists form_version");

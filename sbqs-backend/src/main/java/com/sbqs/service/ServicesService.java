@@ -10,6 +10,7 @@ import com.sbqs.repository.AppointmentRepository;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
+import com.sbqs.repository.ServiceCatalogRepository;
 import com.sbqs.repository.TicketRepository;
 import com.sbqs.mapper.ServiceDtoMapper;
 import jakarta.transaction.Transactional;
@@ -27,6 +28,7 @@ import com.sbqs.entity.FormFieldDefinition;
 public class ServicesService {
 
     private final ServiceRepository serviceRepository;
+    private final ServiceCatalogRepository catalogRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
     private final TicketRepository ticketRepository;
     private final AppointmentRepository appointmentRepository;
@@ -37,6 +39,7 @@ public class ServicesService {
 
     public ServicesService(
             ServiceRepository serviceRepository,
+            ServiceCatalogRepository catalogRepository,
             QueueMachineServiceMappingRepository mappingRepository,
             TicketRepository ticketRepository,
             AppointmentRepository appointmentRepository,
@@ -46,6 +49,7 @@ public class ServicesService {
             DomainEventPublisher eventPublisher) {
 
         this.serviceRepository = serviceRepository;
+        this.catalogRepository = catalogRepository;
         this.mappingRepository = mappingRepository;
         this.ticketRepository = ticketRepository;
         this.appointmentRepository = appointmentRepository;
@@ -109,6 +113,12 @@ public class ServicesService {
         service.setRequiredCustomerFields(CustomerProfilePolicy.includeDefaults(service.getRequiredCustomerFields()));
         currentUserService.requireBranch(service.getBranch().getBranchId());
         service.setBranch(currentUserService.requireUser().getBranch());
+        var catalogItem = catalogRepository.findByServiceCodeIgnoreCase(service.getServiceCode())
+                .orElseThrow(() -> new RuntimeException("Dịch vụ chưa có trong danh mục dùng chung của hệ thống"));
+        service.setCatalog(catalogItem);
+        service.setServiceCode(catalogItem.getServiceCode());
+        service.setServiceName(catalogItem.getServiceName());
+        service.setServiceType(catalogItem.getServiceType());
         if (serviceRepository.existsByBranchAndServiceCode(
                 service.getBranch(),
                 service.getServiceCode())) {
@@ -159,9 +169,7 @@ public class ServicesService {
             throw new RuntimeException("Tên dịch vụ đã tồn tại trong chi nhánh này");
         }
 
-        existingService.setServiceCode(updatedService.getServiceCode());
-        existingService.setServiceName(updatedService.getServiceName());
-        existingService.setServiceType(updatedService.getServiceType());
+        // Danh tính dịch vụ thuộc danh mục toàn cục; chi nhánh chỉ cấu hình cách cung cấp.
         existingService.setDescription(updatedService.getDescription());
         existingService.setEstimatedTime(updatedService.getEstimatedTime());
         existingService.setStatus(updatedService.getStatus());

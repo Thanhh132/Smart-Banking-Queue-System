@@ -63,6 +63,11 @@ export const routes: Routes = [
     canActivate: [roleGuard(['CUSTOMER'])],
   },
   {
+    path: 'delegations',
+    loadComponent: () => import('./pages/customer/delegations/customer-delegations').then((m) => m.CustomerDelegations),
+    canActivate: [roleGuard(['CUSTOMER'])],
+  },
+  {
     path: 'monitor',
     loadComponent: () =>
       import('./pages/queue/monitor/queue-monitor').then((m) => m.QueueMonitorComponent),
@@ -113,6 +118,11 @@ export const routes: Routes = [
     path: 'super-admin/branches',
     loadComponent: () =>
       import('./pages/super-admin/branches/super-admin-branches').then((m) => m.SuperAdminBranches),
+    canActivate: [roleGuard(['SUPER_ADMIN'])],
+  },
+  {
+    path: 'super-admin/services',
+    loadComponent: () => import('./pages/super-admin/services/super-admin-services').then((m) => m.SuperAdminServices),
     canActivate: [roleGuard(['SUPER_ADMIN'])],
   },
   {

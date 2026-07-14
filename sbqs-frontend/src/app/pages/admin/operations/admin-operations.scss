@@ -110,3 +110,25 @@ td:last-child {
   background: #eef2f7;
   color: #475569;
 }
+
+.hours-card { padding: 18px 20px; }
+.hours-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
+.hours-heading span { color: #08756d; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
+.hours-heading h3 { margin: 3px 0; font-size: 20px; }
+.hours-heading p { margin: 0; color: #64748b; font-size: 13px; }
+.hours-actions { display: flex; gap: 8px; }
+.hours-list { border: 1px solid #dbe4ee; border-radius: 8px; overflow: hidden; }
+.hours-row { display: grid; grid-template-columns: 150px minmax(270px,1fr) 86px minmax(270px,1fr); gap: 14px; align-items: center; min-height: 58px; padding: 8px 14px; border-bottom: 1px solid #e6edf4; }
+.hours-row:last-child { border-bottom: 0; }
+.hours-row--closed { grid-template-columns: 150px 1fr; background: #f8fafc; }
+.hours-day { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.day-toggle { min-width: 58px; padding: 5px 8px; border: 0; border-radius: 999px; background: #e2e8f0; color: #64748b; font-size: 11px; font-weight: 800; cursor: pointer; }
+.day-toggle--open { background: #dff5f0; color: #08756d; }
+.hours-row label { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: center; color: #64748b; font-size: 12px; font-weight: 700; }
+.hours-row label div { display: flex; align-items: center; gap: 6px; }
+.hours-row input[type='time'] { width: 104px; height: 36px; padding: 0 8px; border: 1px solid #cbd7e4; border-radius: 6px; background: #fff; font-size: 13px; }
+.hours-row i { color: #94a3b8; font-style: normal; }
+.lunch-break { color: #a16207; font-size: 11px; font-weight: 800; text-align: center; }
+.closed-day { color: #94a3b8; font-size: 13px; }
+@media(max-width:1050px){.hours-row{grid-template-columns:130px 1fr 1fr}.lunch-break{display:none}.hours-row--closed{grid-template-columns:130px 1fr}}
+@media(max-width:720px){.hours-heading{align-items:flex-start;flex-direction:column}.hours-row,.hours-row--closed{grid-template-columns:1fr}.hours-row label{grid-template-columns:52px 1fr}.hours-actions{width:100%}.hours-actions .btn{flex:1}}

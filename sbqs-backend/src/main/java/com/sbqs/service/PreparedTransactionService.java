@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Quản lý dữ liệu khai trước và hồ sơ điện tử gắn với phiếu. */
 /**
  * Xử lý biểu mẫu giao dịch chuẩn bị trước gắn với ticket: kiểm tra dữ liệu,
  * lưu giao dịch nháp và dựng dữ liệu giấy tờ điện tử cho giao dịch viên.
@@ -37,6 +36,10 @@ public class PreparedTransactionService {
         this.userRepository = userRepository;
     }
 
+    /**
+     * Chỉ nhận key có trong schema và chuẩn hóa từng kiểu dữ liệu. Việc kiểm tra lại
+     * ở backend là bắt buộc vì form động phía trình duyệt có thể bị sửa thủ công.
+     */
     public Map<String, Object> validateForm(Services service, Map<String, Object> submittedValues) {
         Map<String, Object> submitted = submittedValues == null ? Map.of() : submittedValues;
         List<FormFieldDefinition> schema = service.getFormSchema() == null ? List.of() : service.getFormSchema();
@@ -67,6 +70,7 @@ public class PreparedTransactionService {
         return result;
     }
 
+    /** Lưu cả schema lẫn giá trị tại thời điểm lấy số để hồ sơ cũ luôn tái hiện đúng. */
     @Transactional
     public void saveDraft(Ticket ticket, Services service, Map<String, Object> values) {
         TransactionDraft draft = new TransactionDraft();
@@ -79,6 +83,7 @@ public class PreparedTransactionService {
         transactionDraftRepository.save(draft);
     }
 
+    /** Chặn cấp số nếu hồ sơ khách hàng còn thiếu trường bắt buộc của dịch vụ. */
     public void requireCompleteProfile(User customer, Services service) {
         List<String> requiredFields = service.getRequiredCustomerFields();
         if (requiredFields == null || requiredFields.isEmpty()) return;
@@ -90,6 +95,10 @@ public class PreparedTransactionService {
         }
     }
 
+    /**
+     * Ghép hồ sơ khách hàng với dữ liệu giao dịch đã khai thành view chỉ dành cho
+     * nhân viên đang phục vụ phiếu; alias hồ sơ được loại để không hiển thị trùng.
+     */
     @Transactional(readOnly = true)
     public TicketStaffViewResponse toStaffView(Ticket ticket) {
         Services service = ticket.getService();

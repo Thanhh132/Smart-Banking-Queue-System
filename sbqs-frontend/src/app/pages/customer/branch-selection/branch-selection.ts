@@ -1,9 +1,9 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
-import { Branch } from '../../../core/models/branch.model';
+import { Branch, SmartBranchRecommendation } from '../../../core/models/branch.model';
 import { BranchService } from '../../../core/services/branch.service';
 import { LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
@@ -15,7 +15,7 @@ import { AppIcon } from '../../../shared/components/app-icon/app-icon';
   templateUrl: './branch-selection.html',
   styleUrl: './branch-selection.scss',
 })
-export class BranchSelection implements OnInit {
+export class BranchSelection implements OnInit, OnDestroy {
   private branchService = inject(BranchService);
   private locationService = inject(LocationService);
   private cdr = inject(ChangeDetectorRef);
@@ -27,8 +27,12 @@ export class BranchSelection implements OnInit {
   selectedBank = 'ALL';
   customerLocationLabel = sessionStorage.getItem('customerAddress') || '';
   isLocating = false;
+  isRouting = false;
+  routingError = '';
   private distances = new Map<number, number>();
+  private recommendations = new Map<number, SmartBranchRecommendation>();
   private popupTimer: ReturnType<typeof setTimeout> | null = null;
+  private routingTimer: ReturnType<typeof setInterval> | null = null;
 
   get bankOptions(): string[] {
     return [...new Set(this.branches.map((branch) => branch.bankName))].sort();
@@ -42,9 +46,15 @@ export class BranchSelection implements OnInit {
         [branch.bankName, branch.branchName, branch.district, branch.province, branch.ward, branch.address]
           .filter(Boolean)
           .some((value) => String(value).toLocaleLowerCase('vi').includes(keyword)))
-      .sort((first, second) =>
-        (this.distances.get(first.branchId) ?? Number.MAX_VALUE)
-        - (this.distances.get(second.branchId) ?? Number.MAX_VALUE));
+      .sort((first, second) => {
+        const firstRoutingScore = this.recommendations.get(first.branchId)?.routingScore;
+        const secondRoutingScore = this.recommendations.get(second.branchId)?.routingScore;
+        if (firstRoutingScore != null || secondRoutingScore != null) {
+          return (firstRoutingScore ?? Number.MAX_VALUE) - (secondRoutingScore ?? Number.MAX_VALUE);
+        }
+        return (this.distances.get(first.branchId) ?? Number.MAX_VALUE)
+          - (this.distances.get(second.branchId) ?? Number.MAX_VALUE);
+      });
   }
 
   ngOnInit(): void {
@@ -65,6 +75,16 @@ export class BranchSelection implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    if (this.popupTimer) {
+      clearTimeout(this.popupTimer);
+    }
+    if (this.routingTimer) {
+      clearInterval(this.routingTimer);
+    }
+  }
+
+  /** Xin vị trí trình duyệt, reverse-geocode địa chỉ và tính khoảng cách tới từng chi nhánh. */
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
       this.showPopup('error', 'Không hỗ trợ định vị', 'Trình duyệt hiện tại không hỗ trợ lấy vị trí tự động.');
@@ -99,14 +119,25 @@ export class BranchSelection implements OnInit {
   }
 
   distanceLabel(branch: Branch): string {
-    const distance = this.distances.get(branch.branchId);
+    const distance = this.recommendations.get(branch.branchId)?.distanceKm
+      ?? this.distances.get(branch.branchId);
     return distance == null ? '' : `${distance.toFixed(distance < 10 ? 1 : 0)} km`;
+  }
+
+  recommendationFor(branchId: number): SmartBranchRecommendation | undefined {
+    return this.recommendations.get(branchId);
+  }
+
+  onBankChange(): void {
+    this.recommendations.clear();
+    this.loadSmartRecommendations();
   }
 
   branchMapUrl(branch: Branch): string {
     return this.locationService.googleMapsUrl(branch);
   }
 
+  /** Lưu chi nhánh cho toàn bộ các bước chọn dịch vụ, cấp số và theo dõi phía sau. */
   selectBranch(branchId: number): void {
     sessionStorage.setItem('selectedBranchId', String(branchId));
     this.router.navigate(['/services']);
@@ -123,6 +154,41 @@ export class BranchSelection implements OnInit {
           latitude, longitude, branch.latitude, branch.longitude));
       }
     }
+    this.loadSmartRecommendations();
+    this.startRoutingRefresh();
+  }
+
+  /** Refresh smart-routing load every 15 seconds after the customer shares a location. */
+  private loadSmartRecommendations(): void {
+    const latitudeValue = sessionStorage.getItem('customerLatitude');
+    const longitudeValue = sessionStorage.getItem('customerLongitude');
+    const latitude = Number(latitudeValue);
+    const longitude = Number(longitudeValue);
+    if (!latitudeValue || !longitudeValue || !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      return;
+    }
+
+    this.isRouting = true;
+    this.routingError = '';
+    this.branchService.getSmartRecommendations(this.selectedBank, latitude, longitude).subscribe({
+      next: (data) => {
+        this.recommendations = new Map((data || []).map((item) => [item.branchId, item]));
+        this.isRouting = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isRouting = false;
+        this.routingError = 'Chưa cập nhật được tải hàng đợi. Danh sách vẫn được sắp theo khoảng cách.';
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  private startRoutingRefresh(): void {
+    if (this.routingTimer) {
+      clearInterval(this.routingTimer);
+    }
+    this.routingTimer = setInterval(() => this.loadSmartRecommendations(), 15000);
   }
 
   private showPopup(type: 'success' | 'error' | 'info', title: string, message: string): void {

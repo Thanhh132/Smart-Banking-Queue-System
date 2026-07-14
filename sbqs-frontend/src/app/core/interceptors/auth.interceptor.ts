@@ -5,6 +5,10 @@ import { catchError, switchMap, throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 
+/**
+ * Gắn access token cho API nghiệp vụ và thử lại request đúng một lần sau khi
+ * refresh thành công; endpoint auth được bỏ qua để tránh interceptor tự lặp.
+ */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -39,6 +43,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   );
 };
 
+/** Clone request vì HttpRequest của Angular là immutable. */
 function addAuthHeader(request: any, token: string) {
   return request.clone({
     setHeaders: {

@@ -116,6 +116,7 @@ public class AccountChangeService {
         return applyProfileChange(change);
     }
 
+    /** Chỉ phát token email mới sau khi chủ tài khoản đã xác nhận từ email hiện tại. */
     private void sendNewEmailConfirmationIfNeeded(AccountChangeToken change) {
         if (change.getNewEmailTokenHash() != null) {
             return;
@@ -129,6 +130,7 @@ public class AccountChangeService {
                 "Bam vao lien ket de xac minh email moi cho tai khoan SBQS.");
     }
 
+    /** Đồng bộ Keycloak trước rồi mới chốt hồ sơ local và đánh dấu token đã áp dụng. */
     private AccountChangeConfirmationResponse applyProfileChange(AccountChangeToken change) {
         User user = change.getUser();
         boolean emailChanged = !change.getPendingEmail().equalsIgnoreCase(user.getEmail());

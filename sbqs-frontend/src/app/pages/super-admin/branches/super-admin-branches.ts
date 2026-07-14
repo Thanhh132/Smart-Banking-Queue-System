@@ -133,6 +133,7 @@ export class SuperAdminBranches implements OnInit {
     });
   }
 
+  /** Bắt buộc xác nhận tọa độ trước khi lưu để dữ liệu tìm chi nhánh gần nhất luôn đáng tin cậy. */
   submitBranch(): void {
     if (!this.locationConfirmed) {
       const requiredSourceControls = ['bankName', 'address', 'phone', 'status'];
@@ -287,6 +288,10 @@ export class SuperAdminBranches implements OnInit {
     });
   }
 
+  /**
+   * Chuẩn hóa địa chỉ/link Maps/tọa độ qua geocoding; tùy ngữ cảnh có thể tiếp tục
+   * lưu ngay sau khi kết quả hành chính và tọa độ đã được xác nhận.
+   */
   private resolveLocation(saveAfterResolved: boolean): void {
     if (!this.addressQuery) {
       this.errorMessage = 'Vui lòng nhập địa chỉ chi nhánh.';
@@ -349,6 +354,7 @@ export class SuperAdminBranches implements OnInit {
     return this.normalizeText(address).includes('viet nam') ? address : `${address}, Việt Nam`;
   }
 
+  /** Sinh mã và tên chi nhánh nhất quán từ ngân hàng + đơn vị hành chính khi tạo mới. */
   private syncGeneratedFields(): void {
     if (this.isEditMode || this.isHydratingForm) return;
     const bank = this.branchForm.get('bankName')?.value || 'BIDV';

@@ -2,6 +2,7 @@ package com.sbqs.repository;
 
 import com.sbqs.entity.Counter;
 import com.sbqs.entity.Branch;
+import com.sbqs.dto.BranchCounterLoad;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Lock;
@@ -25,6 +26,15 @@ public interface CounterRepository extends JpaRepository<Counter, Long> {
     List<Counter> findByBranch(Branch branch);
 
     List<Counter> findByStatus(String status);
+
+    @Query("""
+            select new com.sbqs.dto.BranchCounterLoad(c.branch.branchId, count(c))
+            from Counter c
+            where c.branch.branchId in :branchIds
+              and upper(c.status) = 'ACTIVE'
+            group by c.branch.branchId
+            """)
+    List<BranchCounterLoad> findActiveCounterLoadsByBranchIds(@Param("branchIds") List<Long> branchIds);
 
     @EntityGraph(attributePaths = {"currentTicket", "queueMachine"})
     List<Counter> findByBranchBranchId(Long branchId);

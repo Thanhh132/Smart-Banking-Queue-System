@@ -47,7 +47,12 @@ export class StaffDashboard implements OnInit, OnDestroy {
   isLiveRefreshing = false;
   lastUpdatedAt: Date | null = null;
   private liveIntervalId: any;
+  delegationCode = '';
+  delegationIdentity = '';
+  verifiedDelegation: any = null;
+  isVerifyingDelegation = false;
 
+  /** Khởi tạo dashboard và chỉ polling khi tab đang hiển thị để giảm tải API. */
   ngOnInit(): void {
     this.loadDashboard();
     this.liveIntervalId = setInterval(() => {
@@ -184,6 +189,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     });
   }
 
+  /** Khóa nút trong lúc gọi API và không cho gọi số mới khi quầy còn phiếu hiện tại. */
   callNext(): void {
     if (this.isCallingNext || this.currentTicket) {
       return;
@@ -215,6 +221,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     });
   }
 
+  /** Hoàn tất phiếu hiện tại; backend sẽ đồng thời đóng workflow, ghi lịch sử và giải phóng quầy. */
   complete(): void {
     if (!this.currentTicket || this.isCompleting) {
       return;
@@ -240,6 +247,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     });
   }
 
+  /** Gộp trạng thái quầy và task chờ trong một nhịp refresh, đồng thời chống request chồng nhau. */
   private refreshLiveState(): void {
     if (this.isLiveRefreshing || this.isCallingNext || this.isCompleting) {
       return;
@@ -260,6 +268,10 @@ export class StaffDashboard implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Giữ phần hồ sơ paperless đã tải khi polling chỉ trả ticket rút gọn; chỉ gọi API
+   * chi tiết khi quầy bắt đầu phục vụ một ticket khác.
+   */
   private setServingTicket(ticket: any): void {
     if (!ticket) {
       this.currentTicket = null;
@@ -320,5 +332,22 @@ export class StaffDashboard implements OnInit, OnDestroy {
 
   formatDate(value?: string): string {
     return value ? new Date(value).toLocaleString('vi-VN') : '-';
+  }
+
+  verifyDelegation(): void {
+    if (!this.delegationCode.trim() || !this.delegationIdentity.trim() || this.isVerifyingDelegation) return;
+    this.isVerifyingDelegation = true; this.errorMessage = '';
+    this.staffService.verifyDelegation(this.delegationCode, this.delegationIdentity).pipe(finalize(() => { this.isVerifyingDelegation = false; this.cdr.detectChanges(); })).subscribe({
+      next: (result) => { this.verifiedDelegation = result; this.successMessage = 'Đã xác minh đúng mã ủy quyền và CCCD.'; this.delegationIdentity = ''; this.cdr.detectChanges(); },
+      error: (err) => { this.verifiedDelegation = null; this.errorMessage = this.apiError.getMessage(err, 'Không xác minh được ủy quyền.'); this.cdr.detectChanges(); },
+    });
+  }
+
+  acceptDelegation(): void {
+    if (!this.verifiedDelegation) return;
+    this.staffService.markDelegationUsed(this.verifiedDelegation.delegationId).subscribe({
+      next: () => { this.successMessage = 'Đã tiếp nhận và đóng lệnh ủy quyền.'; this.verifiedDelegation = null; this.delegationCode = ''; this.cdr.detectChanges(); },
+      error: (err) => { this.errorMessage = this.apiError.getMessage(err, 'Không thể đóng lệnh ủy quyền.'); this.cdr.detectChanges(); },
+    });
   }
 }

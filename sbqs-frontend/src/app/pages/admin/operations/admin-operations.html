@@ -9,6 +9,21 @@
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
+    <section class="ui-card hours-card">
+      <div class="hours-heading"><div><span>LỊCH LÀM VIỆC</span><h3>Giờ phục vụ trong tuần</h3><p>Khách chỉ có thể lấy số trong các ca đang mở.</p></div><div class="hours-actions"><button type="button" class="btn btn-secondary btn-sm" (click)="applyWeekdayTemplate()">Mẫu hành chính</button><button type="button" class="btn btn-primary btn-sm" (click)="saveBranchHours()" [disabled]="isSavingHours || branchHours.length !== 7">{{ isSavingHours ? 'Đang lưu...' : 'Lưu lịch' }}</button></div></div>
+      <div class="hours-list" *ngIf="branchHours.length === 7">
+        <div class="hours-row" *ngFor="let hours of branchHours" [class.hours-row--closed]="hours.closed">
+          <div class="hours-day"><strong>{{ dayNames[hours.dayOfWeek] }}</strong><button type="button" class="day-toggle" [class.day-toggle--open]="!hours.closed" (click)="toggleDay(hours)">{{ hours.closed ? 'Nghỉ' : 'Mở cửa' }}</button></div>
+          <ng-container *ngIf="!hours.closed; else closedDay">
+            <label><span>Ca sáng</span><div><input type="time" [(ngModel)]="hours.morningOpen" /><i>–</i><input type="time" [(ngModel)]="hours.morningClose" /></div></label>
+            <span class="lunch-break">Nghỉ trưa</span>
+            <label><span>Ca chiều</span><div><input type="time" [(ngModel)]="hours.afternoonOpen" /><i>–</i><input type="time" [(ngModel)]="hours.afternoonClose" /></div></label>
+          </ng-container>
+          <ng-template #closedDay><div class="closed-day">Không tiếp nhận khách</div></ng-template>
+        </div>
+      </div>
+    </section>
+
     <section class="ui-card-grid">
       <div class="ui-card metric-card">
         <span>Máy bốc số</span>

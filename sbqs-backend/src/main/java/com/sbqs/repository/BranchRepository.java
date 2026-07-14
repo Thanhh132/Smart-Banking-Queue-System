@@ -17,6 +17,10 @@ public interface BranchRepository extends JpaRepository<Branch, Long> {
     // Lấy tất cả chi nhánh theo tên ngân hàng
     List<Branch> findByBankName(String bankName);
 
+    List<Branch> findByStatusIgnoreCase(String status);
+
+    List<Branch> findByBankNameIgnoreCaseAndStatusIgnoreCase(String bankName, String status);
+
     // Tìm chi nhánh gần nhất theo Haversine formula
     @Query("SELECT b FROM Branch b WHERE b.bankName = :bankName ORDER BY " +
             "(6371 * acos(cos(radians(:lat)) * cos(radians(b.latitude)) * " +

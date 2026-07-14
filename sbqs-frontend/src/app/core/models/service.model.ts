@@ -11,6 +11,16 @@ export interface Service {
   branch?: { branchId: number };
 }
 
+export interface ServiceCatalogItem {
+  catalogId: number;
+  serviceCode: string;
+  serviceName: string;
+  serviceType: string;
+  description?: string | null;
+  estimatedTime: number;
+  status: string;
+}
+
 export type FormFieldType = 'TEXT' | 'TEXTAREA' | 'NUMBER' | 'DATE' | 'SELECT' | 'RADIO' | 'CHECKBOX';
 
 export interface FormFieldDefinition {

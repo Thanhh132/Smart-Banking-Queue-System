@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { FormFieldDefinition, FormFieldType, Service } from '../../../core/models/service.model';
+import { FormFieldDefinition, FormFieldType, Service, ServiceCatalogItem } from '../../../core/models/service.model';
 import { AdminServicesService } from '../../../core/services/admin-services.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
@@ -31,6 +31,9 @@ export class AdminServices implements OnInit {
   private cdr = inject(ChangeDetectorRef);
 
   services: Service[] = [];
+  catalog: ServiceCatalogItem[] = [];
+  selectedCatalogId: number | null = null;
+  isAddingService = false;
   selectedService: Service | null = null;
   draftFields: FormFieldDefinition[] = [];
   isLoading = true;
@@ -44,7 +47,39 @@ export class AdminServices implements OnInit {
     { value: 'CHECKBOX', label: 'Đánh dấu Có hoặc Không' },
   ];
 
-  ngOnInit(): void { this.loadServices(); }
+  ngOnInit(): void { this.loadServices(); this.loadCatalog(); }
+
+  get availableCatalog(): ServiceCatalogItem[] {
+    const currentCodes = new Set(this.services.map((service) => service.serviceCode));
+    return this.catalog.filter((item) => item.status === 'ACTIVE' && !currentCodes.has(item.serviceCode));
+  }
+
+  loadCatalog(): void {
+    this.serviceApi.getCatalog().subscribe({
+      next: (items) => { this.catalog = items || []; this.cdr.detectChanges(); },
+      error: (error) => { this.errorMessage = this.apiError.getMessage(error, 'Không tải được danh mục dịch vụ hệ thống.'); this.cdr.detectChanges(); },
+    });
+  }
+
+  addSelectedService(): void {
+    if (!this.selectedCatalogId || this.isAddingService) return;
+    this.isAddingService = true;
+    this.serviceApi.addCatalogItemToBranch(this.selectedCatalogId).subscribe({
+      next: (service) => {
+        this.services = this.sortServices([...this.services, service]);
+        this.selectedCatalogId = null;
+        this.isAddingService = false;
+        this.select(service);
+        this.successMessage = 'Đã thêm dịch vụ vào chi nhánh. Bạn có thể cấu hình phiếu khai báo ngay.';
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = this.apiError.getMessage(error, 'Không thêm được dịch vụ vào chi nhánh.');
+        this.isAddingService = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
 
   loadServices(): void {
     this.isLoading = true;
