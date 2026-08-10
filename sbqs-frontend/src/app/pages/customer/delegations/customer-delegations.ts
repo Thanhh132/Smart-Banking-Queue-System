@@ -18,7 +18,6 @@ export class CustomerDelegations implements OnInit {
   private api = inject(DelegationService); private catalogApi = inject(AdminServicesService);
   private branchApi = inject(BranchService); private servicesApi = inject(ServicesService);
   private locationApi = inject(LocationService); private errors = inject(ApiErrorService); private cdr = inject(ChangeDetectorRef);
-  private readonly blockedCodes = new Set(['ACCOUNT_OPEN', 'DEBIT_CARD_NEW', 'CREDIT_CARD', 'DIGITAL_BANKING', 'IDENTITY_UPDATE', 'SIGNATURE_UPDATE']);
 
   catalog: ServiceCatalogItem[] = []; recommendations: SmartBranchRecommendation[] = [];
   delegations: Delegation[] = []; selectedCatalogId: number | null = null;
@@ -31,7 +30,7 @@ export class CustomerDelegations implements OnInit {
     this.catalogApi.getCatalog().subscribe({ next: (items) => { this.catalog = items.filter((x) => x.status === 'ACTIVE'); this.cdr.detectChanges(); }, error: (e) => { this.errorMessage = this.errors.getMessage(e, 'Không tải được danh mục nghiệp vụ.'); this.cdr.detectChanges(); } });
   }
   get selectedCatalog(): ServiceCatalogItem | undefined { return this.catalog.find((x) => x.catalogId === this.selectedCatalogId); }
-  get canDelegateSelected(): boolean { return !!this.selectedCatalog && !this.blockedCodes.has(this.selectedCatalog.serviceCode); }
+  get canDelegateSelected(): boolean { return !!this.selectedCatalog?.delegatable; }
   get maxValidUntil(): string { return this.localDateTime(new Date(Date.now() + 30 * 86400000)); }
   get minValidUntil(): string { return this.localDateTime(new Date(Date.now() + 30 * 60000)); }
   get today(): string { return new Date().toISOString().slice(0, 10); }

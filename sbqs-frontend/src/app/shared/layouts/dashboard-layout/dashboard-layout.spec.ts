@@ -19,4 +19,33 @@ describe('DashboardLayout', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('collapses the fixed sidebar when toggled on desktop', () => {
+    component.toggleSidebar();
+
+    expect(component.sidebarCollapsed()).toBe(true);
+    expect(component.sidebarOpen()).toBe(false);
+  });
+
+  it('opens and closes the drawer when toggled on mobile', () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: () => ({ matches: true }) as MediaQueryList,
+    });
+
+    try {
+      component.toggleSidebar();
+      expect(component.sidebarOpen()).toBe(true);
+      expect(component.sidebarCollapsed()).toBe(false);
+
+      component.closeMobileSidebar();
+      expect(component.sidebarOpen()).toBe(false);
+    } finally {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        value: originalMatchMedia,
+      });
+    }
+  });
 });

@@ -60,7 +60,8 @@ public class ServicesService {
     }
 
     public List<Services> getAllServices() {
-        return serviceRepository.findByBranch(currentUserService.requireUser().getBranch());
+        return serviceRepository.findByBranchAndStatusNotIgnoreCase(
+                currentUserService.requireUser().getBranch(), "DELETED");
     }
 
     public List<Services> getServices(Long branchId, String serviceType, boolean mappedOnly) {
@@ -87,13 +88,14 @@ public class ServicesService {
     @Cacheable(cacheNames = "services", key = "'branch:' + #branch.branchId")
     public List<Services> getServicesByBranch(Branch branch) {
         requireOperationalBranchAccess(branch.getBranchId());
-        return serviceRepository.findByBranch(branch);
+        return serviceRepository.findByBranchAndStatusNotIgnoreCase(branch, "DELETED");
     }
 
     @Cacheable(cacheNames = "services", key = "'branch:' + #branch.branchId + ':type:' + #serviceType")
     public List<Services> getServicesByBranchAndType(Branch branch, String serviceType) {
         requireOperationalBranchAccess(branch.getBranchId());
-        return serviceRepository.findByBranchAndServiceType(branch, serviceType);
+        return serviceRepository.findByBranchAndServiceTypeAndStatusNotIgnoreCase(
+                branch, serviceType, "DELETED");
     }
 
     @Cacheable(cacheNames = "services", key = "'mapped:' + #branchId")
@@ -170,7 +172,9 @@ public class ServicesService {
         }
 
         // Danh tính dịch vụ thuộc danh mục toàn cục; chi nhánh chỉ cấu hình cách cung cấp.
-        existingService.setDescription(updatedService.getDescription());
+        existingService.setDescription(existingService.getCatalog() == null
+                ? updatedService.getDescription()
+                : existingService.getCatalog().getDescription());
         existingService.setEstimatedTime(updatedService.getEstimatedTime());
         existingService.setStatus(updatedService.getStatus());
         existingService.setBranch(updatedService.getBranch());
@@ -202,6 +206,10 @@ public class ServicesService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
 
         currentUserService.requireBranch(existingService.getBranch().getBranchId());
+
+        if (existingService.getCatalog() != null) {
+            throw new RuntimeException("Dịch vụ thuộc danh mục toàn hệ thống nên chi nhánh không được xóa. Hãy tạm ngừng dịch vụ nếu chưa cung cấp");
+        }
 
         List<Ticket> tickets = ticketRepository.findByService(existingService);
         boolean hasOpenTicket = tickets.stream()

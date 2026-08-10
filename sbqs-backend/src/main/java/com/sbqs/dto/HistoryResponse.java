@@ -25,6 +25,8 @@ public class HistoryResponse {
 
     private String staffName;
 
+    private Long staffId;
+
     private String status;
 
     private LocalDateTime startedAt;

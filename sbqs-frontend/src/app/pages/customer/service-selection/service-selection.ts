@@ -21,11 +21,6 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
   styleUrls: ['./service-selection.scss', './service-selection-profile.scss'],
 })
 export class ServiceSelection implements OnInit {
-  private readonly serviceOrder = [
-    'DEBIT_CARD_NEW', 'DEBIT_CARD_REISSUE', 'ACCOUNT_OPEN', 'DIGITAL_BANKING',
-    'CASH_DEPOSIT', 'CASH_WITHDRAW', 'SAVINGS', 'INTERNATIONAL_TRANSFER',
-    'CREDIT_CARD', 'IDENTITY_UPDATE', 'SIGNATURE_UPDATE',
-  ];
   private servicesService = inject(ServicesService);
   private accountService = inject(AccountService);
   private monitorService = inject(QueueMonitorService);
@@ -55,8 +50,7 @@ export class ServiceSelection implements OnInit {
   get sections(): string[] { return [...new Set(this.visibleFields.map((field) => field.section || 'Thông tin giao dịch'))]; }
   fieldsInSection(section: string): FormFieldDefinition[] { return this.visibleFields.filter((field) => (field.section || 'Thông tin giao dịch') === section); }
   serviceTypeLabel(type?: string): string {
-    const labels: Record<string, string> = { CARD: 'Dịch vụ thẻ', ACCOUNT: 'Tài khoản', CASH: 'Tiền mặt', SAVINGS: 'Tiết kiệm', TRANSFER: 'Chuyển tiền', KYC: 'Cập nhật thông tin' };
-    return labels[type || ''] || 'Dịch vụ tại quầy';
+    return type?.trim() || 'Dịch vụ tại quầy';
   }
 
   ngOnInit(): void {
@@ -82,13 +76,7 @@ export class ServiceSelection implements OnInit {
   }
 
   private sortServices(services: Service[]): Service[] {
-    return [...services].sort((left, right) => {
-      const leftIndex = this.serviceOrder.indexOf(left.serviceCode);
-      const rightIndex = this.serviceOrder.indexOf(right.serviceCode);
-      return (leftIndex < 0 ? Number.MAX_SAFE_INTEGER : leftIndex)
-        - (rightIndex < 0 ? Number.MAX_SAFE_INTEGER : rightIndex)
-        || left.serviceName.localeCompare(right.serviceName, 'vi');
-    });
+    return [...services].sort((left, right) => left.serviceName.localeCompare(right.serviceName, 'vi'));
   }
 
   /**

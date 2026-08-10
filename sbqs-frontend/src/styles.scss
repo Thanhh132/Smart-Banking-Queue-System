@@ -1,7 +1,17 @@
+@use 'styles/coreui';
+@use 'styles/enterprise/colors';
+@use 'styles/enterprise/spacing';
+@use 'styles/enterprise/typography';
+@use 'styles/enterprise/button';
+@use 'styles/enterprise/form';
+@use 'styles/enterprise/table';
+@use 'styles/enterprise/card';
+
 :root {
   --primary-color: #087d74;
   --primary-dark: #05665f;
-  --secondary-color: #0b5c69;
+  --secondary-color: var(--primary-dark);
+  --neutral-color: #60777d;
   --success-color: #0b9b78;
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
@@ -11,7 +21,7 @@
   --border-color: #dce6e7;
 
   --text-primary: #13353d;
-  --text-secondary: #60777d;
+  --text-secondary: var(--neutral-color);
   --text-muted: #9ca3af;
 
   --shadow-card: 0 12px 32px rgba(20, 61, 70, 0.07);
@@ -160,7 +170,7 @@ button:disabled,
 
 .btn-primary,
 button[type='submit'] {
-  background: linear-gradient(135deg, var(--primary-color), #0a9185);
+  background: var(--primary-color);
   color: #ffffff;
 }
 

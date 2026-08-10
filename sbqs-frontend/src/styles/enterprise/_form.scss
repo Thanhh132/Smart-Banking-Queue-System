@@ -1,0 +1,54 @@
+.eb-field {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.eb-field input,
+.eb-field select,
+.eb-field textarea {
+  border-radius: 8px;
+  border-color: #d1d5db;
+  font-size: 14px;
+}
+
+.eb-compact-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.eb-compact-form label {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  color: #374151;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.eb-compact-form input,
+.eb-compact-form select,
+.eb-compact-form textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+}
+
+.eb-compact-form textarea {
+  min-height: 68px;
+  resize: vertical;
+}
+
+@media (max-width: 720px) {
+  .eb-compact-form {
+    grid-template-columns: 1fr;
+  }
+}

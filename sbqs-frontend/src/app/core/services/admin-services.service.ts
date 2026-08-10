@@ -19,12 +19,20 @@ export class AdminServicesService {
 
   getCatalog() { return this.http.get<ServiceCatalogItem[]>(this.catalogUrl); }
 
-  createCatalogItem(payload: { serviceCode: string; serviceName: string; serviceType: string; description: string; estimatedTime: number }) {
+  createCatalogItem(payload: { serviceCode: string; serviceName: string; serviceType: string; description: string; estimatedTime: number; delegatable: boolean }) {
     return this.http.post<ServiceCatalogItem>(this.catalogUrl, payload);
   }
 
-  addCatalogItemToBranch(catalogId: number) {
-    return this.http.post<Service>(`${this.catalogUrl}/${catalogId}/add-to-branch`, {});
+  updateCatalogItem(catalogId: number, payload: { serviceCode: string; serviceName: string; serviceType: string; description: string; estimatedTime: number; delegatable: boolean }) {
+    return this.http.put<ServiceCatalogItem>(`${this.catalogUrl}/${catalogId}`, payload);
+  }
+
+  deleteCatalogItem(catalogId: number) {
+    return this.http.delete<void>(`${this.catalogUrl}/${catalogId}`);
+  }
+
+  restoreCatalogItem(catalogId: number) {
+    return this.http.post<ServiceCatalogItem>(`${this.catalogUrl}/${catalogId}/restore`, {});
   }
 
   getServicesByBranch(branchId: number) {

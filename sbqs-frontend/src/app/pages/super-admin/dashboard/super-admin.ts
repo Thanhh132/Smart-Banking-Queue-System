@@ -47,10 +47,6 @@ export class SuperAdmin implements OnInit {
   showPassword = false;
   showConfirmPassword = false;
 
-  get activeAdminCount(): number {
-    return this.adminBranches.filter((admin) => admin.status === 'ACTIVE').length;
-  }
-
   get filteredAdmins(): any[] {
     const keyword = this.searchTerm.trim().toLocaleLowerCase('vi');
     if (!keyword) return this.adminBranches;
@@ -68,7 +64,6 @@ export class SuperAdmin implements OnInit {
     password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
     confirmPassword: ['', [Validators.required]],
     branchId: [null as number | null, [Validators.required]],
-    status: ['ACTIVE'],
   });
 
   get isEditMode(): boolean {
@@ -190,7 +185,6 @@ export class SuperAdmin implements OnInit {
       password: '',
       confirmPassword: '',
       branchId: admin.branch?.branchId || null,
-      status: admin.status || 'ACTIVE',
     });
     this.cdr.detectChanges();
   }
@@ -216,7 +210,6 @@ export class SuperAdmin implements OnInit {
       email: this.adminBranchForm.value.email,
       phone: this.adminBranchForm.value.phone,
       branchId: this.adminBranchForm.value.branchId,
-      status: this.adminBranchForm.value.status,
     };
 
     this.userService.updateUser(this.editingAdminId, payload).subscribe({
@@ -265,14 +258,13 @@ export class SuperAdmin implements OnInit {
       password: '',
       confirmPassword: '',
       branchId: null,
-      status: 'ACTIVE',
     });
   }
 
   deleteAdminBranch(user: any): void {
-    const isInactive = user.status === 'INACTIVE';
-    const action = isInactive ? 'xóa khỏi danh sách' : 'khóa tài khoản';
-    if (!confirm(`Bạn có chắc muốn ${action} quản trị chi nhánh "${user.fullName}" không?`)) {
+    if (!confirm(
+      `Xóa vĩnh viễn quản trị chi nhánh "${user.fullName}" khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.`,
+    )) {
       return;
     }
 
@@ -281,18 +273,14 @@ export class SuperAdmin implements OnInit {
 
     this.userService.deleteUser(user.userId).subscribe({
       next: () => {
-        this.successMessage = isInactive
-          ? 'Đã xóa tài khoản quản trị chi nhánh khỏi danh sách.'
-          : 'Đã khóa tài khoản quản trị chi nhánh.';
+        this.successMessage = 'Đã xóa vĩnh viễn tài khoản quản trị chi nhánh.';
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          isInactive
-            ? 'Không xóa được tài khoản quản trị chi nhánh.'
-            : 'Không khóa được tài khoản quản trị chi nhánh.',
+          'Không xóa được tài khoản quản trị chi nhánh.',
         );
         this.cdr.detectChanges();
       },

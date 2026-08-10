@@ -1,19 +1,302 @@
 <app-dashboard-layout title="Danh mục dịch vụ">
   <main class="catalog-page">
-    <header><div><span>QUẢN TRỊ HỆ THỐNG</span><h1>Danh mục dịch vụ dùng chung</h1><p>Tạo dịch vụ một lần để mọi chi nhánh có thể lựa chọn và cấu hình riêng.</p></div><button type="button" class="btn btn-secondary" (click)="loadCatalog()" [disabled]="isLoading">Làm mới</button></header>
-    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-    <section class="catalog-grid">
-      <form class="catalog-panel catalog-form" (ngSubmit)="create()">
-        <div class="panel-heading"><span>TẠO MỚI</span><h2>Thêm dịch vụ toàn hệ thống</h2></div>
-        <label><span>Mã dịch vụ</span><input name="serviceCode" [(ngModel)]="form.serviceCode" placeholder="PHYSICAL_CARD_REGISTRATION" required /></label>
-        <label><span>Tên dịch vụ</span><input name="serviceName" [(ngModel)]="form.serviceName" placeholder="Đăng ký làm thẻ vật lý" required /></label>
-        <label><span>Nhóm dịch vụ</span><select name="serviceType" [(ngModel)]="form.serviceType"><option value="CARD">Thẻ</option><option value="ACCOUNT">Tài khoản</option><option value="CASH">Tiền mặt</option><option value="TRANSFER">Chuyển tiền</option><option value="SAVINGS">Tiết kiệm</option><option value="KYC">Định danh</option><option value="BASIC">Khác</option></select></label>
-        <label><span>Thời gian dự kiến (phút)</span><input name="estimatedTime" type="number" min="1" [(ngModel)]="form.estimatedTime" required /></label>
-        <label class="full"><span>Mô tả</span><textarea name="description" rows="4" [(ngModel)]="form.description"></textarea></label>
-        <button type="submit" class="btn btn-primary" [disabled]="isSaving">{{ isSaving ? 'Đang tạo...' : 'Tạo dịch vụ dùng chung' }}</button>
+    <nav class="catalog-breadcrumb" aria-label="Điều hướng phân cấp">
+      <span>Quản trị hệ thống</span>
+      <span aria-hidden="true">/</span>
+      <strong>Danh mục dịch vụ</strong>
+    </nav>
+
+    <header class="catalog-header">
+      <div>
+        <span class="eb-eyebrow">Danh mục dùng chung</span>
+        <h1 class="eb-page-title">Quản lý dịch vụ toàn hệ thống</h1>
+        <p>
+          Mỗi dịch vụ được tạo tại đây sẽ tự động kế thừa xuống tất cả chi nhánh để cấu hình vận
+          hành.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="eb-button eb-button--outline"
+        (click)="loadCatalog()"
+        [disabled]="isLoading"
+      >
+        <app-icon name="refresh" [size]="16" />
+        {{ isLoading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
+      </button>
+    </header>
+
+    <section class="catalog-stats" aria-label="Thống kê danh mục dịch vụ">
+      <article class="eb-card">
+        <span>Dịch vụ hoạt động</span>
+        <strong>{{ activeCatalog.length }}</strong>
+        <small>Đang được cung cấp cho các chi nhánh</small>
+      </article>
+      <article class="eb-card">
+        <span>Cho phép ủy quyền</span>
+        <strong>{{ delegatableCount }}</strong>
+        <small>Dịch vụ có thể thực hiện qua người đại diện</small>
+      </article>
+      <article class="eb-card">
+        <span>Đã lưu trữ</span>
+        <strong>{{ archivedCatalog.length }}</strong>
+        <small>Ngừng áp dụng nhưng vẫn giữ lịch sử</small>
+      </article>
+    </section>
+
+    <div *ngIf="successMessage" class="alert alert-success" role="status">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+
+    <section class="catalog-workspace">
+      <form class="catalog-form eb-card" (ngSubmit)="create()">
+        <header class="panel-heading">
+          <div>
+            <span class="eb-eyebrow">{{
+              editingCatalogId === null ? 'Tạo mới' : 'Chỉnh sửa'
+            }}</span>
+            <h2>
+              {{ editingCatalogId === null ? 'Thêm dịch vụ dùng chung' : 'Cập nhật dịch vụ' }}
+            </h2>
+          </div>
+          <p>
+            {{
+              editingCatalogId === null
+                ? 'Khai báo thông tin chuẩn để các chi nhánh sử dụng thống nhất.'
+                : 'Các thay đổi sẽ được đồng bộ xuống dịch vụ tương ứng tại chi nhánh.'
+            }}
+          </p>
+        </header>
+
+        <div class="catalog-form__grid">
+          <label class="eb-field" *ngIf="editingCatalogId === null">
+            <span>Mã dịch vụ</span>
+            <input value="Hệ thống tự tạo" disabled />
+          </label>
+
+          <label class="eb-field" *ngIf="editingCatalogId !== null">
+            <span>Mã dịch vụ</span>
+            <input name="serviceCode" [(ngModel)]="form.serviceCode" disabled />
+            <small>Mã định danh được giữ nguyên để bảo toàn dữ liệu liên quan.</small>
+          </label>
+
+          <label class="eb-field">
+            <span>Tên dịch vụ</span>
+            <input
+              name="serviceName"
+              [(ngModel)]="form.serviceName"
+              placeholder="Đăng ký làm thẻ vật lý"
+              required
+            />
+          </label>
+
+          <label class="eb-field">
+            <span>Nhóm dịch vụ</span>
+            <input
+              name="serviceType"
+              [(ngModel)]="form.serviceType"
+              placeholder="Ví dụ: THẺ, TÀI KHOẢN"
+              required
+            />
+          </label>
+
+          <label class="eb-field">
+            <span>Thời gian dự kiến (phút)</span>
+            <input
+              name="estimatedTime"
+              type="number"
+              min="1"
+              [(ngModel)]="form.estimatedTime"
+              required
+            />
+          </label>
+
+          <label class="eb-field catalog-form__wide">
+            <span>Mô tả</span>
+            <textarea
+              name="description"
+              rows="3"
+              [(ngModel)]="form.description"
+              placeholder="Mô tả ngắn gọn phạm vi xử lý của dịch vụ"
+            ></textarea>
+          </label>
+
+          <label class="delegation-toggle catalog-form__wide">
+            <input name="delegatable" type="checkbox" [(ngModel)]="form.delegatable" />
+            <span>
+              <strong>Cho phép ủy quyền giao dịch</strong>
+              <small
+                >Khách hàng có thể lập lệnh để người đại diện thực hiện dịch vụ này tại quầy.</small
+              >
+            </span>
+          </label>
+        </div>
+
+        <footer class="form-actions">
+          <button type="submit" class="eb-button eb-button--primary" [disabled]="isSaving">
+            <app-icon [name]="editingCatalogId === null ? 'plus' : 'save'" [size]="16" />
+            {{
+              isSaving ? 'Đang lưu...' : editingCatalogId === null ? 'Tạo dịch vụ' : 'Lưu thay đổi'
+            }}
+          </button>
+          <button
+            *ngIf="editingCatalogId !== null"
+            type="button"
+            class="eb-button eb-button--outline"
+            (click)="resetForm()"
+          >
+            <app-icon name="x" [size]="16" />
+            Hủy chỉnh sửa
+          </button>
+        </footer>
       </form>
-      <section class="catalog-panel"><div class="panel-heading"><span>DANH SÁCH</span><h2>{{ catalog.length }} dịch vụ có thể chọn</h2></div><div *ngIf="isLoading" class="admin-empty">Đang tải danh mục...</div><div class="catalog-list" *ngIf="!isLoading"><article *ngFor="let item of catalog"><div><strong>{{ item.serviceName }}</strong><small>{{ item.serviceCode }} · {{ item.serviceType }}</small></div><span>{{ item.estimatedTime }} phút</span><p>{{ item.description || 'Chưa có mô tả' }}</p></article></div></section>
+
+      <section class="catalog-list-panel eb-card" aria-labelledby="catalog-list-title">
+        <header class="panel-heading panel-heading--list">
+          <div>
+            <span class="eb-eyebrow">Danh sách</span>
+            <h2 id="catalog-list-title">Danh mục hiện có</h2>
+          </div>
+          <p>{{ filteredCatalog.length }} / {{ catalog.length }} dịch vụ phù hợp</p>
+        </header>
+
+        <div class="catalog-toolbar eb-table-toolbar">
+          <label class="catalog-search eb-table-search">
+            <span class="visually-hidden">Tìm kiếm dịch vụ</span>
+            <app-icon name="search" [size]="17" />
+            <input
+              type="search"
+              [(ngModel)]="searchTerm"
+              [ngModelOptions]="{ standalone: true }"
+              placeholder="Tìm theo mã, tên hoặc mô tả..."
+            />
+          </label>
+          <label>
+            <span class="visually-hidden">Lọc theo trạng thái</span>
+            <select [(ngModel)]="statusFilter" [ngModelOptions]="{ standalone: true }">
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="ACTIVE">Đang hoạt động</option>
+              <option value="ARCHIVED">Đã lưu trữ</option>
+            </select>
+          </label>
+          <label>
+            <span class="visually-hidden">Lọc theo nhóm dịch vụ</span>
+            <select [(ngModel)]="typeFilter" [ngModelOptions]="{ standalone: true }">
+              <option value="ALL">Tất cả nhóm</option>
+              <option *ngFor="let type of serviceTypes" [value]="type">{{ type }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div *ngIf="isLoading" class="eb-table-skeleton" aria-label="Đang tải danh mục">
+          <span *ngFor="let row of [1, 2, 3, 4]"></span>
+        </div>
+
+        <div class="eb-table-shell" *ngIf="!isLoading && filteredCatalog.length">
+          <table class="eb-table">
+            <thead>
+              <tr>
+                <th>Dịch vụ</th>
+                <th>Nhóm</th>
+                <th>Thời gian</th>
+                <th>Ủy quyền</th>
+                <th>Trạng thái</th>
+                <th class="actions-column">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filteredCatalog">
+                <td class="service-cell eb-entity-cell">
+                  <strong>{{ item.serviceName }}</strong>
+                  <code>{{ item.serviceCode }}</code>
+                  <small>{{ item.description || 'Chưa có mô tả' }}</small>
+                </td>
+                <td>{{ item.serviceType }}</td>
+                <td>
+                  <strong>{{ item.estimatedTime }}</strong> phút
+                </td>
+                <td>
+                  <span class="eb-badge" [class.eb-badge--teal]="item.delegatable">
+                    {{ item.delegatable ? 'Cho phép' : 'Chính chủ' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="eb-badge" [class.eb-badge--success]="item.status === 'ACTIVE'">
+                    {{ item.status === 'ACTIVE' ? 'Hoạt động' : 'Lưu trữ' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="row-actions" *ngIf="item.status === 'ACTIVE'; else restoreAction">
+                    <button
+                      type="button"
+                      class="eb-icon-action"
+                      (click)="edit(item)"
+                      [attr.aria-label]="'Chỉnh sửa ' + item.serviceName"
+                      title="Chỉnh sửa"
+                    >
+                      <app-icon name="pencil" [size]="15" />
+                    </button>
+                    <button
+                      type="button"
+                      class="eb-icon-action eb-icon-action--danger"
+                      (click)="remove(item)"
+                      [disabled]="deletingCatalogId === item.catalogId"
+                      [attr.aria-label]="'Xóa ' + item.serviceName"
+                      title="Xóa hoặc lưu trữ"
+                    >
+                      <app-icon name="trash" [size]="15" />
+                    </button>
+                  </div>
+                  <ng-template #restoreAction>
+                    <div class="row-actions">
+                      <button
+                        type="button"
+                        class="restore-button"
+                        (click)="restore(item)"
+                        [disabled]="isSaving || deletingCatalogId === item.catalogId"
+                      >
+                        <app-icon name="refresh" [size]="14" />
+                        Khôi phục
+                      </button>
+                      <button
+                        type="button"
+                        class="eb-icon-action eb-icon-action--danger"
+                        (click)="remove(item)"
+                        [disabled]="isSaving || deletingCatalogId === item.catalogId"
+                        [attr.aria-label]="'Xóa vĩnh viễn ' + item.serviceName"
+                        title="Xóa vĩnh viễn và giữ lịch sử"
+                      >
+                        <app-icon name="trash" [size]="15" />
+                      </button>
+                    </div>
+                  </ng-template>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div *ngIf="!isLoading && !filteredCatalog.length" class="eb-empty-state">
+          <app-icon name="list-checks" [size]="28" />
+          <strong>Không tìm thấy dịch vụ phù hợp</strong>
+          <p>Thử thay đổi từ khóa hoặc bộ lọc để xem lại danh mục.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="catalog-import eb-card">
+      <div class="catalog-import__intro">
+        <span class="eb-eyebrow">Nhập dữ liệu hàng loạt</span>
+        <h2>Thêm nhiều dịch vụ bằng Excel</h2>
+        <p>
+          Tải file mẫu, điền đúng cấu trúc rồi nhập để đồng bộ các dòng hợp lệ đến toàn bộ chi
+          nhánh.
+        </p>
+      </div>
+      <app-excel-import-panel
+        type="service-catalog"
+        title="Nhập danh mục dịch vụ"
+        (imported)="imported()"
+      />
     </section>
   </main>
 </app-dashboard-layout>

@@ -2,6 +2,7 @@ package com.sbqs.service;
 
 import com.sbqs.dto.AccountProfileResponse;
 import com.sbqs.dto.ChangePasswordRequest;
+import com.sbqs.dto.CompleteSocialProfileRequest;
 import com.sbqs.dto.CustomerPaperlessProfileResponse;
 import com.sbqs.dto.CustomerProfileFieldResponse;
 import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
@@ -153,6 +154,23 @@ public class AccountService {
 
         userRepository.save(user);
         return getPaperlessProfile(request.serviceId());
+    }
+
+    @Transactional
+    public AccountProfileResponse completeSocialProfile(CompleteSocialProfileRequest request) {
+        User user = requireCustomer();
+        if (CustomerProfilePolicy.isComplete(user)) {
+            throw new RuntimeException("Ho so khach hang da hoan tat");
+        }
+
+        user.setFullName(request.fullName().trim());
+        user.setPhone(request.phone().trim());
+        user.setPermanentAddress(request.permanentAddress().trim());
+        user.setContactAddress(request.contactAddress().trim());
+        user = userRepository.save(user);
+        keycloakAdminService.updateUserProfile(
+                user.getKeycloakUserId(), user.getFullName(), user.getEmail(), user.getRole());
+        return AccountProfileResponse.from(user);
     }
 
     @Transactional

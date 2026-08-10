@@ -6,6 +6,7 @@ import com.sbqs.entity.Branch;
 import com.sbqs.entity.Counter;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
+import com.sbqs.repository.CounterSessionRepository;
 import com.sbqs.repository.TicketRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -20,17 +21,20 @@ public class QueueMonitorService {
     private final CounterRepository counterRepository;
     private final TicketRepository ticketRepository;
     private final CurrentUserService currentUserService;
+    private final CounterSessionRepository counterSessionRepository;
 
     public QueueMonitorService(
             BranchRepository branchRepository,
             CounterRepository counterRepository,
             TicketRepository ticketRepository,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            CounterSessionRepository counterSessionRepository) {
 
         this.branchRepository = branchRepository;
         this.counterRepository = counterRepository;
         this.ticketRepository = ticketRepository;
         this.currentUserService = currentUserService;
+        this.counterSessionRepository = counterSessionRepository;
     }
 
     public QueueMonitorResponse getMonitor(Long branchId) {
@@ -58,6 +62,10 @@ public class QueueMonitorService {
 
         for (Counter counter : counters) {
             String status = getMonitorStatus(counter);
+            String staffName = counterSessionRepository
+                    .findFirstByCounterIdAndStatusOrderByStartedAtDesc(counter.getCounterId(), "ACTIVE")
+                    .map(session -> session.getStaffName())
+                    .orElse(null);
 
             servingCounters.add(
                     new ServingCounterDTO(
@@ -68,7 +76,8 @@ public class QueueMonitorService {
                             status,
                             counter.getQueueMachine() == null
                                     ? null
-                                    : counter.getQueueMachine().getMachineName()));
+                                    : counter.getQueueMachine().getMachineName(),
+                            staffName));
         }
 
         long waitingCount = queueMachineId == null

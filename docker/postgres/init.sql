@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS services (
 CREATE TABLE IF NOT EXISTS customers (
     customer_id BIGSERIAL PRIMARY KEY,
     keycloak_user_id VARCHAR(100) UNIQUE,
+    identity_provider VARCHAR(30),
     full_name VARCHAR(255) NOT NULL,
     phone VARCHAR(30),
     email VARCHAR(255),

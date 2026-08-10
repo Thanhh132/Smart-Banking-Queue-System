@@ -17,6 +17,7 @@ public class TicketNotificationDelegate implements JavaDelegate {
     @Override
     public void execute(DelegateExecution execution) {
         eventPublisher.publishEvent(new TicketCalledNotification(
+                number(execution, "ticketId"),
                 text(execution, "customerEmail"),
                 text(execution, "ticketNumber"),
                 text(execution, "branchName"),
@@ -24,6 +25,11 @@ public class TicketNotificationDelegate implements JavaDelegate {
                 text(execution, "queueMachineLocationNote"),
                 text(execution, "counterName"),
                 text(execution, "staffName")));
+    }
+
+    private Long number(DelegateExecution execution, String variableName) {
+        Object value = execution.getVariable(variableName);
+        return value instanceof Number number ? number.longValue() : null;
     }
 
     private String text(DelegateExecution execution, String variableName) {

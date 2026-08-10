@@ -19,6 +19,7 @@ export interface ServiceCatalogItem {
   description?: string | null;
   estimatedTime: number;
   status: string;
+  delegatable: boolean;
 }
 
 export type FormFieldType = 'TEXT' | 'TEXTAREA' | 'NUMBER' | 'DATE' | 'SELECT' | 'RADIO' | 'CHECKBOX';

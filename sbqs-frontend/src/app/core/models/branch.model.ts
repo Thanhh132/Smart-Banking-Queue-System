@@ -26,3 +26,10 @@ export interface SmartBranchRecommendation extends Branch {
   explanation: string;
   calculatedAt: string;
 }
+
+export interface BranchOpenStatus {
+  branchId: number;
+  openNow: boolean;
+  message: string;
+  checkedAt: string;
+}

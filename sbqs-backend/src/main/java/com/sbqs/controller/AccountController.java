@@ -3,6 +3,7 @@ package com.sbqs.controller;
 import com.sbqs.dto.AccountProfileResponse;
 import com.sbqs.dto.AccountChangeConfirmationResponse;
 import com.sbqs.dto.ChangePasswordRequest;
+import com.sbqs.dto.CompleteSocialProfileRequest;
 import com.sbqs.dto.CustomerPaperlessProfileResponse;
 import com.sbqs.dto.UpdateAccountProfileRequest;
 import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
@@ -42,6 +43,12 @@ public class AccountController {
     public ResponseEntity<CustomerPaperlessProfileResponse> updatePaperlessProfile(
             @Valid @RequestBody UpdateCustomerPaperlessProfileRequest request) {
         return ResponseEntity.ok(accountService.updatePaperlessProfile(request));
+    }
+
+    @PutMapping("/social-profile")
+    public ResponseEntity<AccountProfileResponse> completeSocialProfile(
+            @Valid @RequestBody CompleteSocialProfileRequest request) {
+        return ResponseEntity.ok(accountService.completeSocialProfile(request));
     }
 
     @PostMapping("/change-request")

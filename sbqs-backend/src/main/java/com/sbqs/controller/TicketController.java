@@ -79,6 +79,11 @@ public class TicketController {
         return ResponseEntity.ok(ticketService.completeTicket(ticketId));
     }
 
+    @PostMapping("/{ticketId}/no-show")
+    public ResponseEntity<Ticket> markCustomerNoShow(@PathVariable Long ticketId) {
+        return ResponseEntity.ok(ticketService.markCustomerNoShow(ticketId));
+    }
+
     @PostMapping("/{ticketId}/cancel")
     public ResponseEntity<Ticket> cancelTicket(@PathVariable Long ticketId) {
         return ResponseEntity.ok(ticketService.cancelTicket(ticketId));

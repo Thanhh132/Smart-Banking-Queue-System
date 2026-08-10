@@ -53,7 +53,9 @@ npm ci
 npm start
 ```
 
-The frontend runs at `http://localhost:4200`, the API at `http://localhost:8081`, and Keycloak at `http://localhost:8080`.
+The frontend runs at `http://localhost:4200`, the API at `http://localhost:8081`, Keycloak at `http://localhost:8080`, and Camunda Cockpit at `http://localhost:8081/camunda/app/cockpit/default/`.
+
+For local development, Cockpit uses `admin` / `admin`. Override `CAMUNDA_ADMIN_USERNAME` and `CAMUNDA_ADMIN_PASSWORD` outside local development. The Camunda login is separate from SBQS/Keycloak authentication.
 
 ## Verification
 

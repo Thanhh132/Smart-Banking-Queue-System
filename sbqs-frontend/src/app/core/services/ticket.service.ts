@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../config/api.config';
 export interface TicketTracking {
   ticketId: number;
   ticketNumber: number;
-  status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED';
+  status: 'WAITING' | 'SERVING' | 'COMPLETED' | 'CANCELLED' | 'MISSED';
   peopleAhead: number;
   counterName: string | null;
   branchName: string | null;

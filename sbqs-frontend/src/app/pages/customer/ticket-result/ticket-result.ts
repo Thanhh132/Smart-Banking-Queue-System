@@ -7,6 +7,7 @@ import { HistoryItem, HistoryService } from '../../../core/services/history.serv
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { CustomerLiveTrackingService } from '../../../core/services/customer-live-tracking.service';
+import { WebPushService } from '../../../core/services/web-push.service';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
@@ -31,6 +32,7 @@ export class TicketResult implements OnInit, OnDestroy {
   private historyService = inject(HistoryService);
   private cdr = inject(ChangeDetectorRef);
   readonly liveTracking = inject(CustomerLiveTrackingService);
+  readonly webPush = inject(WebPushService);
 
   ticket: any = null;
   monitor: QueueMonitor | null = null;
@@ -59,7 +61,7 @@ export class TicketResult implements OnInit, OnDestroy {
     };
 
     if (
-      ['COMPLETED', 'CANCELLED'].includes(tracking.status)
+      ['COMPLETED', 'CANCELLED', 'MISSED'].includes(tracking.status)
       && this.lastTerminalStatus !== tracking.status
     ) {
       this.lastTerminalStatus = tracking.status;
@@ -76,6 +78,7 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    void this.webPush.initialize();
     const data = sessionStorage.getItem('currentTicket');
 
     if (data) {
@@ -116,6 +119,7 @@ export class TicketResult implements OnInit, OnDestroy {
       SERVING: 'Đang phục vụ',
       COMPLETED: 'Đã hoàn thành',
       CANCELLED: 'Đã hủy',
+      MISSED: 'Khách không đến quầy',
     };
     return labels[this.effectiveStatus] || 'Đang xử lý';
   }
@@ -144,6 +148,7 @@ export class TicketResult implements OnInit, OnDestroy {
     const labels: Record<string, string> = {
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy',
+      MISSED: 'Khách không đến',
     };
     return labels[status || ''] || status || '-';
   }
@@ -162,7 +167,7 @@ export class TicketResult implements OnInit, OnDestroy {
     this.ticketService.cancelTicket(this.ticket.ticketId).subscribe({
       next: (ticket: any) => {
         this.ticket = ticket;
-        sessionStorage.setItem('currentTicket', JSON.stringify(ticket));
+        sessionStorage.removeItem('currentTicket');
         this.isCancelling = false;
         this.loadHistory();
         this.cdr.detectChanges();

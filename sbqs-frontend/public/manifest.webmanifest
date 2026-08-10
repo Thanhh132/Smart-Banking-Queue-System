@@ -1,0 +1,17 @@
+{
+  "name": "Smart Banking Queue System",
+  "short_name": "SBQS",
+  "description": "Theo dõi hàng đợi ngân hàng và nhận thông báo khi sắp đến lượt.",
+  "start_url": "/ticket",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f8fa",
+  "theme_color": "#08756d",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

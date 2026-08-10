@@ -1,0 +1,53 @@
+<app-dashboard-layout title="Lịch sử nhân viên">
+  <section class="history-page">
+    <app-page-header
+      title="Lịch sử phục vụ theo nhân viên"
+      subtitle="Theo dõi kết quả giao dịch, khách vắng và thời gian xử lý của từng giao dịch viên."
+    />
+
+    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+    <app-card>
+      <div class="history-filters">
+        <label>Nhân viên
+          <select [(ngModel)]="selectedStaffId">
+            <option [ngValue]="0">Tất cả nhân viên</option>
+            <option *ngFor="let staff of staffOptions" [ngValue]="staff.id">{{ staff.name }}</option>
+          </select>
+        </label>
+        <label>Kết quả
+          <select [(ngModel)]="status">
+            <option value="ALL">Tất cả kết quả</option>
+            <option value="COMPLETED">Hoàn thành</option>
+            <option value="MISSED">Khách không đến</option>
+            <option value="CANCELLED">Khách hủy</option>
+          </select>
+        </label>
+        <div><span>Tổng lượt</span><strong>{{ filteredHistories.length }}</strong></div>
+        <div><span>Hoàn thành</span><strong>{{ completedCount }}</strong></div>
+        <div><span>Khách vắng</span><strong>{{ missedCount }}</strong></div>
+      </div>
+    </app-card>
+
+    <app-card>
+      <div *ngIf="filteredHistories.length === 0" class="admin-empty">Chưa có dữ liệu phù hợp.</div>
+      <div class="table-wrapper" *ngIf="filteredHistories.length > 0">
+        <table class="admin-table">
+          <thead><tr><th>Nhân viên</th><th>Phiếu</th><th>Dịch vụ</th><th>Quầy</th><th>Khách hàng</th><th>Bắt đầu</th><th>Kết thúc</th><th>Kết quả</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let item of filteredHistories">
+              <td><strong>{{ item.staffName || 'Chưa phân công' }}</strong></td>
+              <td>#{{ item.ticketNumber }}</td>
+              <td>{{ item.serviceName || '-' }}</td>
+              <td>{{ item.counterName || '-' }}</td>
+              <td>{{ item.customerEmail || '-' }}</td>
+              <td>{{ formatDate(item.startedAt) }}</td>
+              <td>{{ formatDate(item.completedAt) }}</td>
+              <td><span class="admin-badge" [ngClass]="item.status === 'COMPLETED' ? 'badge-success' : 'badge-danger'">{{ statusLabel(item.status) }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </app-card>
+  </section>
+</app-dashboard-layout>

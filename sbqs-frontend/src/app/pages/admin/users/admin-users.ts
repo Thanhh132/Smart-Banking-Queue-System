@@ -40,7 +40,6 @@ export class AdminUsers implements OnInit {
   showConfirmPassword = false;
 
   editingUserId: number | null = null;
-  editingUserStatus = 'ACTIVE';
   successMessage = '';
   errorMessage = '';
 
@@ -81,7 +80,7 @@ export class AdminUsers implements OnInit {
     this.errorMessage = '';
     this.cdr.detectChanges();
 
-    this.userManagementService.getUsersByBranch(branchId).subscribe({
+    this.userManagementService.getUsersByRole('STAFF').subscribe({
       next: (res: any) => {
         this.users = Array.isArray(res) ? res : [];
         this.isListLoading = false;
@@ -153,9 +152,9 @@ export class AdminUsers implements OnInit {
   }
 
   deleteUser(user: any): void {
-    const isInactive = user.status === 'INACTIVE';
-    const action = isInactive ? 'xóa khỏi danh sách' : 'khóa tài khoản';
-    const confirmed = confirm(`Bạn có chắc muốn ${action} nhân viên "${user.fullName}" không?`);
+    const confirmed = confirm(
+      `Xóa vĩnh viễn nhân viên "${user.fullName}" khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.`,
+    );
 
     if (!confirmed) {
       return;
@@ -166,20 +165,14 @@ export class AdminUsers implements OnInit {
 
     this.userManagementService.deleteUser(user.userId).subscribe({
       next: () => {
-        this.successMessage = isInactive
-          ? 'Đã xóa nhân viên khỏi danh sách.'
-          : 'Đã khóa tài khoản nhân viên.';
-        this.users = isInactive
-          ? this.users.filter((item) => item.userId !== user.userId)
-          : this.users.map((item) =>
-              item.userId === user.userId ? { ...item, status: 'INACTIVE' } : item,
-            );
+        this.successMessage = 'Đã xóa vĩnh viễn tài khoản nhân viên.';
+        this.users = this.users.filter((item) => item.userId !== user.userId);
         this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          isInactive ? 'Xóa nhân viên thất bại.' : 'Khóa tài khoản nhân viên thất bại.',
+          'Xóa tài khoản nhân viên thất bại.',
         );
         this.cdr.detectChanges();
       },
@@ -189,7 +182,6 @@ export class AdminUsers implements OnInit {
   startEdit(user: any): void {
     this.isEditMode = true;
     this.editingUserId = user.userId;
-    this.editingUserStatus = user.status || 'ACTIVE';
     const passwordControl = this.staffForm.get('password');
     const confirmPasswordControl = this.staffForm.get('confirmPassword');
     passwordControl?.clearValidators();
@@ -211,7 +203,6 @@ export class AdminUsers implements OnInit {
   cancelEdit(): void {
     this.isEditMode = false;
     this.editingUserId = null;
-    this.editingUserStatus = 'ACTIVE';
     const passwordControl = this.staffForm.get('password');
     const confirmPasswordControl = this.staffForm.get('confirmPassword');
     passwordControl?.setValidators([
@@ -240,7 +231,6 @@ export class AdminUsers implements OnInit {
       fullName: this.staffForm.value.fullName,
       email: this.staffForm.value.email,
       phone: this.staffForm.value.phone,
-      status: this.editingUserStatus,
     };
 
     this.isSubmitting = true;
@@ -251,7 +241,6 @@ export class AdminUsers implements OnInit {
         this.isSubmitting = false;
         this.isEditMode = false;
         this.editingUserId = null;
-        this.editingUserStatus = 'ACTIVE';
         const passwordControl = this.staffForm.get('password');
         const confirmPasswordControl = this.staffForm.get('confirmPassword');
         passwordControl?.setValidators([
@@ -267,33 +256,6 @@ export class AdminUsers implements OnInit {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(err, 'Cập nhật thất bại.');
         this.isSubmitting = false;
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  unlockUser(user: any): void {
-    if (!confirm(`Mở khóa tài khoản nhân viên "${user.fullName}"?`)) {
-      return;
-    }
-
-    this.successMessage = '';
-    this.errorMessage = '';
-
-    const payload = {
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      status: 'ACTIVE',
-    };
-
-    this.userManagementService.updateUser(user.userId, payload).subscribe({
-      next: () => {
-        this.successMessage = 'Đã mở khóa tài khoản nhân viên.';
-        this.loadUsers();
-      },
-      error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Mở khóa tài khoản nhân viên thất bại.');
         this.cdr.detectChanges();
       },
     });

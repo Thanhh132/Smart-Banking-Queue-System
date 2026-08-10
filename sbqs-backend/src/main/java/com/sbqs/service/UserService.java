@@ -3,17 +3,24 @@ package com.sbqs.service;
 import com.sbqs.dto.CreateStaffRequest;
 import com.sbqs.dto.UpdateUserRequest;
 import com.sbqs.entity.Branch;
+import com.sbqs.entity.Counter;
+import com.sbqs.entity.CounterSession;
 import com.sbqs.entity.User;
 import com.sbqs.repository.BranchRepository;
+import com.sbqs.repository.CounterRepository;
+import com.sbqs.repository.CounterSessionRepository;
+import com.sbqs.repository.DigitalDelegationRepository;
 import com.sbqs.repository.UserRepository;
 import com.sbqs.util.PasswordPolicy;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 
@@ -25,19 +32,28 @@ public class UserService {
         private final KeycloakAdminService keycloakService;
         private final CurrentUserService currentUserService;
         private final PasswordEncoder passwordEncoder;
+        private final CounterSessionRepository counterSessionRepository;
+        private final CounterRepository counterRepository;
+        private final DigitalDelegationRepository delegationRepository;
 
         public UserService(
                         UserRepository userRepository,
                         BranchRepository branchRepository,
                         KeycloakAdminService keycloakService,
                         CurrentUserService currentUserService,
-                        PasswordEncoder passwordEncoder) {
+                        PasswordEncoder passwordEncoder,
+                        CounterSessionRepository counterSessionRepository,
+                        CounterRepository counterRepository,
+                        DigitalDelegationRepository delegationRepository) {
 
                 this.userRepository = userRepository;
                 this.branchRepository = branchRepository;
                 this.keycloakService = keycloakService;
                 this.currentUserService = currentUserService;
                 this.passwordEncoder = passwordEncoder;
+                this.counterSessionRepository = counterSessionRepository;
+                this.counterRepository = counterRepository;
+                this.delegationRepository = delegationRepository;
         }
 
         public List<User> getUsersByBranch(Long branchId) {
@@ -61,12 +77,18 @@ public class UserService {
 
         public List<User> getUsersByRole(String role) {
                 User currentUser = currentUserService.requireUser();
+                boolean managedRole = "STAFF".equalsIgnoreCase(role)
+                                || "BRANCH_ADMIN".equalsIgnoreCase(role);
                 if ("SUPER_ADMIN".equals(currentUser.getRole())) {
-                        return userRepository.findByRoleAndStatusNotIgnoreCase(role, "DELETED");
+                        return managedRole
+                                        ? userRepository.findByRole(role)
+                                        : userRepository.findByRoleAndStatusNotIgnoreCase(role, "DELETED");
                 }
 
-                return userRepository.findByBranchAndRoleAndStatusNotIgnoreCase(
-                                currentUser.getBranch(), role, "DELETED");
+                return managedRole
+                                ? userRepository.findByBranchAndRole(currentUser.getBranch(), role)
+                                : userRepository.findByBranchAndRoleAndStatusNotIgnoreCase(
+                                                currentUser.getBranch(), role, "DELETED");
         }
 
         public User createStaff(CreateStaffRequest request) {
@@ -163,10 +185,6 @@ public class UserService {
                 user.setEmail(email);
                 user.setPhone(request.getPhone());
 
-                if (request.getStatus() != null && !request.getStatus().isBlank()) {
-                        user.setStatus(request.getStatus().toUpperCase(Locale.ROOT));
-                }
-
                 if (request.getBranchId() != null) {
                         Branch branch = branchRepository.findById(request.getBranchId())
                                         .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
@@ -181,28 +199,51 @@ public class UserService {
                                 savedUser.getEmail(),
                                 savedUser.getRole());
 
-                if (request.getStatus() != null && !request.getStatus().isBlank()) {
-                        keycloakService.setUserEnabled(
-                                        savedUser.getKeycloakUserId(),
-                                        "ACTIVE".equalsIgnoreCase(savedUser.getStatus()));
-                }
-
                 return savedUser;
         }
 
         @Transactional
-        /** Khóa mềm tài khoản thay vì xóa để bảo toàn lịch sử giao dịch và audit ngân hàng. */
+        @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+        /** Xóa vĩnh viễn nhân sự khỏi database và Keycloak; lịch sử dùng dữ liệu snapshot. */
         public void deleteUser(Long userId) {
 
                 User user = userRepository.findById(userId)
                                 .orElseThrow(() -> new RuntimeException("Khong tim thay nguoi dung"));
 
                 requireUserManagementAccess(user);
+                if (!List.of("STAFF", "BRANCH_ADMIN").contains(user.getRole())) {
+                        throw new RuntimeException("Chi duoc xoa tai khoan nhan vien hoac quan tri chi nhanh");
+                }
 
-                // Khong xoa vat ly de giu lich su giao dich; lan xoa thu hai an khoi danh sach quan tri.
-                user.setStatus("INACTIVE".equalsIgnoreCase(user.getStatus()) ? "DELETED" : "INACTIVE");
-                userRepository.save(user);
-                keycloakService.setUserEnabled(user.getKeycloakUserId(), false);
+                closeIdleCounterSession(user);
+                delegationRepository.clearVerifier(user);
+                userRepository.delete(user);
+                userRepository.flush();
+                keycloakService.deleteUser(user.getKeycloakUserId(), user.getEmail());
+        }
+
+        private void closeIdleCounterSession(User user) {
+                CounterSession session = counterSessionRepository
+                                .findFirstByStaffIdAndStatusOrderByStartedAtDesc(user.getUserId(), "ACTIVE")
+                                .orElse(null);
+                if (session == null) {
+                        return;
+                }
+
+                Counter counter = counterRepository.findById(session.getCounterId()).orElse(null);
+                if (counter != null && counter.getCurrentTicket() != null) {
+                        throw new RuntimeException(
+                                        "Nhan vien dang phuc vu mot phieu. Hay hoan tat phieu truoc khi xoa tai khoan");
+                }
+
+                session.setEndedAt(LocalDateTime.now());
+                session.setStatus("COMPLETED");
+                counterSessionRepository.save(session);
+
+                if (counter != null) {
+                        counter.setStatus("INACTIVE");
+                        counterRepository.save(counter);
+                }
         }
 
         private void requireBranchAccess(Long branchId) {

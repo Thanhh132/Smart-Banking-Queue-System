@@ -12,6 +12,7 @@ export interface HistoryItem {
   queueMachineName?: string;
   customerEmail?: string;
   staffName?: string;
+  staffId?: number;
   status?: string;
   startedAt?: string;
   completedAt?: string;

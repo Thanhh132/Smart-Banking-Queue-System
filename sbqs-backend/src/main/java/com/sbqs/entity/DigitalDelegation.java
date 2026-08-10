@@ -20,11 +20,17 @@ public class DigitalDelegation {
     @ManyToOne(optional = false) @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @ManyToOne(optional = false) @JoinColumn(name = "branch_id", nullable = false)
+    @ManyToOne @JoinColumn(name = "branch_id")
     private Branch branch;
 
-    @ManyToOne(optional = false) @JoinColumn(name = "service_id", nullable = false)
+    @ManyToOne @JoinColumn(name = "service_id")
     private Services service;
+
+    @Column(name = "branch_name_snapshot", length = 255)
+    private String branchNameSnapshot;
+
+    @Column(name = "service_name_snapshot", length = 255)
+    private String serviceNameSnapshot;
 
     @Column(name = "delegate_name", nullable = false, length = 150) private String delegateName;
     @Column(name = "delegate_identity_hash", nullable = false, length = 100) private String delegateIdentityHash;

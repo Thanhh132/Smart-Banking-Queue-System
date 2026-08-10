@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class BranchOperatingHoursService {
+    private static final ZoneId BUSINESS_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
+
     private final BranchOperatingHoursRepository repository;
     private final BranchRepository branchRepository;
     private final CurrentUserService currentUserService;
@@ -66,7 +69,9 @@ public class BranchOperatingHoursService {
         return getSchedule(branchId);
     }
 
-    public boolean isOpenNow(Long branchId) { return isOpen(branchId, LocalDateTime.now()); }
+    public boolean isOpenNow(Long branchId) {
+        return isOpen(branchId, LocalDateTime.now(BUSINESS_ZONE));
+    }
 
     public boolean isOpen(Long branchId, LocalDateTime dateTime) {
         int day = dateTime.getDayOfWeek().getValue();
@@ -79,13 +84,18 @@ public class BranchOperatingHoursService {
     }
 
     public BranchOpenStatusResponse getStatus(Long branchId) {
-        boolean open = isOpenNow(branchId);
+        LocalDateTime checkedAt = LocalDateTime.now(BUSINESS_ZONE);
+        boolean open = isOpen(branchId, checkedAt);
         return new BranchOpenStatusResponse(branchId, open,
-                open ? "Chi nhánh đang trong giờ phục vụ" : "Chi nhánh hiện ngoài giờ phục vụ", LocalDateTime.now());
+                open ? "Chi nhánh đang trong giờ phục vụ" : "Chi nhánh hiện ngoài giờ phục vụ", checkedAt);
     }
 
     public void requireOpen(Long branchId) {
-        if (!isOpenNow(branchId)) {
+        requireOpen(branchId, LocalDateTime.now(BUSINESS_ZONE));
+    }
+
+    void requireOpen(Long branchId, LocalDateTime dateTime) {
+        if (!isOpen(branchId, dateTime)) {
             throw new RuntimeException("Chi nhánh hiện ngoài giờ phục vụ. Vui lòng quay lại trong khung giờ làm việc");
         }
     }

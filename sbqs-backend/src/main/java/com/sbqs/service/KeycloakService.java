@@ -37,6 +37,18 @@ public class KeycloakService {
         return formClient.postForMap(tokenUrl(), body);
     }
 
+    public Map<String, Object> exchangeAuthorizationCode(String code, String codeVerifier, String redirectUri) {
+        if (!properties.isGoogleLoginEnabled()) {
+            throw new RuntimeException("Dang nhap Google chua duoc bat");
+        }
+        MultiValueMap<String, String> body = clientCredentials();
+        body.add("grant_type", "authorization_code");
+        body.add("code", code);
+        body.add("code_verifier", codeVerifier);
+        body.add("redirect_uri", redirectUri);
+        return formClient.postForMap(tokenUrl(), body);
+    }
+
     public void logout(String refreshToken) {
         requireRefreshToken(refreshToken);
         MultiValueMap<String, String> body = clientCredentials();

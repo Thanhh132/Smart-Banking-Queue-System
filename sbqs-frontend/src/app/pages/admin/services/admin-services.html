@@ -8,15 +8,6 @@
     <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-    <section class="catalog-adder">
-      <div><strong>Thêm dịch vụ cho chi nhánh</strong><small>Danh sách do Super Admin quản lý và dùng chung toàn hệ thống.</small></div>
-      <select [(ngModel)]="selectedCatalogId">
-        <option [ngValue]="null">Chọn dịch vụ chưa có tại chi nhánh</option>
-        <option *ngFor="let item of availableCatalog" [ngValue]="item.catalogId">{{ item.serviceName }} ({{ item.serviceCode }})</option>
-      </select>
-      <button type="button" class="btn btn-primary" (click)="addSelectedService()" [disabled]="!selectedCatalogId || isAddingService">{{ isAddingService ? 'Đang thêm...' : 'Thêm vào chi nhánh' }}</button>
-    </section>
-
     <div class="settings-layout">
       <aside class="service-picker">
         <div class="service-picker__heading"><div><strong>Chọn dịch vụ</strong><small>{{ services.length }} dịch vụ tại chi nhánh</small></div><button type="button" (click)="loadServices()" aria-label="Tải lại">↻</button></div>

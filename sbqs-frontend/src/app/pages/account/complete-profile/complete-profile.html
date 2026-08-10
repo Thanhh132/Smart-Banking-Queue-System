@@ -1,0 +1,56 @@
+<main class="profile-onboarding">
+  <section class="profile-onboarding__card">
+    <header>
+      <div>
+        <span>BƯỚC BẮT BUỘC</span>
+        <h1>Hoàn tất hồ sơ khách hàng</h1>
+        <p>Google chỉ được dùng để xác thực đăng nhập. Vui lòng cung cấp thông tin thật dùng cho giao dịch tại quầy.</p>
+      </div>
+      <button type="button" class="logout-button" (click)="logout()">Đăng xuất</button>
+    </header>
+
+    <div class="identity-note">
+      <strong>Email đã xác thực</strong>
+      <span>{{ email }}</span>
+    </div>
+
+    <form [formGroup]="profileForm" (ngSubmit)="submit()">
+      <div class="form-grid">
+        <label>
+          Họ và tên theo giấy tờ <b>*</b>
+          <input formControlName="fullName" autocomplete="name" placeholder="Ví dụ: Nguyễn Văn An" />
+          <small *ngIf="profileForm.controls.fullName.touched && profileForm.controls.fullName.invalid">
+            Vui lòng nhập họ tên thật.
+          </small>
+        </label>
+
+        <label>
+          Số điện thoại <b>*</b>
+          <input formControlName="phone" inputmode="tel" autocomplete="tel" placeholder="Ví dụ: 0912345678" />
+          <small *ngIf="profileForm.controls.phone.touched && profileForm.controls.phone.invalid">
+            Số điện thoại Việt Nam chưa hợp lệ.
+          </small>
+        </label>
+
+        <label class="full-width">
+          Địa chỉ thường trú <b>*</b>
+          <textarea formControlName="permanentAddress" rows="3" placeholder="Địa chỉ theo CCCD/giấy tờ tùy thân"></textarea>
+        </label>
+
+        <label class="full-width">
+          <span class="label-row">
+            Địa chỉ tạm trú / nơi ở hiện tại <b>*</b>
+            <button type="button" (click)="usePermanentAddress()">Giống địa chỉ thường trú</button>
+          </span>
+          <textarea formControlName="contactAddress" rows="3" placeholder="Nơi ngân hàng có thể liên hệ hoặc giao nhận"></textarea>
+        </label>
+      </div>
+
+      <p class="privacy-note">Thông tin này được lưu trong hồ sơ SBQS và không lấy tự động từ tên hiển thị Google.</p>
+      <div *ngIf="errorMessage" class="form-error">{{ errorMessage }}</div>
+      <button type="submit" class="submit-button" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Đang lưu hồ sơ...' : 'Lưu và tiếp tục' }}
+      </button>
+    </form>
+  </section>
+</main>

@@ -8,6 +8,7 @@ import com.sbqs.entity.User;
 import com.sbqs.repository.AppointmentRepository;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
+import com.sbqs.repository.DigitalDelegationRepository;
 import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.ServiceRepository;
@@ -35,7 +36,9 @@ public class BranchService {
     private final QueueMachineRepository queueMachineRepository;
     private final ServiceRepository serviceRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
+    private final DigitalDelegationRepository delegationRepository;
     private final DomainEventPublisher eventPublisher;
+    private final ServiceCatalogService serviceCatalogService;
 
     public BranchService(
             BranchRepository branchRepository,
@@ -46,7 +49,9 @@ public class BranchService {
             QueueMachineRepository queueMachineRepository,
             ServiceRepository serviceRepository,
             QueueMachineServiceMappingRepository mappingRepository,
-            DomainEventPublisher eventPublisher) {
+            DigitalDelegationRepository delegationRepository,
+            DomainEventPublisher eventPublisher,
+            ServiceCatalogService serviceCatalogService) {
 
         this.branchRepository = branchRepository;
         this.userRepository = userRepository;
@@ -56,7 +61,9 @@ public class BranchService {
         this.queueMachineRepository = queueMachineRepository;
         this.serviceRepository = serviceRepository;
         this.mappingRepository = mappingRepository;
+        this.delegationRepository = delegationRepository;
         this.eventPublisher = eventPublisher;
+        this.serviceCatalogService = serviceCatalogService;
     }
 
     @Cacheable(cacheNames = "branches", key = "'all'")
@@ -78,6 +85,7 @@ public class BranchService {
     }
 
     @CacheEvict(cacheNames = "branches", allEntries = true)
+    @Transactional
     /** Tạo chi nhánh, chuẩn hóa địa chỉ/mã và geocode tọa độ phục vụ tìm kiếm gần nhất. */
     public Branch createBranch(Branch branch) {
         if (branch.getBranchCode() == null
@@ -87,6 +95,7 @@ public class BranchService {
         }
 
         Branch savedBranch = branchRepository.save(branch);
+        serviceCatalogService.inheritCatalogForBranch(savedBranch);
         eventPublisher.publish(
                 "BRANCH_CREATED",
                 "BRANCH",
@@ -155,14 +164,43 @@ public class BranchService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay chi nhanh"));
 
         List<User> users = userRepository.findByBranch(branch);
-        if (!users.isEmpty()) {
+        List<User> blockingUsers = users.stream()
+                .filter(user -> !"INACTIVE".equalsIgnoreCase(user.getStatus())
+                        && !"DELETED".equalsIgnoreCase(user.getStatus()))
+                .toList();
+        if (!blockingUsers.isEmpty()) {
             throw new RuntimeException(
                     "Khong the xoa chi nhanh vi con "
-                            + users.size()
-                            + " tai khoan thuoc chi nhanh nay. Hay khoa hoac chuyen tai khoan truoc.");
+                            + blockingUsers.size()
+                            + " tai khoan dang hoat dong. Hay xoa hoac chuyen tai khoan truoc.");
         }
 
-        appointmentRepository.deleteAll(appointmentRepository.findByBranch(branch));
+        // Tai khoan da khoa/xoa mem van duoc giu lai cho audit, nhung phai hoan tat
+        // trang thai xoa va bo khoa ngoai den chi nhanh dang bi xoa vat ly.
+        users.forEach(user -> {
+            user.setStatus("DELETED");
+            user.setBranch(null);
+        });
+        userRepository.saveAll(users);
+        userRepository.flush();
+
+        var delegations = delegationRepository.findByBranch(branch);
+        delegations.forEach(delegation -> {
+            if (delegation.getBranchNameSnapshot() == null) {
+                delegation.setBranchNameSnapshot(branch.getBranchName());
+            }
+            if (delegation.getServiceNameSnapshot() == null && delegation.getService() != null) {
+                delegation.setServiceNameSnapshot(delegation.getService().getServiceName());
+            }
+            if ("ACTIVE".equalsIgnoreCase(delegation.getStatus())
+                    || "VERIFIED".equalsIgnoreCase(delegation.getStatus())) {
+                delegation.setStatus("CANCELLED");
+            }
+            delegation.setBranch(null);
+            delegation.setService(null);
+        });
+        delegationRepository.saveAll(delegations);
+        delegationRepository.flush();
 
         List<QueueMachineServiceMapping> mappings = mappingRepository.findAllRelatedToBranch(branchId);
         mappingRepository.deleteAll(mappings);
@@ -174,6 +212,8 @@ public class BranchService {
         counterRepository.saveAll(counters);
 
         ticketRepository.deleteAll(ticketRepository.findByBranch(branch));
+        ticketRepository.flush();
+        appointmentRepository.deleteAll(appointmentRepository.findByBranch(branch));
         counterRepository.deleteAll(counters);
         serviceRepository.deleteAll(serviceRepository.findByBranch(branch));
         queueMachineRepository.deleteAll(queueMachineRepository.findByBranch(branch));

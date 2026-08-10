@@ -4,7 +4,9 @@ import com.sbqs.dto.CreateStaffRequest;
 import com.sbqs.dto.bulkimport.ImportError;
 import com.sbqs.dto.bulkimport.ImportResult;
 import com.sbqs.dto.bulkimport.ServiceImportRow;
+import com.sbqs.dto.bulkimport.ServiceCatalogImportRow;
 import com.sbqs.dto.bulkimport.StaffImportRow;
+import com.sbqs.dto.service.ServiceCatalogRequest;
 import com.sbqs.entity.Branch;
 import com.sbqs.entity.Services;
 import org.springframework.stereotype.Service;
@@ -23,17 +25,20 @@ public class BulkImportService {
     private final UserService userService;
     private final ServicesService servicesService;
     private final CurrentUserService currentUserService;
+    private final ServiceCatalogService serviceCatalogService;
 
     public BulkImportService(
             ExcelImportParser parser,
             UserService userService,
             ServicesService servicesService,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            ServiceCatalogService serviceCatalogService) {
 
         this.parser = parser;
         this.userService = userService;
         this.servicesService = servicesService;
         this.currentUserService = currentUserService;
+        this.serviceCatalogService = serviceCatalogService;
     }
 
     /** Import nhân viên theo từng dòng; dòng lỗi được thu thập riêng thay vì hủy toàn bộ file. */
@@ -87,12 +92,42 @@ public class BulkImportService {
         return result(rows.size(), successCount, errors);
     }
 
+    /** Import danh mục dịch vụ toàn hệ thống do Super Admin quản lý. */
+    public ImportResult importServiceCatalog(MultipartFile file) {
+        validateFile(file);
+        List<ServiceCatalogImportRow> rows = readServiceCatalog(file);
+        List<ImportError> errors = new ArrayList<>();
+        int successCount = 0;
+
+        for (ServiceCatalogImportRow row : rows) {
+            try {
+                requireText(row.serviceCode(), "Mã dịch vụ");
+                requireText(row.serviceName(), "Tên dịch vụ");
+                requireText(row.serviceType(), "Nhóm dịch vụ");
+                int estimatedTime = positiveInteger(row.estimatedTime());
+                boolean delegatable = parseYesNo(row.delegatable());
+                serviceCatalogService.create(new ServiceCatalogRequest(
+                        row.serviceCode(), row.serviceName(), row.serviceType(), row.description(),
+                        estimatedTime, delegatable));
+                successCount++;
+            } catch (RuntimeException ex) {
+                errors.add(error(row.rowNumber(), row.serviceCode(), ex));
+            }
+        }
+
+        return result(rows.size(), successCount, errors);
+    }
+
     public byte[] staffTemplate() {
         return parser.createStaffTemplate();
     }
 
     public byte[] serviceTemplate() {
         return parser.createServiceTemplate();
+    }
+
+    public byte[] serviceCatalogTemplate() {
+        return parser.createServiceCatalogTemplate();
     }
 
     private Services toService(ServiceImportRow row, Branch branch) {
@@ -167,6 +202,31 @@ public class BulkImportService {
         } catch (IOException ex) {
             throw new RuntimeException("Không đọc được file Excel", ex);
         }
+    }
+
+    private List<ServiceCatalogImportRow> readServiceCatalog(MultipartFile file) {
+        try {
+            return parser.parseServiceCatalog(file.getInputStream());
+        } catch (IOException ex) {
+            throw new RuntimeException("Không đọc được file Excel", ex);
+        }
+    }
+
+    private int positiveInteger(String value) {
+        try {
+            int parsed = Integer.parseInt(value);
+            if (parsed <= 0) throw new NumberFormatException();
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new RuntimeException("Thời gian xử lý phải là số nguyên dương");
+        }
+    }
+
+    private boolean parseYesNo(String value) {
+        String normalized = value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+        if (List.of("CÓ", "CO", "YES", "TRUE", "1").contains(normalized)) return true;
+        if (List.of("KHÔNG", "KHONG", "NO", "FALSE", "0", "").contains(normalized)) return false;
+        throw new RuntimeException("Cột cho phép ủy quyền chỉ nhận CÓ hoặc KHÔNG");
     }
 
     private ImportResult result(int total, int success, List<ImportError> errors) {

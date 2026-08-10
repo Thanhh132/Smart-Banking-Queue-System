@@ -2,7 +2,6 @@ package com.sbqs.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,9 +18,6 @@ public class UpdateUserRequest {
 
     @NotBlank(message = "So dien thoai khong duoc de trong")
     private String phone;
-
-    @Pattern(regexp = "(?i)ACTIVE|INACTIVE", message = "Trang thai chi duoc la ACTIVE hoac INACTIVE")
-    private String status;
 
     private Long branchId;
 }

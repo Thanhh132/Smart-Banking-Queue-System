@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import com.sbqs.dto.LoginResponse;
+import com.sbqs.dto.GoogleCodeExchangeRequest;
+import com.sbqs.dto.GoogleLoginConfigResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Locale;
 
@@ -92,6 +94,17 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 authService.refresh(request.getRefreshToken()));
+    }
+
+    @GetMapping("/google/config")
+    public ResponseEntity<GoogleLoginConfigResponse> googleLoginConfig() {
+        return ResponseEntity.ok(authService.getGoogleLoginConfig());
+    }
+
+    @PostMapping("/google/exchange")
+    public ResponseEntity<LoginResponse> exchangeGoogleCode(
+            @Valid @RequestBody GoogleCodeExchangeRequest request) {
+        return ResponseEntity.ok(authService.exchangeGoogleCode(request));
     }
 
     @PostMapping("/logout")

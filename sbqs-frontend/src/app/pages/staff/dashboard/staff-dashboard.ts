@@ -44,6 +44,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
   successMessage = '';
   isCallingNext = false;
   isCompleting = false;
+  isSkipping = false;
   isLiveRefreshing = false;
   lastUpdatedAt: Date | null = null;
   private liveIntervalId: any;
@@ -247,9 +248,32 @@ export class StaffDashboard implements OnInit, OnDestroy {
     });
   }
 
+  markNoShow(): void {
+    if (!this.currentTicket || this.isSkipping) return;
+    if (!confirm(`Xác nhận phiếu #${this.currentTicket.ticketNumber} không đến quầy?`)) return;
+
+    this.errorMessage = '';
+    this.isSkipping = true;
+    this.staffService.markNoShow(this.currentTicket.ticketId)
+      .pipe(finalize(() => {
+        this.isSkipping = false;
+        this.cdr.detectChanges();
+      }))
+      .subscribe({
+        next: () => {
+          this.successMessage = 'Đã ghi nhận khách không đến. Quầy có thể gọi số tiếp theo.';
+          this.currentTicket = null;
+          this.loadDashboard();
+        },
+        error: (err) => {
+          this.errorMessage = this.apiError.getMessage(err, 'Không thể bỏ qua phiếu này.');
+        },
+      });
+  }
+
   /** Gộp trạng thái quầy và task chờ trong một nhịp refresh, đồng thời chống request chồng nhau. */
   private refreshLiveState(): void {
-    if (this.isLiveRefreshing || this.isCallingNext || this.isCompleting) {
+    if (this.isLiveRefreshing || this.isCallingNext || this.isCompleting || this.isSkipping) {
       return;
     }
 
@@ -326,6 +350,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
     const labels: Record<string, string> = {
       COMPLETED: 'Hoàn thành',
       CANCELLED: 'Đã hủy',
+      MISSED: 'Khách không đến',
     };
     return labels[status || ''] || status || '-';
   }

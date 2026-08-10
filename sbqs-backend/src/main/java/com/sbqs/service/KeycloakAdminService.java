@@ -122,6 +122,32 @@ public class KeycloakAdminService {
         }
     }
 
+    public void deleteUser(String userId, String email) {
+        String adminToken = getAdminAccessToken();
+        String resolvedUserId = userId;
+
+        if (resolvedUserId == null || resolvedUserId.isBlank()) {
+            resolvedUserId = findOptionalUserIdByEmail(email, adminToken);
+        }
+        if (resolvedUserId == null) {
+            log.info("Keycloak user already missing email={}", email);
+            return;
+        }
+
+        try {
+            restTemplate.exchange(
+                    userUrl(resolvedUserId),
+                    HttpMethod.DELETE,
+                    new HttpEntity<>(adminHeaders(adminToken)),
+                    Void.class);
+        } catch (HttpClientErrorException.NotFound ex) {
+            log.info("Keycloak user already missing id={} email={}", resolvedUserId, email);
+        } catch (HttpClientErrorException ex) {
+            throw new RuntimeException(
+                    "Khong xoa duoc user tren Keycloak: " + ex.getResponseBodyAsString());
+        }
+    }
+
     public void updateUserProfile(String userId, String fullName, String email, String role) {
         if (userId == null || userId.isBlank()) {
             return;
@@ -159,7 +185,42 @@ public class KeycloakAdminService {
         updateUserVerificationState(userId, true, true, getAdminAccessToken());
     }
 
+    public void assignRealmRole(String userId, String role) {
+        if (userId == null || userId.isBlank()) {
+            throw new RuntimeException("Tai khoan chua duoc dong bo voi Keycloak");
+        }
+        assignRealmRole(userId, role, getAdminAccessToken());
+    }
+
+    public boolean hasFederatedIdentity(String userId, String providerAlias) {
+        if (userId == null || userId.isBlank() || providerAlias == null || providerAlias.isBlank()) {
+            return false;
+        }
+        ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
+                userUrl(userId) + "/federated-identity",
+                HttpMethod.GET,
+                new HttpEntity<>(bearerHeaders(getAdminAccessToken())),
+                new ParameterizedTypeReference<>() {
+                });
+        return response.getBody() != null && response.getBody().stream()
+                .map(identity -> identity.get("identityProvider"))
+                .filter(java.util.Objects::nonNull)
+                .map(Object::toString)
+                .anyMatch(providerAlias::equalsIgnoreCase);
+    }
+
     private String findUserIdByEmail(String email, String adminToken) {
+        String userId = findOptionalUserIdByEmail(email, adminToken);
+        if (userId == null) {
+            throw new RuntimeException("Email da ton tai tren Keycloak nhung khong tim thay user id");
+        }
+        return userId;
+    }
+
+    private String findOptionalUserIdByEmail(String email, String adminToken) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
         String url = UriComponentsBuilder.fromUriString(usersUrl())
                 .queryParam("email", email)
                 .queryParam("exact", true)
@@ -169,7 +230,7 @@ public class KeycloakAdminService {
                 new ParameterizedTypeReference<>() {
                 });
         if (response.getBody() == null || response.getBody().isEmpty()) {
-            throw new RuntimeException("Email da ton tai tren Keycloak nhung khong tim thay user id");
+            return null;
         }
         Object id = response.getBody().get(0).get("id");
         if (id == null) {

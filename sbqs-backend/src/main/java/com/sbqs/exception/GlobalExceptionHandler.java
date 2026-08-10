@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import com.sbqs.exception.LoginRateLimitExceededException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -127,7 +126,7 @@ public class GlobalExceptionHandler {
         }
 
         if (value.contains("users") || lower.contains("table \"users\"")) {
-            return "Không thể xóa vì tài khoản đang có dữ liệu liên quan như ca làm hoặc lịch sử phục vụ. Hãy khóa tài khoản thay vì xóa hẳn.";
+            return "Không thể xóa tài khoản vì vẫn còn dữ liệu đang tham chiếu đến tài khoản này.";
         }
 
         if (value.contains("branches") || lower.contains("table \"branches\"")) {

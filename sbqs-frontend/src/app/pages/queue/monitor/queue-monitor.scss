@@ -46,6 +46,22 @@ $surface-color: #ffffff;
     color: $muted-color;
     font-weight: 700;
   }
+
+  &__staff {
+    display: grid;
+    gap: 3px;
+
+    span {
+      padding: 0;
+      background: transparent;
+      color: $muted-color;
+      font-size: 11px;
+    }
+
+    strong {
+      font-size: 15px;
+    }
+  }
 }
 
 .live-indicator {

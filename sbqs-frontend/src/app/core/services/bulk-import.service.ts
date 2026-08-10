@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { API_BASE_URL } from '../config/api.config';
 
-export type ImportType = 'staff' | 'services';
+export type ImportType = 'staff' | 'services' | 'service-catalog';
 
 export interface ImportRowError {
   row: number;
@@ -35,7 +35,9 @@ export class BulkImportService {
   saveTemplate(type: ImportType, blob: Blob): void {
     const fileName = type === 'staff'
       ? 'sbqs-staff-import-template.xlsx'
-      : 'sbqs-services-import-template.xlsx';
+      : type === 'service-catalog'
+        ? 'sbqs-service-catalog-import-template.xlsx'
+        : 'sbqs-services-import-template.xlsx';
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;

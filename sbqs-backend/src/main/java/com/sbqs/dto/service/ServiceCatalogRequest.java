@@ -5,9 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 public record ServiceCatalogRequest(
-        @NotBlank String serviceCode,
+        String serviceCode,
         @NotBlank String serviceName,
         @NotBlank String serviceType,
         String description,
-        @NotNull @Positive Integer estimatedTime) {
+        @NotNull @Positive Integer estimatedTime,
+        boolean delegatable) {
 }

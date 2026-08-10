@@ -31,6 +31,9 @@ public class User {
     @Column(name = "keycloak_user_id")
     private String keycloakUserId;
 
+    @Column(name = "identity_provider")
+    private String identityProvider;
+
     private String phone;
 
     @Column(name = "gender")

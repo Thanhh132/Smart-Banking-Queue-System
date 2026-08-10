@@ -183,7 +183,7 @@ public class ReportService {
     }
 
     private String statusLabel(String status) {
-        return "ACTIVE".equals(status) ? "Hoạt động" : "Tạm khóa";
+        return "ACTIVE".equals(status) ? "Hoạt động" : "Không hoạt động";
     }
 
     private String ticketStatusLabel(String status) {
@@ -192,6 +192,7 @@ public class ReportService {
             case "SERVING" -> "Đang phục vụ";
             case "COMPLETED" -> "Hoàn thành";
             case "CANCELLED" -> "Đã hủy";
+            case "MISSED" -> "Khách không đến";
             default -> value(status);
         };
     }

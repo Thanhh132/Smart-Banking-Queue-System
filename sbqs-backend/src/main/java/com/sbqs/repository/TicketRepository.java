@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,16 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     Optional<Ticket> findFirstByQueueMachineAndStatusOrderByTicketNumberAsc(
             QueueMachine queueMachine,
             String status);
+
+    List<Ticket> findByQueueMachineAndStatusOrderByTicketNumberAsc(
+            QueueMachine queueMachine,
+            String status,
+            Pageable pageable);
+
+    long countByQueueMachineAndStatusAndTicketNumberLessThan(
+            QueueMachine queueMachine,
+            String status,
+            Integer ticketNumber);
 
     @Query("""
             select count(t)

@@ -11,6 +11,7 @@ import com.sbqs.dto.CreatePreparedTicketRequest;
 import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.event.DomainEventPublisher;
+import com.sbqs.event.TicketQueueThresholdNotification;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.CounterSessionRepository;
@@ -23,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -46,6 +49,7 @@ public class TicketService {
     private final DomainEventPublisher eventPublisher;
     private final PreparedTransactionService preparedTransactionService;
     private final BranchOperatingHoursService operatingHoursService;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public TicketService(
             TicketRepository ticketRepository,
@@ -60,7 +64,8 @@ public class TicketService {
             TicketWorkflowService ticketWorkflowService,
             DomainEventPublisher eventPublisher,
             PreparedTransactionService preparedTransactionService,
-            BranchOperatingHoursService operatingHoursService) {
+            BranchOperatingHoursService operatingHoursService,
+            ApplicationEventPublisher applicationEventPublisher) {
 
         this.ticketRepository = ticketRepository;
         this.mappingRepository = mappingRepository;
@@ -75,6 +80,7 @@ public class TicketService {
         this.eventPublisher = eventPublisher;
         this.preparedTransactionService = preparedTransactionService;
         this.operatingHoursService = operatingHoursService;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     /**
@@ -168,6 +174,7 @@ public class TicketService {
 
         Ticket savedTicket = ticketRepository.save(ticket);
         ticketWorkflowService.startTicketApproval(savedTicket);
+        notifyIfAlreadyNearFront(savedTicket);
         eventPublisher.publish(
                 "TICKET_CREATED",
                 "TICKET",
@@ -276,6 +283,7 @@ public class TicketService {
 
         counter.setCurrentTicket(savedTicket);
         counterRepository.save(counter);
+        notifyTicketThatReachedThreshold(counter.getQueueMachine());
         eventPublisher.publish(
                 "TICKET_CALLED",
                 "TICKET",
@@ -287,6 +295,31 @@ public class TicketService {
                         "serviceName", savedTicket.getService().getServiceName()));
 
         return preparedTransactionService.toStaffView(savedTicket);
+    }
+
+    private void notifyTicketThatReachedThreshold(QueueMachine queueMachine) {
+        List<Ticket> firstWaiting = ticketRepository.findByQueueMachineAndStatusOrderByTicketNumberAsc(
+                queueMachine, "WAITING", PageRequest.of(0, 4));
+        if (firstWaiting.size() < 4) return;
+
+        Ticket target = firstWaiting.get(3);
+        applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
+                target.getTicketId(), target.getCustomerEmail(), target.getTicketNumber(), 3));
+        eventPublisher.publish(
+                "TICKET_QUEUE_NEAR",
+                "TICKET",
+                target.getTicketId().toString(),
+                target.getBranch().getBranchId(),
+                Map.of("ticketNumber", target.getTicketNumber(), "peopleAhead", 3));
+    }
+
+    private void notifyIfAlreadyNearFront(Ticket ticket) {
+        long peopleAhead = ticketRepository.countByQueueMachineAndStatusAndTicketNumberLessThan(
+                ticket.getQueueMachine(), "WAITING", ticket.getTicketNumber());
+        if (peopleAhead > 3) return;
+
+        applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
+                ticket.getTicketId(), ticket.getCustomerEmail(), ticket.getTicketNumber(), peopleAhead));
     }
 
     @Transactional(readOnly = true)
@@ -346,6 +379,39 @@ public class TicketService {
                         "counterName", counter.getCounterName(),
                         "serviceName", savedTicket.getService().getServiceName()));
 
+        return savedTicket;
+    }
+
+    @CacheEvict(cacheNames = "queueMonitor", allEntries = true)
+    @Transactional
+    public Ticket markCustomerNoShow(Long ticketId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu"));
+        if (!"SERVING".equals(ticket.getStatus())) {
+            throw new RuntimeException("Chỉ có thể bỏ qua phiếu đang được gọi");
+        }
+
+        Counter counter = counterRepository.findFirstByCurrentTicketTicketId(ticketId)
+                .orElseThrow(() -> new RuntimeException("Phiếu không thuộc quầy đang phục vụ"));
+        requireCurrentStaffOwnsCounter(counter);
+        User currentStaff = currentUserService.requireUser();
+
+        ticketWorkflowService.closeNoShow(ticket);
+        ticket.setStatus("MISSED");
+        historyService.recordMissed(ticket, counter, currentStaff);
+        counter.setCurrentTicket(null);
+        counterRepository.save(counter);
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        eventPublisher.publish(
+                "TICKET_MISSED",
+                "TICKET",
+                savedTicket.getTicketId().toString(),
+                savedTicket.getBranch().getBranchId(),
+                Map.of(
+                        "ticketNumber", savedTicket.getTicketNumber(),
+                        "staffName", currentStaff.getFullName(),
+                        "counterName", counter.getCounterName()));
         return savedTicket;
     }
 

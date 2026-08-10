@@ -58,6 +58,18 @@ describe('CustomerLiveTrackingService', () => {
     expect(service.lastUpdatedAt()).toBeNull();
   });
 
+  it('does not repeat a cancelled notice after leaving and returning to a customer page', () => {
+    applyTracking(tracking({ status: 'CANCELLED', peopleAhead: 0 }));
+    expect(service.notice()?.title).toBe('Phiếu đã hủy');
+
+    service.start();
+    service.stop();
+    applyTracking(tracking({ status: 'CANCELLED', peopleAhead: 0 }));
+
+    expect(service.notice()).toBeNull();
+    expect(sessionStorage.getItem('currentTicket')).toBeNull();
+  });
+
   function applyTracking(value: TicketTracking): void {
     (service as any).applyTracking(value);
   }

@@ -134,6 +134,39 @@
   box-shadow: 0 12px 30px rgba(15, 138, 120, 0.13);
 }
 
+.branch-hours-badge {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-self: start;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.branch-hours-badge span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+.branch-hours-badge--open {
+  color: #047857;
+}
+
+.branch-hours-badge--open span {
+  background: #10b981;
+}
+
+.branch-hours-badge--closed {
+  color: #b45309;
+}
+
+.branch-hours-badge--closed span {
+  background: #f59e0b;
+}
+
 .recommendation-banner {
   display: inline-flex;
   gap: 7px;

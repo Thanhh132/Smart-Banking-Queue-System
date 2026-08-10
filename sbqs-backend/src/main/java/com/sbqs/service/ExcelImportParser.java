@@ -1,6 +1,7 @@
 package com.sbqs.service;
 
 import com.sbqs.dto.bulkimport.ServiceImportRow;
+import com.sbqs.dto.bulkimport.ServiceCatalogImportRow;
 import com.sbqs.dto.bulkimport.StaffImportRow;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -44,6 +45,17 @@ public class ExcelImportParser {
                 cell(row, 5, formatter)));
     }
 
+    public List<ServiceCatalogImportRow> parseServiceCatalog(InputStream inputStream) {
+        return readRows(inputStream, (row, formatter) -> new ServiceCatalogImportRow(
+                row.getRowNum() + 1,
+                cell(row, 0, formatter),
+                cell(row, 1, formatter),
+                cell(row, 2, formatter),
+                cell(row, 3, formatter),
+                cell(row, 4, formatter),
+                cell(row, 5, formatter)));
+    }
+
     public byte[] createStaffTemplate() {
         return createTemplate(
                 "NHAN_VIEN",
@@ -56,6 +68,14 @@ public class ExcelImportParser {
                 "DICH_VU",
                 List.of("Mã dịch vụ", "Tên dịch vụ", "Loại dịch vụ", "Mô tả", "Thời gian (phút)", "Trạng thái"),
                 new int[] { 18, 28, 18, 38, 20, 18 });
+    }
+
+    public byte[] createServiceCatalogTemplate() {
+        return createTemplate(
+                "DANH_MUC_DICH_VU",
+                List.of("Mã dịch vụ", "Tên dịch vụ", "Nhóm dịch vụ", "Mô tả",
+                        "Thời gian (phút)", "Cho phép ủy quyền (CÓ/KHÔNG)"),
+                new int[] { 22, 32, 22, 42, 20, 30 });
     }
 
     private <T> List<T> readRows(InputStream inputStream, RowMapper<T> mapper) {

@@ -16,4 +16,6 @@ public class ServingCounterDTO {
     private String status;
 
     private String queueMachineName;
+
+    private String staffName;
 }

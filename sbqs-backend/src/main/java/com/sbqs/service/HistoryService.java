@@ -64,6 +64,18 @@ public class HistoryService {
         historyRepository.save(history);
     }
 
+    public void recordMissed(Ticket ticket, Counter counter, User staff) {
+        History history = snapshot(ticket);
+        history.setCounterId(counter.getCounterId());
+        history.setCounterName(counter.getCounterName());
+        history.setStaffId(staff.getUserId());
+        history.setStaffName(staff.getFullName());
+        history.setStartedAt(ticket.getServingStartedAt());
+        history.setStatus("MISSED");
+        history.setStaffNote("Khách không đến quầy sau khi được gọi");
+        historyRepository.save(history);
+    }
+
     public List<HistoryResponse> getAllHistory() {
         return findRecentScopedHistory(currentUserService.requireUser())
                 .stream()
@@ -145,6 +157,7 @@ public class HistoryService {
         response.setQueueMachineName(history.getQueueMachineName());
         response.setCustomerEmail(history.getCustomerEmail());
         response.setStaffName(history.getStaffName());
+        response.setStaffId(history.getStaffId());
 
         return response;
     }

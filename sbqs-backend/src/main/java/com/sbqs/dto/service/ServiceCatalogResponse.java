@@ -7,5 +7,6 @@ public record ServiceCatalogResponse(
         String serviceType,
         String description,
         Integer estimatedTime,
-        String status) {
+        String status,
+        boolean delegatable) {
 }

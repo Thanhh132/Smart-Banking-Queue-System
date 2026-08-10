@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-import { Branch, SmartBranchRecommendation } from '../models/branch.model';
+import { Branch, BranchOpenStatus, SmartBranchRecommendation } from '../models/branch.model';
 import { API_BASE_URL } from '../config/api.config';
 
 @Injectable({
@@ -11,8 +11,9 @@ import { API_BASE_URL } from '../config/api.config';
 export class BranchService {
 
   private http = inject(HttpClient);
+  private apiBaseUrl = inject(API_BASE_URL);
 
-  private apiUrl = `${inject(API_BASE_URL)}/branches`;
+  private apiUrl = `${this.apiBaseUrl}/branches`;
 
   getBranches(): Observable<Branch[]> {
     return this.http.get<Branch[]>(this.apiUrl);
@@ -25,6 +26,10 @@ export class BranchService {
       .set('longitude', longitude);
     if (serviceCode) params = params.set('serviceCode', serviceCode);
     return this.http.get<SmartBranchRecommendation[]>(`${this.apiUrl}/recommendations`, { params });
+  }
+
+  getOpenStatus(branchId: number): Observable<BranchOpenStatus> {
+    return this.http.get<BranchOpenStatus>(`${this.apiBaseUrl}/branch-hours/${branchId}/status`);
   }
 
   createBranch(payload: any): Observable<Branch> {

@@ -1,7 +1,8 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, forkJoin, of } from 'rxjs';
 
 import { Branch, SmartBranchRecommendation } from '../../../core/models/branch.model';
 import { BranchService } from '../../../core/services/branch.service';
@@ -20,6 +21,7 @@ export class BranchSelection implements OnInit, OnDestroy {
   private locationService = inject(LocationService);
   private cdr = inject(ChangeDetectorRef);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   branches: Branch[] = [];
   popup: { type: 'success' | 'error' | 'info'; title: string; message: string } | null = null;
@@ -29,8 +31,10 @@ export class BranchSelection implements OnInit, OnDestroy {
   isLocating = false;
   isRouting = false;
   routingError = '';
+  selectingBranchId: number | null = null;
   private distances = new Map<number, number>();
   private recommendations = new Map<number, SmartBranchRecommendation>();
+  private openStatuses = new Map<number, boolean>();
   private popupTimer: ReturnType<typeof setTimeout> | null = null;
   private routingTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -58,9 +62,24 @@ export class BranchSelection implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    if (this.route.snapshot.queryParamMap.has('closedBranch')) {
+      this.showPopup(
+        'info',
+        'Chi nhánh đã đóng cửa',
+        'Bạn không thể vào bước lấy số ngoài giờ phục vụ. Vui lòng quay lại trong khung giờ làm việc.',
+      );
+    } else if (this.route.snapshot.queryParamMap.has('scheduleUnavailable')) {
+      this.showPopup(
+        'error',
+        'Chưa kiểm tra được giờ phục vụ',
+        'Hệ thống tạm thời không cho lấy số để tránh cấp phiếu khi chi nhánh đã đóng cửa.',
+      );
+    }
+
     this.branchService.getBranches().subscribe({
       next: (data) => {
         this.branches = (data || []).filter((branch) => branch.status === 'ACTIVE');
+        this.loadOpenStatuses();
         const latitude = Number(sessionStorage.getItem('customerLatitude'));
         const longitude = Number(sessionStorage.getItem('customerLongitude'));
         if (latitude && longitude) {
@@ -128,6 +147,20 @@ export class BranchSelection implements OnInit, OnDestroy {
     return this.recommendations.get(branchId);
   }
 
+  isOpenStatusLoaded(branchId: number): boolean {
+    return this.openStatuses.has(branchId);
+  }
+
+  isBranchOpen(branchId: number): boolean {
+    return this.openStatuses.get(branchId) === true;
+  }
+
+  get routingStatusLabel(): string {
+    if (this.isRouting) return 'Đang cập nhật tải...';
+    if (this.routingError) return 'Chưa có đề xuất';
+    return this.recommendations.size > 0 ? 'Đề xuất theo tải trực tiếp' : 'Chưa chia sẻ vị trí';
+  }
+
   onBankChange(): void {
     this.recommendations.clear();
     this.loadSmartRecommendations();
@@ -138,9 +171,43 @@ export class BranchSelection implements OnInit, OnDestroy {
   }
 
   /** Lưu chi nhánh cho toàn bộ các bước chọn dịch vụ, cấp số và theo dõi phía sau. */
-  selectBranch(branchId: number): void {
-    sessionStorage.setItem('selectedBranchId', String(branchId));
-    this.router.navigate(['/services']);
+  selectBranch(branch: Branch): void {
+    if (!this.isOpenStatusLoaded(branch.branchId)) {
+      this.showPopup('info', 'Đang kiểm tra giờ phục vụ', 'Vui lòng chờ trong giây lát rồi thử lại.');
+      return;
+    }
+    if (!this.isBranchOpen(branch.branchId)) {
+      this.showPopup(
+        'info',
+        'Chi nhánh đã đóng cửa',
+        'Chi nhánh hiện ngoài giờ phục vụ nên chưa thể cấp số.',
+      );
+      return;
+    }
+
+    this.selectingBranchId = branch.branchId;
+    this.branchService.getOpenStatus(branch.branchId).subscribe({
+      next: (status) => {
+        this.openStatuses.set(branch.branchId, status.openNow);
+        this.selectingBranchId = null;
+        if (!status.openNow) {
+          this.showPopup('info', 'Chi nhánh vừa đóng cửa', status.message);
+          this.cdr.detectChanges();
+          return;
+        }
+        sessionStorage.setItem('selectedBranchId', String(branch.branchId));
+        this.router.navigate(['/services']);
+      },
+      error: () => {
+        this.selectingBranchId = null;
+        this.showPopup(
+          'error',
+          'Chưa kiểm tra được giờ phục vụ',
+          'Hệ thống chưa thể xác nhận chi nhánh đang mở nên không cấp số lúc này.',
+        );
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   private setCustomerLocation(latitude: number, longitude: number, address: string): void {
@@ -172,7 +239,13 @@ export class BranchSelection implements OnInit, OnDestroy {
     this.routingError = '';
     this.branchService.getSmartRecommendations(this.selectedBank, latitude, longitude).subscribe({
       next: (data) => {
-        this.recommendations = new Map((data || []).map((item) => [item.branchId, item]));
+        const items = data || [];
+        this.recommendations = new Map(items.map((item) => [item.branchId, item]));
+        if (items.length === 0) {
+          this.routingError = 'Hiện không có chi nhánh nào đang mở để đề xuất. Bạn vẫn có thể xem danh sách, nhưng chỉ lấy số trong giờ phục vụ.';
+        } else if (!items.some((item) => item.recommended)) {
+          this.routingError = 'Các chi nhánh đang mở hiện chưa có quầy hoạt động nên hệ thống chưa thể chọn đề xuất tối ưu.';
+        }
         this.isRouting = false;
         this.cdr.detectChanges();
       },
@@ -188,7 +261,33 @@ export class BranchSelection implements OnInit, OnDestroy {
     if (this.routingTimer) {
       clearInterval(this.routingTimer);
     }
-    this.routingTimer = setInterval(() => this.loadSmartRecommendations(), 15000);
+    this.routingTimer = setInterval(() => {
+      this.loadSmartRecommendations();
+      this.loadOpenStatuses();
+    }, 15000);
+  }
+
+  private loadOpenStatuses(): void {
+    if (this.branches.length === 0) {
+      this.openStatuses.clear();
+      return;
+    }
+
+    forkJoin(
+      this.branches.map((branch) =>
+        this.branchService.getOpenStatus(branch.branchId).pipe(
+          catchError(() => of({
+            branchId: branch.branchId,
+            openNow: false,
+            message: 'Chưa kiểm tra được giờ phục vụ',
+            checkedAt: new Date().toISOString(),
+          })),
+        ),
+      ),
+    ).subscribe((statuses) => {
+      this.openStatuses = new Map(statuses.map((status) => [status.branchId, status.openNow]));
+      this.cdr.detectChanges();
+    });
   }
 
   private showPopup(type: 'success' | 'error' | 'info', title: string, message: string): void {

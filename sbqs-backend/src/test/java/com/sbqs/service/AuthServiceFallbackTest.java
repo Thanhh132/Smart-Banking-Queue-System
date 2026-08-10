@@ -2,6 +2,7 @@ package com.sbqs.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbqs.config.FallbackAuthProperties;
+import com.sbqs.config.KeycloakProperties;
 import com.sbqs.dto.LoginRequest;
 import com.sbqs.dto.LoginResponse;
 import com.sbqs.entity.User;
@@ -42,6 +43,11 @@ class AuthServiceFallbackTest {
         properties.setEnabled(true);
         properties.setAllowedRoles(java.util.List.of(
                 "CUSTOMER", "STAFF", "BRANCH_ADMIN", "SUPER_ADMIN"));
+        KeycloakProperties keycloakProperties = new KeycloakProperties();
+        keycloakProperties.setServerUrl("http://localhost:8080");
+        keycloakProperties.setPublicUrl("http://localhost:8080");
+        keycloakProperties.setRealm("SBQS");
+        keycloakProperties.setClientId("sbqs-frontend");
 
         authService = new AuthService(
                 userRepository,
@@ -50,7 +56,8 @@ class AuthServiceFallbackTest {
                 new ObjectMapper(),
                 passwordEncoder,
                 fallbackTokenService,
-                properties);
+                properties,
+                keycloakProperties);
     }
 
     @Test

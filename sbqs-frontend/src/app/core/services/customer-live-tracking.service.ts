@@ -13,6 +13,7 @@ export interface LiveTicketNotice {
 @Injectable({ providedIn: 'root' })
 export class CustomerLiveTrackingService {
   private static readonly POLLING_INTERVAL_MS = 2000;
+  private static readonly SEEN_NOTICE_KEYS = 'sbqs:seen-live-notices';
   private ticketService = inject(TicketService);
   private pollingSubscription: Subscription | null = null;
   private consumers = 0;
@@ -68,7 +69,6 @@ export class CustomerLiveTrackingService {
     this.tracking.set(null);
     this.notice.set(null);
     this.lastUpdatedAt.set(null);
-    sessionStorage.removeItem('sbqs:last-live-notice');
   }
 
   /** Ưu tiên ticket cache để giảm một API call; cache hỏng sẽ tự phục hồi từ server. */
@@ -115,7 +115,11 @@ export class CustomerLiveTrackingService {
     const previousPeopleAhead = this.previousPeopleAhead;
     this.tracking.set(tracking);
     this.lastUpdatedAt.set(new Date());
-    this.updateCachedTicket(tracking);
+    if (['COMPLETED', 'CANCELLED', 'MISSED'].includes(tracking.status)) {
+      sessionStorage.removeItem('currentTicket');
+    } else {
+      this.updateCachedTicket(tracking);
+    }
 
     if (tracking.status === 'SERVING' && previousStatus !== 'SERVING') {
       this.showNotice({
@@ -151,19 +155,48 @@ export class CustomerLiveTrackingService {
         title: 'Phiếu đã hủy',
         message: `Phiếu #${tracking.ticketNumber} không còn trong hàng đợi.`,
       });
+    } else if (tracking.status === 'MISSED' && previousStatus !== 'MISSED') {
+      this.showNotice({
+        key: `missed:${tracking.ticketId}`,
+        level: 'warning',
+        title: 'Bạn đã lỡ lượt',
+        message: 'Nhân viên đã ghi nhận bạn không đến quầy. Vui lòng lấy số mới nếu vẫn cần giao dịch.',
+      });
     }
 
     this.previousStatus = tracking.status;
     this.previousPeopleAhead = tracking.peopleAhead;
   }
 
-  /** Chống hiện lại cùng một thông báo khi component bị dựng lại trong cùng tab. */
+  /** Ghi nhớ các thông báo đã hiện trong tab để route/polling không phát lại trạng thái cũ. */
   private showNotice(notice: LiveTicketNotice): void {
-    if (sessionStorage.getItem('sbqs:last-live-notice') === notice.key) {
+    const seenKeys = this.readSeenNoticeKeys();
+    if (seenKeys.has(notice.key)) {
       return;
     }
-    sessionStorage.setItem('sbqs:last-live-notice', notice.key);
+    seenKeys.add(notice.key);
+    sessionStorage.setItem(
+      CustomerLiveTrackingService.SEEN_NOTICE_KEYS,
+      JSON.stringify([...seenKeys].slice(-30)),
+    );
     this.notice.set(notice);
+  }
+
+  private readSeenNoticeKeys(): Set<string> {
+    try {
+      const values = JSON.parse(
+        sessionStorage.getItem(CustomerLiveTrackingService.SEEN_NOTICE_KEYS) || '[]',
+      );
+      const seenKeys = new Set<string>(
+        Array.isArray(values) ? values.filter((value): value is string => typeof value === 'string') : [],
+      );
+      const legacyKey = sessionStorage.getItem('sbqs:last-live-notice');
+      if (legacyKey) seenKeys.add(legacyKey);
+      return seenKeys;
+    } catch {
+      sessionStorage.removeItem(CustomerLiveTrackingService.SEEN_NOTICE_KEYS);
+      return new Set();
+    }
   }
 
   private readCachedTicket(): any | null {

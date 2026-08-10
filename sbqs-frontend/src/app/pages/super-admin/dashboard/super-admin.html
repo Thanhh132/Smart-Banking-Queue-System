@@ -22,8 +22,8 @@
         <p>Tài khoản đã cấp</p>
       </div>
       <div>
-        <span>Đang hoạt động</span><strong>{{ activeAdminCount }}</strong>
-        <p>Tài khoản có thể đăng nhập</p>
+        <span>Quản lý danh tính</span><strong>Keycloak</strong>
+        <p>Tạo và xóa tài khoản đồng bộ</p>
       </div>
     </section>
 
@@ -150,14 +150,6 @@
             </span>
           </label>
 
-          <label *ngIf="isEditMode">
-            Trạng thái
-            <select formControlName="status">
-              <option value="ACTIVE">Hoạt động</option>
-              <option value="INACTIVE">Tạm khóa</option>
-            </select>
-          </label>
-
           <label class="full-row">
             Chi nhánh phụ trách
             <select formControlName="branchId">
@@ -203,7 +195,6 @@
                 <th>Người dùng</th>
                 <th>Chi nhánh</th>
                 <th>Liên hệ</th>
-                <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
@@ -219,18 +210,13 @@
                 </td>
                 <td>{{ admin.phone || '-' }}</td>
                 <td>
-                  <span class="admin-badge" [ngClass]="admin.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
-                    {{ admin.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
-                  </span>
-                </td>
-                <td>
                   <button type="button" class="btn btn-secondary btn-sm" (click)="startEditAdminBranch(admin)">
                     <app-icon name="pencil" [size]="14" />
                     Sửa
                   </button>
                   <button type="button" class="btn btn-danger btn-sm" (click)="deleteAdminBranch(admin)">
-                    <app-icon [name]="admin.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
-                    {{ admin.status === 'INACTIVE' ? 'Xóa' : 'Khóa' }}
+                    <app-icon name="trash" [size]="14" />
+                    Xóa
                   </button>
                 </td>
               </tr>

@@ -10,6 +10,7 @@ import java.time.LocalTime;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -51,5 +52,13 @@ class BranchOperatingHoursServiceTest {
 
         assertTrue(service.isOpen(1L, LocalDateTime.of(2026, 7, 14, 8, 0)));
         assertFalse(service.isOpen(1L, LocalDateTime.of(2026, 7, 14, 12, 0)));
+    }
+
+    @Test
+    void requireOpenRejectsAfterClosingTime() {
+        when(repository.findByBranchBranchIdAndDayOfWeek(1L, 4)).thenReturn(Optional.empty());
+
+        assertThrows(RuntimeException.class,
+                () -> service.requireOpen(1L, LocalDateTime.of(2026, 7, 23, 22, 0)));
     }
 }

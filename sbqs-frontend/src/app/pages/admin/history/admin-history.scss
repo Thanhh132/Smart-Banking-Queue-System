@@ -1,0 +1,9 @@
+.history-page { display: grid; gap: 18px; }
+.history-filters { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.history-filters label { display: grid; gap: 7px; font-weight: 800; }
+.history-filters select { height: 42px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 0 10px; background: #fff; }
+.history-filters div { min-height: 68px; display: grid; align-content: center; padding: 10px 14px; border-radius: 7px; background: #f1f5f9; }
+.history-filters span { color: #64748b; font-size: 12px; font-weight: 800; }
+.history-filters strong { color: #0f172a; font-size: 24px; }
+@media (max-width: 960px) { .history-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .history-filters { grid-template-columns: 1fr; } }

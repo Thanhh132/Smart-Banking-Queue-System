@@ -1,6 +1,7 @@
 package com.sbqs.service;
 
 import com.sbqs.dto.bulkimport.ServiceImportRow;
+import com.sbqs.dto.bulkimport.ServiceCatalogImportRow;
 import com.sbqs.dto.bulkimport.StaffImportRow;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Row;
@@ -43,6 +44,19 @@ class ExcelImportParserTest {
         assertEquals(1, rows.size());
         assertEquals("CASH-01", rows.getFirst().serviceCode());
         assertEquals("7", rows.getFirst().estimatedTime());
+    }
+
+    @Test
+    void parsesGlobalServiceCatalogRows() throws Exception {
+        byte[] content = workbook(
+                List.of("Mã dịch vụ", "Tên dịch vụ", "Nhóm dịch vụ", "Mô tả", "Thời gian", "Ủy quyền"),
+                List.of("PHYSICAL_CARD", "Làm thẻ vật lý", "THẺ", "Đăng ký tại quầy", "15", "CÓ"));
+
+        List<ServiceCatalogImportRow> rows = parser.parseServiceCatalog(new ByteArrayInputStream(content));
+
+        assertEquals(1, rows.size());
+        assertEquals("PHYSICAL_CARD", rows.getFirst().serviceCode());
+        assertEquals("CÓ", rows.getFirst().delegatable());
     }
 
     @Test

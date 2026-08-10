@@ -1,0 +1,15 @@
+.eb-eyebrow {
+  color: var(--eb-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.eb-page-title {
+  margin: 4px 0 0;
+  color: var(--eb-text);
+  font-size: clamp(24px, 2vw, 30px);
+  font-weight: 750;
+  line-height: 1.25;
+}

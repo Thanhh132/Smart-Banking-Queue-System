@@ -10,9 +10,63 @@
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <app-card>
-      <div class="card-header"><div><h2>Xác minh ủy quyền giao dịch</h2><p>Đối chiếu CCCD bản gốc trước khi nhập số. Hệ thống không hiển thị hoặc lưu CCCD dạng rõ.</p></div></div>
-      <div class="assign-panel"><label>Mã ủy quyền<input [(ngModel)]="delegationCode" placeholder="UQ-XXXXXXXX" /></label><label>Số CCCD trên bản gốc<input [(ngModel)]="delegationIdentity" inputmode="numeric" /></label><button type="button" class="btn btn-primary" (click)="verifyDelegation()" [disabled]="isVerifyingDelegation">{{ isVerifyingDelegation ? 'Đang xác minh...' : 'Xác minh' }}</button></div>
-      <div class="ticket-current" *ngIf="verifiedDelegation"><div class="ticket-detail"><span>Chủ tài khoản ủy quyền</span><strong>{{ verifiedDelegation.ownerName }} · {{ verifiedDelegation.maskedOwnerEmail }}</strong></div><div class="ticket-detail"><span>Người được ủy quyền</span><strong>{{ verifiedDelegation.delegateName }} · {{ verifiedDelegation.maskedIdentity }}</strong><small>Sinh {{ verifiedDelegation.delegateDateOfBirth | date:'dd/MM/yyyy' }} · {{ verifiedDelegation.delegatePhone }} · {{ verifiedDelegation.relationship }}</small></div><div class="ticket-detail"><span>CCCD đối chiếu</span><strong>Cấp {{ verifiedDelegation.identityIssueDate | date:'dd/MM/yyyy' }} tại {{ verifiedDelegation.identityIssuePlace }}</strong><small>Hết hạn {{ verifiedDelegation.identityExpiryDate | date:'dd/MM/yyyy' }}</small></div><div class="ticket-detail"><span>Phạm vi</span><strong>{{ verifiedDelegation.transactionScope }}</strong></div><div class="ticket-detail"><span>Dịch vụ</span><strong>{{ verifiedDelegation.serviceName }} · {{ verifiedDelegation.branchName }}</strong></div><button type="button" class="btn btn-success" (click)="acceptDelegation()">Tiếp nhận và đánh dấu đã sử dụng</button></div>
+      <div class="card-header">
+        <div>
+          <h2>Xác minh ủy quyền giao dịch</h2>
+          <p>
+            Đối chiếu CCCD bản gốc trước khi nhập số. Hệ thống không hiển thị hoặc lưu CCCD dạng rõ.
+          </p>
+        </div>
+      </div>
+      <div class="assign-panel">
+        <label>Mã ủy quyền<input [(ngModel)]="delegationCode" placeholder="UQ-XXXXXXXX" /></label
+        ><label
+          >Số CCCD trên bản gốc<input [(ngModel)]="delegationIdentity" inputmode="numeric" /></label
+        ><button
+          type="button"
+          class="btn btn-primary"
+          (click)="verifyDelegation()"
+          [disabled]="isVerifyingDelegation"
+        >
+          {{ isVerifyingDelegation ? 'Đang xác minh...' : 'Xác minh' }}
+        </button>
+      </div>
+      <div class="ticket-current" *ngIf="verifiedDelegation">
+        <div class="ticket-detail">
+          <span>Chủ tài khoản ủy quyền</span
+          ><strong
+            >{{ verifiedDelegation.ownerName }} · {{ verifiedDelegation.maskedOwnerEmail }}</strong
+          >
+        </div>
+        <div class="ticket-detail">
+          <span>Người được ủy quyền</span
+          ><strong
+            >{{ verifiedDelegation.delegateName }} · {{ verifiedDelegation.maskedIdentity }}</strong
+          ><small
+            >Sinh {{ verifiedDelegation.delegateDateOfBirth | date: 'dd/MM/yyyy' }} ·
+            {{ verifiedDelegation.delegatePhone }} · {{ verifiedDelegation.relationship }}</small
+          >
+        </div>
+        <div class="ticket-detail">
+          <span>CCCD đối chiếu</span
+          ><strong
+            >Cấp {{ verifiedDelegation.identityIssueDate | date: 'dd/MM/yyyy' }} tại
+            {{ verifiedDelegation.identityIssuePlace }}</strong
+          ><small>Hết hạn {{ verifiedDelegation.identityExpiryDate | date: 'dd/MM/yyyy' }}</small>
+        </div>
+        <div class="ticket-detail">
+          <span>Phạm vi</span><strong>{{ verifiedDelegation.transactionScope }}</strong>
+        </div>
+        <div class="ticket-detail">
+          <span>Dịch vụ</span
+          ><strong
+            >{{ verifiedDelegation.serviceName }} · {{ verifiedDelegation.branchName }}</strong
+          >
+        </div>
+        <button type="button" class="btn btn-success" (click)="acceptDelegation()">
+          Tiếp nhận và đánh dấu đã sử dụng
+        </button>
+      </div>
     </app-card>
 
     <div class="staff-live-status">
@@ -45,7 +99,7 @@
     </div>
 
     <div class="staff-grid">
-      <app-card>
+      <app-card class="fill-height">
         <div class="card-header">
           <div>
             <h2>{{ selectedCounter ? 'Thông tin ca làm' : 'Bắt đầu ca phục vụ' }}</h2>
@@ -105,7 +159,7 @@
         </div>
       </app-card>
 
-      <app-card>
+      <app-card class="fill-height">
         <div class="card-header">
           <div>
             <h2>Khách hàng hiện tại</h2>
@@ -161,6 +215,15 @@
             >
               <app-icon name="check-circle" [size]="16" />
               {{ isCompleting ? 'Đang hoàn tất...' : 'Hoàn thành phục vụ' }}
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              (click)="markNoShow()"
+              [disabled]="isSkipping || isCompleting"
+            >
+              <app-icon name="x" [size]="16" />
+              {{ isSkipping ? 'Đang xử lý...' : 'Khách không đến' }}
             </button>
           </div>
         </div>

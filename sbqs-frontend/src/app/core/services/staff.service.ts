@@ -26,6 +26,10 @@ export class StaffService {
     );
   }
 
+  markNoShow(ticketId: number) {
+    return this.http.post(`${this.apiUrl}/${ticketId}/no-show`, {});
+  }
+
   getTicketStaffView(ticketId: number) {
     return this.http.get<any>(
       `${this.apiUrl}/${ticketId}/staff-view`

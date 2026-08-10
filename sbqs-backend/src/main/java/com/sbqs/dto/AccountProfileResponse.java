@@ -1,6 +1,7 @@
 package com.sbqs.dto;
 
 import com.sbqs.entity.User;
+import com.sbqs.service.CustomerProfilePolicy;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +14,9 @@ public record AccountProfileResponse(
         String status,
         Long branchId,
         String branchName,
-        LocalDateTime createdAt) {
+        LocalDateTime createdAt,
+        boolean profileComplete,
+        boolean passwordChangeAvailable) {
 
     public static AccountProfileResponse from(User user) {
         return new AccountProfileResponse(
@@ -25,6 +28,8 @@ public record AccountProfileResponse(
                 user.getStatus(),
                 user.getBranch() == null ? null : user.getBranch().getBranchId(),
                 user.getBranch() == null ? null : user.getBranch().getBranchName(),
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                !"CUSTOMER".equals(user.getRole()) || CustomerProfilePolicy.isComplete(user),
+                !"GOOGLE".equals(user.getIdentityProvider()));
     }
 }

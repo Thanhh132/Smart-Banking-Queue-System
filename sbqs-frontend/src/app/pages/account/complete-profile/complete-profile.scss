@@ -1,0 +1,78 @@
+.profile-onboarding {
+  min-height: 100vh;
+  padding: 40px 20px;
+  background: #eef5f5;
+}
+
+.profile-onboarding__card {
+  width: min(900px, 100%);
+  margin: 0 auto;
+  padding: 30px;
+  border: 1px solid #d5e3e5;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #e2eaec;
+  }
+
+  header span { color: var(--primary-color); font-size: 12px; font-weight: 850; letter-spacing: .08em; }
+  h1 { margin: 6px 0 8px; font-size: clamp(26px, 4vw, 34px); }
+  header p { max-width: 650px; margin: 0; color: var(--text-secondary); }
+}
+
+.logout-button {
+  flex: 0 0 auto;
+  padding: 9px 14px;
+  border: 1px solid #cadadd;
+  border-radius: 9px;
+  background: #fff;
+  color: #435e68;
+  font-weight: 700;
+}
+
+.identity-note {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 22px 0;
+  padding: 13px 16px;
+  border-radius: 10px;
+  background: #edf8f6;
+  color: #17665f;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+
+  label { display: grid; gap: 7px; color: #183641; font-weight: 750; }
+  b { color: #c2413b; }
+  input, textarea { width: 100%; }
+  textarea { resize: vertical; }
+  small { color: #b91c1c; font-weight: 600; }
+}
+
+.full-width { grid-column: 1 / -1; }
+.label-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.label-row button { border: 0; background: transparent; color: var(--primary-color); font-weight: 750; }
+.privacy-note { margin: 18px 0 12px; color: var(--text-secondary); font-size: 13px; }
+.form-error { margin-bottom: 12px; padding: 11px 13px; border-radius: 9px; background: #fef2f2; color: #b91c1c; }
+.submit-button { width: 100%; padding: 13px 18px; border: 0; border-radius: 10px; background: var(--primary-color); color: #fff; font-weight: 800; }
+.submit-button:disabled { opacity: .65; }
+
+@media (max-width: 700px) {
+  .profile-onboarding { padding: 18px 12px; }
+  .profile-onboarding__card { padding: 20px; }
+  .profile-onboarding__card header, .identity-note { display: grid; }
+  .form-grid { grid-template-columns: 1fr; }
+  .full-width { grid-column: auto; }
+  .label-row { align-items: flex-start; flex-direction: column; }
+}

@@ -7,6 +7,32 @@
   overflow: hidden;
 }
 
+.push-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  border: 1px solid #b8ddd7;
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.push-card__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #d8f3ed;
+  font-size: 19px;
+}
+
+.push-card__content { display: grid; gap: 3px; }
+.push-card__content strong { color: #075b55; }
+.push-card__content p, .push-card__content small { margin: 0; color: #526577; }
+.push-card__content small { color: #08756d; font-weight: 700; }
+
 .ticket-number-panel {
   display: grid;
   place-items: center;
@@ -37,6 +63,8 @@
 .customer-empty-ticket .btn { margin-top: 8px; }
 
 @media (max-width: 720px) {
+  .push-card { grid-template-columns: auto 1fr; }
+  .push-card .btn { grid-column: 1 / -1; width: 100%; }
   .ticket-panel { grid-template-columns: 1fr; }
   .ticket-number-panel { min-height: 230px; border-right: 0; border-bottom: 1px solid #c5dced; }
   .ticket-details div { min-height: 82px; }

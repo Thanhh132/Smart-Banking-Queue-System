@@ -44,6 +44,9 @@ public class ServiceCatalog {
     @Column(name = "status", nullable = false)
     private String status = "ACTIVE";
 
+    @Column(name = "delegatable", nullable = false)
+    private boolean delegatable;
+
     @Convert(converter = FormSchemaConverter.class)
     @Column(name = "form_schema", nullable = false, columnDefinition = "text")
     private List<FormFieldDefinition> formSchema = new ArrayList<>();

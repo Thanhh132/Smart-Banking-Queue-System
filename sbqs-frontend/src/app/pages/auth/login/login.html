@@ -65,6 +65,42 @@
       </button>
     </form>
 
+    <div class="auth-divider"><span>hoặc</span></div>
+    <button
+      type="button"
+      class="google-login"
+      [disabled]="isGoogleSubmitting || isSubmitting"
+      (click)="loginWithGoogle()"
+    >
+      <span class="google-login__mark" aria-hidden="true">G</span>
+      {{ isGoogleSubmitting ? 'Đang chuyển đến Google...' : 'Tiếp tục với Google' }}
+    </button>
+
+    <section class="dev-login-accounts" *ngIf="devAccounts.length" aria-labelledby="dev-login-title">
+      <div class="dev-login-accounts__heading">
+        <div>
+          <span>LOCAL TEST</span>
+          <strong id="dev-login-title">Tài khoản kiểm thử</strong>
+        </div>
+        <small>Bấm một tài khoản để tự điền thông tin đăng nhập.</small>
+      </div>
+
+      <div class="dev-login-accounts__list">
+        <button
+          *ngFor="let account of devAccounts"
+          type="button"
+          class="dev-login-account"
+          (click)="fillDevAccount(account)"
+        >
+          <span>
+            <strong>{{ account.label }}</strong>
+            <small>{{ account.email }}</small>
+          </span>
+          <em>{{ account.role }}</em>
+        </button>
+      </div>
+    </section>
+
     <p class="auth-switch">
       Khách hàng mới?
       <a routerLink="/register">Đăng ký tài khoản</a>

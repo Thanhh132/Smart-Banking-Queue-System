@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class DatabaseSchemaInitializer {
-    private static final String SCHEMA_VERSION = "database-schema-v7-delegation-identity-expiry";
+    private static final String SCHEMA_VERSION = "database-schema-v10-delegation-snapshots";
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -45,9 +45,11 @@ public class DatabaseSchemaInitializer {
                     description text,
                     estimated_time integer not null default 15,
                     status varchar(255) not null default 'ACTIVE',
+                    delegatable boolean not null default false,
                     form_schema text not null default '[]'
                 )
                 """);
+        executeIfPossible("alter table service_catalog add column if not exists delegatable boolean not null default false");
         executeIfPossible("alter table services add column if not exists catalog_id bigint references service_catalog(catalog_id)");
 
         jdbcTemplate.execute("""
@@ -69,8 +71,10 @@ public class DatabaseSchemaInitializer {
                     delegation_id bigserial primary key,
                     reference_code varchar(20) not null unique,
                     owner_id bigint not null references users(user_id),
-                    branch_id bigint not null references branches(branch_id),
-                    service_id bigint not null references services(service_id),
+                    branch_id bigint references branches(branch_id),
+                    service_id bigint references services(service_id),
+                    branch_name_snapshot varchar(255),
+                    service_name_snapshot varchar(255),
                     delegate_name varchar(150) not null,
                     delegate_identity_hash varchar(100) not null,
                     delegate_identity_last4 varchar(4) not null,
@@ -87,7 +91,7 @@ public class DatabaseSchemaInitializer {
                     created_at timestamp not null,
                     verified_at timestamp,
                     used_at timestamp,
-                    verified_by bigint references users(user_id)
+                    verified_by bigint references users(user_id) on delete set null
                 )
                 """);
         jdbcTemplate.execute("create index if not exists idx_delegations_owner_created on digital_delegations(owner_id, created_at desc)");
@@ -96,6 +100,68 @@ public class DatabaseSchemaInitializer {
         executeIfPossible("alter table digital_delegations add column if not exists identity_issue_date date");
         executeIfPossible("alter table digital_delegations add column if not exists identity_expiry_date date");
         executeIfPossible("alter table digital_delegations add column if not exists identity_issue_place varchar(150)");
+        jdbcTemplate.execute("alter table digital_delegations add column if not exists branch_name_snapshot varchar(255)");
+        jdbcTemplate.execute("alter table digital_delegations add column if not exists service_name_snapshot varchar(255)");
+        jdbcTemplate.execute("update digital_delegations d set branch_name_snapshot = b.branch_name from branches b where d.branch_id = b.branch_id and d.branch_name_snapshot is null");
+        jdbcTemplate.execute("update digital_delegations d set service_name_snapshot = s.service_name from services s where d.service_id = s.service_id and d.service_name_snapshot is null");
+        jdbcTemplate.execute("alter table digital_delegations alter column branch_id drop not null");
+        jdbcTemplate.execute("alter table digital_delegations alter column service_id drop not null");
+        executeIfPossible("""
+                do $$
+                declare
+                    constraint_name text;
+                begin
+                    select c.conname into constraint_name
+                    from pg_constraint c
+                    join pg_class t on t.oid = c.conrelid
+                    join pg_attribute a on a.attrelid = t.oid and a.attnum = any(c.conkey)
+                    where t.relname = 'digital_delegations'
+                      and c.contype = 'f'
+                      and a.attname = 'verified_by'
+                    limit 1;
+
+                    if constraint_name is not null then
+                        execute format(
+                            'alter table digital_delegations drop constraint %I',
+                            constraint_name);
+                    end if;
+
+                    alter table digital_delegations
+                        add constraint fk_delegations_verified_by
+                        foreign key (verified_by) references users(user_id) on delete set null;
+                end $$;
+                """);
+
+        jdbcTemplate.execute("""
+                create table if not exists web_push_subscriptions (
+                    subscription_id bigserial primary key,
+                    user_id bigint not null references users(user_id) on delete cascade,
+                    endpoint text not null,
+                    endpoint_hash varchar(64) not null unique,
+                    p256dh varchar(255) not null,
+                    auth_secret varchar(255) not null,
+                    user_agent varchar(500),
+                    active boolean not null default true,
+                    failure_count integer not null default 0,
+                    created_at timestamp not null default current_timestamp,
+                    updated_at timestamp not null default current_timestamp,
+                    last_success_at timestamp
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_web_push_user_active on web_push_subscriptions(user_id, active)");
+        jdbcTemplate.execute("""
+                create table if not exists web_push_deliveries (
+                    delivery_id bigserial primary key,
+                    ticket_id bigint not null references tickets(ticket_id) on delete cascade,
+                    subscription_id bigint not null references web_push_subscriptions(subscription_id) on delete cascade,
+                    notification_type varchar(30) not null,
+                    status varchar(20) not null,
+                    created_at timestamp not null default current_timestamp,
+                    sent_at timestamp,
+                    constraint uk_web_push_delivery unique(ticket_id, subscription_id, notification_type)
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_web_push_delivery_ticket on web_push_deliveries(ticket_id, notification_type)");
 
         executeIfPossible("drop table if exists service_form_revisions");
         executeIfPossible("alter table services drop column if exists form_version");
@@ -128,6 +194,7 @@ public class DatabaseSchemaInitializer {
         executeIfPossible("alter table users add column if not exists identity_issue_date varchar(30)");
         executeIfPossible("alter table users add column if not exists identity_issue_place varchar(255)");
         executeIfPossible("alter table users add column if not exists permanent_address varchar(500)");
+        executeIfPossible("alter table users add column if not exists identity_provider varchar(30)");
         executeIfPossible("alter table users add column if not exists contact_address varchar(500)");
         executeIfPossible("alter table users add column if not exists occupation varchar(255)");
         executeIfPossible("alter table users add column if not exists employment_status varchar(100)");

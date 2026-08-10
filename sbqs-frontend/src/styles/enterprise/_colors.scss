@@ -1,0 +1,13 @@
+:root {
+  --eb-primary: var(--primary-color);
+  --eb-primary-hover: var(--primary-dark);
+  --eb-secondary: var(--neutral-color);
+  --eb-background: var(--bg-main);
+  --eb-surface: var(--bg-card);
+  --eb-border: var(--border-color);
+  --eb-success: var(--success-color);
+  --eb-warning: var(--warning-color);
+  --eb-danger: var(--danger-color);
+  --eb-text: var(--text-primary);
+  --eb-muted: var(--text-secondary);
+}

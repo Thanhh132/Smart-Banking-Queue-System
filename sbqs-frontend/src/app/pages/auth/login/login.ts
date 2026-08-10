@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
@@ -10,6 +11,13 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
+interface DevLoginAccount {
+  label: string;
+  role: string;
+  email: string;
+  password: string;
+}
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -17,21 +25,45 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
   templateUrl: './login.html',
   styleUrl: './login.scss',
 })
-export class Login {
+export class Login implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private authService = inject(AuthService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private http = inject(HttpClient);
 
   isSubmitting = false;
+  isGoogleSubmitting = false;
   errorMessage = '';
   showPassword = false;
+  devAccounts: DevLoginAccount[] = [];
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]],
   });
+
+  ngOnInit(): void {
+    if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return;
+    this.http.get<DevLoginAccount[]>('/dev-login-accounts.local.json').subscribe({
+      next: (accounts) => {
+        this.devAccounts = Array.isArray(accounts) ? accounts : [];
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.devAccounts = [];
+      },
+    });
+  }
+
+  fillDevAccount(account: DevLoginAccount): void {
+    this.loginForm.setValue({ email: account.email, password: account.password });
+    this.loginForm.markAsPristine();
+    this.loginForm.markAsUntouched();
+    this.errorMessage = '';
+    this.showPassword = false;
+  }
 
   submit(): void {
     this.errorMessage = '';
@@ -60,7 +92,7 @@ export class Login {
       )
       .subscribe({
         next: (response) => {
-          this.router.navigateByUrl(this.authService.getHomeRoute(response.role));
+          this.router.navigateByUrl(this.authService.getPostLoginRoute(response));
         },
         error: (err) => {
           this.errorMessage = this.apiError.getMessage(
@@ -70,6 +102,25 @@ export class Login {
           this.cdr.detectChanges();
         },
       });
+  }
+
+  async loginWithGoogle(): Promise<void> {
+    this.errorMessage = '';
+    this.isGoogleSubmitting = true;
+    try {
+      const response = await this.authService.startGoogleLogin();
+      if (response) {
+        await this.router.navigateByUrl(this.authService.getPostLoginRoute(response));
+      }
+    } catch (error) {
+      this.authService.clearLocalSession();
+      this.errorMessage = error instanceof Error
+        ? error.message
+        : 'Không thể hoàn tất đăng nhập Google. Vui lòng thử lại.';
+    } finally {
+      this.isGoogleSubmitting = false;
+      this.cdr.detectChanges();
+    }
   }
 
   togglePasswordVisibility(): void {

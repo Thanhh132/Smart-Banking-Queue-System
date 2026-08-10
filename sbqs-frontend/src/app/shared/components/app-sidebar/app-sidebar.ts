@@ -1,5 +1,5 @@
-import { NgFor } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { NgFor, NgIf } from '@angular/common';
+import { Component, HostListener, Input, Output, EventEmitter, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../core/services/auth.service';
@@ -14,13 +14,18 @@ interface SidebarItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, NgFor, AppIcon],
+  imports: [RouterLink, RouterLinkActive, NgFor, NgIf, AppIcon],
   templateUrl: './app-sidebar.html',
   styleUrl: './app-sidebar.scss',
 })
 export class AppSidebar {
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  @Input() collapsed = false;
+  @Input() open = false;
+  @Output() closeRequested = new EventEmitter<void>();
+  @Output() collapseRequested = new EventEmitter<void>();
 
   private menusByRole: Record<string, SidebarItem[]> = {
     SUPER_ADMIN: [
@@ -34,6 +39,7 @@ export class AppSidebar {
       { label: 'Phiếu khai báo', icon: 'briefcase', route: '/admin/services' },
       { label: 'Gán dịch vụ', icon: 'list-checks', route: '/admin/mappings' },
       { label: 'Nhân viên', icon: 'users', route: '/admin/users' },
+      { label: 'Lịch sử phục vụ', icon: 'file-text', route: '/admin/history' },
       { label: 'Màn hình hàng đợi', icon: 'monitor', route: '/monitor' },
     ],
     STAFF: [
@@ -56,5 +62,20 @@ export class AppSidebar {
   logout(): void {
     this.authService.logout().subscribe();
     this.router.navigateByUrl('/login');
+  }
+
+  closeMobileSidebar(): void {
+    this.closeRequested.emit();
+  }
+
+  toggleCollapse(): void {
+    this.collapseRequested.emit();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.open) {
+      this.closeMobileSidebar();
+    }
   }
 }

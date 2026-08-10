@@ -1,0 +1,15 @@
+<main class="google-callback">
+  <section>
+    <div class="google-mark">G</div>
+    <ng-container *ngIf="isLoading; else result">
+      <h1>Đang xác thực với Google</h1>
+      <p>SBQS đang tạo phiên đăng nhập an toàn cho bạn...</p>
+      <span class="loader" aria-label="Đang xử lý"></span>
+    </ng-container>
+    <ng-template #result>
+      <h1>Không thể đăng nhập</h1>
+      <p class="error">{{ errorMessage }}</p>
+      <a routerLink="/login">Quay lại đăng nhập</a>
+    </ng-template>
+  </section>
+</main>

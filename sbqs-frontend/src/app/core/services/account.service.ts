@@ -12,6 +12,8 @@ export interface AccountProfile {
   branchId: number | null;
   branchName: string | null;
   createdAt: string;
+  profileComplete: boolean;
+  passwordChangeAvailable: boolean;
 }
 
 export interface AccountChangeConfirmation {
@@ -73,5 +75,14 @@ export class AccountService {
 
   updatePaperlessProfile(payload: { serviceId?: number; values: Record<string, string> }) {
     return this.http.put<CustomerPaperlessProfile>(`${this.apiUrl}/paperless-profile`, payload);
+  }
+
+  completeSocialProfile(payload: {
+    fullName: string;
+    phone: string;
+    permanentAddress: string;
+    contactAddress: string;
+  }) {
+    return this.http.put<AccountProfile>(`${this.apiUrl}/social-profile`, payload);
   }
 }

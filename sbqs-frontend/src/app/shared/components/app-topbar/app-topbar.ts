@@ -1,15 +1,23 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+
+import { AuthService } from '../../../core/services/auth.service';
+import { AppIcon } from '../app-icon/app-icon';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [],
+  imports: [RouterLink, AppIcon],
   templateUrl: './app-topbar.html',
   styleUrl: './app-topbar.scss'
 })
 export class AppTopbar {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   @Input() title = 'Tổng quan';
   @Input() username = sessionStorage.getItem('fullName') || 'Người dùng';
+  @Output() sidebarToggle = new EventEmitter<void>();
 
   get subtitle(): string {
     return sessionStorage.getItem('userRole') === 'CUSTOMER'
@@ -32,5 +40,29 @@ export class AppTopbar {
       default:
         return 'Người dùng';
     }
+  }
+
+  get homeRoute(): string {
+    switch (sessionStorage.getItem('userRole')) {
+      case 'SUPER_ADMIN':
+        return '/super-admin';
+      case 'BRANCH_ADMIN':
+        return '/admin';
+      case 'STAFF':
+        return '/staff';
+      case 'CUSTOMER':
+        return '/customer';
+      default:
+        return '/';
+    }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarToggle.emit();
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe();
+    this.router.navigateByUrl('/login');
   }
 }

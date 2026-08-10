@@ -7,6 +7,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sbqs.entity.User;
 import com.sbqs.repository.UserRepository;
 import com.sbqs.config.FallbackAuthProperties;
+import com.sbqs.config.KeycloakProperties;
+import com.sbqs.dto.GoogleCodeExchangeRequest;
+import com.sbqs.dto.GoogleLoginConfigResponse;
 import com.sbqs.exception.KeycloakUnavailableException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.slf4j.Logger;
@@ -36,6 +39,7 @@ public class AuthService {
         private final PasswordEncoder passwordEncoder;
         private final FallbackTokenService fallbackTokenService;
         private final FallbackAuthProperties fallbackProperties;
+        private final KeycloakProperties keycloakProperties;
 
         public AuthService(
                         UserRepository userRepository,
@@ -44,7 +48,8 @@ public class AuthService {
                         ObjectMapper objectMapper,
                         PasswordEncoder passwordEncoder,
                         FallbackTokenService fallbackTokenService,
-                        FallbackAuthProperties fallbackProperties) {
+                        FallbackAuthProperties fallbackProperties,
+                        KeycloakProperties keycloakProperties) {
 
                 this.userRepository = userRepository;
                 this.keycloakService = keycloakService;
@@ -53,6 +58,7 @@ public class AuthService {
                 this.passwordEncoder = passwordEncoder;
                 this.fallbackTokenService = fallbackTokenService;
                 this.fallbackProperties = fallbackProperties;
+                this.keycloakProperties = keycloakProperties;
         }
 
         /**
@@ -104,7 +110,7 @@ public class AuthService {
                         }
                 }
 
-                LoginResponse response = buildLoginResponse(token, email);
+                LoginResponse response = buildLoginResponse(token, email, false);
                 userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
                         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
                         userRepository.save(user);
@@ -149,7 +155,8 @@ public class AuthService {
                                 user.getFullName(),
                                 user.getEmail(),
                                 user.getBranch() == null ? null : user.getBranch().getBranchId(),
-                                "FALLBACK");
+                                "FALLBACK",
+                                !"CUSTOMER".equals(user.getRole()) || CustomerProfilePolicy.isComplete(user));
         }
 
         private boolean canUseLocalFallback(Optional<User> user, String password) {
@@ -164,7 +171,47 @@ public class AuthService {
         /** Đổi refresh token Keycloak lấy bộ token mới; JWT fallback không có refresh token. */
         public LoginResponse refresh(String refreshToken) {
                 Map<String, Object> token = keycloakService.refreshToken(refreshToken);
-                return buildLoginResponse(token, null);
+                return buildLoginResponse(token, null, false);
+        }
+
+        public GoogleLoginConfigResponse getGoogleLoginConfig() {
+                String publicUrl = firstNotBlank(keycloakProperties.getPublicUrl(), keycloakProperties.getServerUrl());
+                return new GoogleLoginConfigResponse(
+                                keycloakProperties.isGoogleLoginEnabled(),
+                                publicUrl + "/realms/" + keycloakProperties.getRealm()
+                                                + "/protocol/openid-connect/auth",
+                                keycloakProperties.getClientId(),
+                                keycloakProperties.getGoogleRedirectUri());
+        }
+
+        public LoginResponse exchangeGoogleCode(GoogleCodeExchangeRequest request) {
+                Map<String, Object> token = keycloakService.exchangeAuthorizationCode(
+                                request.code(), request.codeVerifier(), keycloakProperties.getGoogleRedirectUri());
+                Map<String, Object> payload = decodeTokenPayload(valueAsString(token.get("access_token")));
+                String email = normalizeEmail(valueAsString(payload.get("email")));
+                String keycloakUserId = valueAsString(payload.get("sub"));
+                if (email == null || email.isBlank() || keycloakUserId == null || keycloakUserId.isBlank()) {
+                        throw new RuntimeException("Google khong cung cap du thong tin dinh danh");
+                }
+
+                boolean googleClaim = "google".equalsIgnoreCase(
+                                valueAsString(payload.get("identity_provider")));
+                if (!googleClaim && !keycloakAdminService.hasFederatedIdentity(keycloakUserId, "google")) {
+                        throw new RuntimeException("Phien dang nhap khong den tu Google");
+                }
+
+                userRepository.findByEmailIgnoreCase(email).ifPresent(user -> {
+                        if (!"CUSTOMER".equals(user.getRole())) {
+                                throw new RuntimeException("Dang nhap Google chi danh cho tai khoan khach hang");
+                        }
+                });
+
+                if (!"CUSTOMER".equals(resolveRoleFromPayload(payload, null))) {
+                        keycloakAdminService.assignRealmRole(keycloakUserId, "CUSTOMER");
+                        token = keycloakService.refreshToken(valueAsString(token.get("refresh_token")));
+                }
+
+                return buildLoginResponse(token, email, true);
         }
 
         public void logout(String refreshToken) {
@@ -174,7 +221,8 @@ public class AuthService {
         /** Chuẩn hóa token Keycloak thành response chung mà Angular sử dụng cho mọi role. */
         private LoginResponse buildLoginResponse(
                         Map<String, Object> token,
-                        String fallbackEmail) {
+                        String fallbackEmail,
+                        boolean googleLogin) {
 
                 String accessToken = valueAsString(token.get("access_token"));
                 Map<String, Object> tokenPayload = decodeTokenPayload(accessToken);
@@ -193,7 +241,8 @@ public class AuthService {
                                                 tokenPayload,
                                                 tokenEmail,
                                                 keycloakUserId,
-                                                resolvedRole));
+                                                resolvedRole,
+                                                googleLogin));
 
                 if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
                         throw new RuntimeException("Tai khoan da bi khoa");
@@ -217,6 +266,11 @@ public class AuthService {
                         changed = true;
                 }
 
+                if (googleLogin && !"GOOGLE".equals(user.getIdentityProvider())) {
+                        user.setIdentityProvider("GOOGLE");
+                        changed = true;
+                }
+
                 if (changed) {
                         user = userRepository.save(user);
                 }
@@ -236,7 +290,8 @@ public class AuthService {
                                 user.getFullName(),
                                 user.getEmail(),
                                 user.getBranch() == null ? null : user.getBranch().getBranchId(),
-                                "KEYCLOAK");
+                                "KEYCLOAK",
+                                !"CUSTOMER".equals(resolvedRole) || CustomerProfilePolicy.isComplete(user));
         }
 
         private String valueAsString(Object value) {
@@ -264,15 +319,17 @@ public class AuthService {
                         Map<String, Object> tokenPayload,
                         String email,
                         String keycloakUserId,
-                        String role) {
+                        String role,
+                        boolean googleLogin) {
 
                 User user = new User();
                 user.setEmail(email);
-                user.setFullName(resolveFullName(tokenPayload, email));
+                user.setFullName(googleLogin ? "" : resolveFullName(tokenPayload, email));
                 user.setRole(role);
                 user.setStatus("ACTIVE");
                 user.setPasswordHash("KEYCLOAK_MANAGED");
                 user.setKeycloakUserId(keycloakUserId);
+                user.setIdentityProvider(googleLogin ? "GOOGLE" : "KEYCLOAK");
 
                 log.info("Creating local app profile from Keycloak token email={} role={}", email, role);
 

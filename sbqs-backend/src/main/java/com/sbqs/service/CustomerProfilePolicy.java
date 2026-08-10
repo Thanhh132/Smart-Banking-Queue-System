@@ -1,5 +1,7 @@
 package com.sbqs.service;
 
+import com.sbqs.entity.User;
+
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,5 +35,17 @@ public final class CustomerProfilePolicy {
 
     public static boolean isAccountManaged(String field) {
         return FULL_NAME.equals(field) || MOBILE_PHONE.equals(field);
+    }
+
+    public static boolean isComplete(User user) {
+        return user != null
+                && !isBlank(user.getFullName())
+                && !isBlank(user.getPhone())
+                && !isBlank(user.getPermanentAddress())
+                && !isBlank(user.getContactAddress());
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

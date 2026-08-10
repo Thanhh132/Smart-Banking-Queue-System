@@ -53,7 +53,7 @@
           <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
         </div>
         <span class="routing-refresh" *ngIf="customerLocationLabel">
-          {{ isRouting ? 'Đang cập nhật tải...' : 'Tải hàng đợi trực tiếp' }}
+          {{ routingStatusLabel }}
         </span>
       </div>
 
@@ -73,6 +73,14 @@
           <div class="recommendation-banner" *ngIf="recommendationFor(branch.branchId)?.recommended">
             <app-icon name="check-circle" [size]="16" />
             Đề xuất tối ưu
+          </div>
+          <div class="branch-hours-badge"
+            [class.branch-hours-badge--open]="isBranchOpen(branch.branchId)"
+            [class.branch-hours-badge--closed]="isOpenStatusLoaded(branch.branchId) && !isBranchOpen(branch.branchId)">
+            <span></span>
+            {{ !isOpenStatusLoaded(branch.branchId)
+              ? 'Đang kiểm tra giờ'
+              : isBranchOpen(branch.branchId) ? 'Đang mở cửa' : 'Ngoài giờ phục vụ' }}
           </div>
           <div class="branch-result__heading">
             <span>{{ branch.bankName }}</span>
@@ -101,9 +109,13 @@
             {{ routing.explanation }}
           </p>
           <div class="branch-result__actions">
-            <button type="button" class="btn btn-primary" (click)="selectBranch(branch.branchId)">
+            <button type="button" class="btn btn-primary"
+              (click)="selectBranch(branch)"
+              [disabled]="!isBranchOpen(branch.branchId) || selectingBranchId === branch.branchId">
               <app-icon name="arrow-right" [size]="16" />
-              Chọn chi nhánh
+              {{ selectingBranchId === branch.branchId
+                ? 'Đang kiểm tra...'
+                : isBranchOpen(branch.branchId) ? 'Chọn chi nhánh' : 'Chưa thể lấy số' }}
             </button>
             <a class="btn btn-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">
               <app-icon name="external-link" [size]="16" />

@@ -18,9 +18,6 @@ import java.util.List;
 
 @Service
 public class DigitalDelegationService {
-    private static final java.util.Set<String> NON_DELEGATABLE_CODES = java.util.Set.of(
-            "ACCOUNT_OPEN", "DEBIT_CARD_NEW", "CREDIT_CARD", "DIGITAL_BANKING",
-            "IDENTITY_UPDATE", "SIGNATURE_UPDATE");
     private static final char[] CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".toCharArray();
     private final SecureRandom random = new SecureRandom();
     private final DigitalDelegationRepository repository;
@@ -40,13 +37,16 @@ public class DigitalDelegationService {
     @Transactional
     public DelegationResponse create(CreateDelegationRequest request) {
         User owner = currentUserService.requireUser();
+        if (!CustomerProfilePolicy.isComplete(owner)) {
+            throw new RuntimeException("Vui long hoan tat ho so khach hang truoc khi tao uy quyen");
+        }
         if (!"CUSTOMER".equals(owner.getRole())) throw new RuntimeException("Chỉ khách hàng được tạo ủy quyền");
         var branch = branchRepository.findById(request.branchId()).orElseThrow(() -> new RuntimeException("Không tìm thấy chi nhánh"));
         Services service = serviceRepository.findById(request.serviceId()).orElseThrow(() -> new RuntimeException("Không tìm thấy dịch vụ"));
         if (service.getBranch() == null || !service.getBranch().getBranchId().equals(branch.getBranchId())) {
             throw new RuntimeException("Dịch vụ không thuộc chi nhánh đã chọn");
         }
-        if (NON_DELEGATABLE_CODES.contains(service.getServiceCode().toUpperCase())) {
+        if (service.getCatalog() == null || !service.getCatalog().isDelegatable()) {
             throw new RuntimeException("Nghiệp vụ này yêu cầu chính chủ hoặc người đại diện hợp pháp trực tiếp xác minh, không thể dùng ủy quyền thông thường");
         }
         LocalDateTime now = LocalDateTime.now();
@@ -54,6 +54,7 @@ public class DigitalDelegationService {
 
         DigitalDelegation value = new DigitalDelegation();
         value.setReferenceCode(newReferenceCode()); value.setOwner(owner); value.setBranch(branch); value.setService(service);
+        value.setBranchNameSnapshot(branch.getBranchName()); value.setServiceNameSnapshot(service.getServiceName());
         value.setDelegateName(request.delegateName().trim());
         value.setDelegateIdentityHash(passwordEncoder.encode(request.delegateIdentityNumber()));
         value.setDelegateIdentityLast4(request.delegateIdentityNumber().substring(request.delegateIdentityNumber().length() - 4));
@@ -139,7 +140,10 @@ public class DigitalDelegationService {
                 "********" + value.getDelegateIdentityLast4(), value.getDelegateDateOfBirth(), value.getDelegatePhone(),
                 value.getIdentityIssueDate(), value.getIdentityExpiryDate(), value.getIdentityIssuePlace(), value.getRelationship(), value.getTransactionScope(), value.getStatus(),
                 value.getOwner().getFullName(), maskEmail(value.getOwner().getEmail()),
-                value.getBranch().getBranchId(), value.getBranch().getBranchName(), value.getService().getServiceId(), value.getService().getServiceName(),
+                value.getBranch() == null ? null : value.getBranch().getBranchId(),
+                value.getBranch() == null ? value.getBranchNameSnapshot() : value.getBranch().getBranchName(),
+                value.getService() == null ? null : value.getService().getServiceId(),
+                value.getService() == null ? value.getServiceNameSnapshot() : value.getService().getServiceName(),
                 value.getValidFrom(), value.getValidUntil(), value.getCreatedAt(), value.getVerifiedAt(), value.getUsedAt());
     }
 

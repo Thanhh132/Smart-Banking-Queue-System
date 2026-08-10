@@ -174,7 +174,6 @@
                 <th>Email</th>
                 <th>Số điện thoại</th>
                 <th>Vai trò</th>
-                <th>Trạng thái</th>
                 <th>Thao tác</th>
               </tr>
             </thead>
@@ -186,23 +185,14 @@
                 <td>{{ user.phone || '-' }}</td>
                 <td><span class="admin-badge badge-info">Nhân viên giao dịch</span></td>
                 <td>
-                  <span class="admin-badge" [ngClass]="user.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'">
-                    {{ user.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm khóa' }}
-                  </span>
-                </td>
-                <td>
                   <div class="user-row-actions">
                     <button class="btn-secondary btn-sm" type="button" (click)="startEdit(user)">
                       <app-icon name="pencil" [size]="14" />
                       Sửa
                     </button>
-                    <button *ngIf="user.status === 'INACTIVE'" class="btn-secondary btn-sm" type="button" (click)="unlockUser(user)">
-                      <app-icon name="unlock" [size]="14" />
-                      Mở khóa
-                    </button>
                     <button class="btn-danger btn-sm" type="button" (click)="deleteUser(user)">
-                      <app-icon [name]="user.status === 'INACTIVE' ? 'trash' : 'lock'" [size]="14" />
-                      {{ user.status === 'INACTIVE' ? 'Xóa khỏi danh sách' : 'Khóa tài khoản' }}
+                      <app-icon name="trash" [size]="14" />
+                      Xóa
                     </button>
                   </div>
                 </td>

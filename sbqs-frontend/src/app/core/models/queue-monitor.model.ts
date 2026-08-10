@@ -3,6 +3,7 @@ export interface ServingCounter {
   ticketNumber: number | null;
   status: string;
   queueMachineName?: string | null;
+  staffName?: string | null;
 }
 
 export interface QueueMonitor {

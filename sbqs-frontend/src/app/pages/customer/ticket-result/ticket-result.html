@@ -9,6 +9,24 @@
     <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
     <ng-container *ngIf="ticket; else noTicket">
+      <section class="push-card" *ngIf="effectiveStatus === 'WAITING'">
+        <div class="push-card__icon">🔔</div>
+        <div class="push-card__content">
+          <strong>Nhận thông báo khi đóng trang</strong>
+          <p *ngIf="webPush.subscribed()">Thiết bị này sẽ được nhắc khi còn 3 người và khi phiếu được gọi.</p>
+          <p *ngIf="!webPush.subscribed() && webPush.supported() && webPush.serverEnabled()">Bật một lần để có thể khóa màn hình hoặc rời website mà vẫn nhận thông báo.</p>
+          <p *ngIf="!webPush.supported()">Thiết bị chưa hỗ trợ Web Push. Trên iPhone, hãy thêm SBQS vào Màn hình chính rồi mở lại ứng dụng.</p>
+          <p *ngIf="webPush.supported() && !webPush.serverEnabled()">Máy chủ chưa cấu hình khóa Web Push.</p>
+          <small *ngIf="webPush.message()">{{ webPush.message() }}</small>
+        </div>
+        <button *ngIf="webPush.supported() && webPush.serverEnabled() && !webPush.subscribed()" type="button" class="btn btn-primary" (click)="webPush.enable()" [disabled]="webPush.busy()">
+          {{ webPush.busy() ? 'Đang bật...' : 'Bật thông báo' }}
+        </button>
+        <button *ngIf="webPush.subscribed()" type="button" class="btn btn-secondary" (click)="webPush.disable()" [disabled]="webPush.busy()">
+          {{ webPush.busy() ? 'Đang tắt...' : 'Tắt trên thiết bị này' }}
+        </button>
+      </section>
+
       <section class="ticket-panel">
         <div class="ticket-number-panel">
           <span>Số thứ tự của bạn</span>

@@ -1,104 +1,142 @@
-.metric-card {
-  display: grid;
-  gap: 8px;
-}
-
-.metric-card span {
-  color: #14a38b;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.metric-card strong {
-  font-size: 32px;
-  line-height: 1;
-}
-
-.table-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  margin-bottom: 18px;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-td:last-child {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
+@use '../../../../styles/enterprise/variables' as v;
 
 .operations-page {
-  display: grid;
-  gap: 20px;
+  gap: 16px;
 }
 
-.split-form {
+.page-heading {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 4px;
+  max-width: none;
+  margin: 0;
 
-  @media (max-width: 760px) {
-    grid-template-columns: 1fr;
+  .page-kicker {
+    margin: 0;
+    color: v.$primary;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h1 {
+    margin: 0;
+    color: v.$text;
+    font-size: 28px;
+    line-height: 1.25;
+  }
+
+  p {
+    margin: 2px 0 0;
+    color: v.$muted;
+    font-size: 14px;
   }
 }
 
-.split-form label {
+.ui-card {
+  padding: 18px;
+  border-radius: v.$radius;
+}
+
+.operations-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.metric-card {
   display: grid;
-  gap: 8px;
-  color: #0f172a;
-  font-weight: 800;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  min-height: 100px;
+  align-content: center;
+
+  span {
+    color: v.$secondary;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  strong {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    color: v.$text;
+    font-size: 30px;
+    line-height: 1;
+  }
+
+  p {
+    margin: 0;
+    color: v.$muted;
+    font-size: 13px;
+  }
 }
 
-.split-form input,
-.split-form select,
-.split-form textarea {
-  width: 100%;
-  min-height: 44px;
-  border: 1px solid #bfd0e3;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 15px;
-  background: #fff;
+.admin-panel-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
 }
 
-.split-form textarea {
-  resize: vertical;
+.machine-management-grid > .ui-card:first-child,
+.counter-management-grid > .operations-form-stack {
+  grid-column: span 4;
+}
+
+.machine-management-grid > .ui-card:last-child,
+.counter-management-grid > .counter-list-card {
+  grid-column: span 8;
+}
+
+.machine-management-grid > .ui-card,
+.counter-list-card {
+  height: 100%;
+}
+
+.operations-form-stack {
+  display: grid;
+  gap: 16px;
+  align-content: start;
 }
 
 .full-row {
   grid-column: 1 / -1;
 }
 
-.form-actions {
+.form-actions,
+.row-actions,
+.hours-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
+.form-actions {
+  padding-top: 2px;
+}
+
 .hint-line {
-  min-height: 42px;
+  min-height: 36px;
   display: flex;
   align-items: center;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 8px;
   background: #f0f7ff;
   color: #0f4f86;
-  font-weight: 800;
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .status-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 6px 10px;
+  min-height: 26px;
+  padding: 4px 8px;
   border-radius: 999px;
-  font-size: 12px;
-  font-weight: 900;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .status-chip--active {
@@ -111,24 +149,176 @@ td:last-child {
   color: #475569;
 }
 
-.hours-card { padding: 18px 20px; }
-.hours-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
-.hours-heading span { color: #08756d; font-size: 11px; font-weight: 900; letter-spacing: .08em; }
-.hours-heading h3 { margin: 3px 0; font-size: 20px; }
-.hours-heading p { margin: 0; color: #64748b; font-size: 13px; }
-.hours-actions { display: flex; gap: 8px; }
-.hours-list { border: 1px solid #dbe4ee; border-radius: 8px; overflow: hidden; }
-.hours-row { display: grid; grid-template-columns: 150px minmax(270px,1fr) 86px minmax(270px,1fr); gap: 14px; align-items: center; min-height: 58px; padding: 8px 14px; border-bottom: 1px solid #e6edf4; }
-.hours-row:last-child { border-bottom: 0; }
-.hours-row--closed { grid-template-columns: 150px 1fr; background: #f8fafc; }
-.hours-day { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.day-toggle { min-width: 58px; padding: 5px 8px; border: 0; border-radius: 999px; background: #e2e8f0; color: #64748b; font-size: 11px; font-weight: 800; cursor: pointer; }
-.day-toggle--open { background: #dff5f0; color: #08756d; }
-.hours-row label { display: grid; grid-template-columns: 52px 1fr; gap: 8px; align-items: center; color: #64748b; font-size: 12px; font-weight: 700; }
-.hours-row label div { display: flex; align-items: center; gap: 6px; }
-.hours-row input[type='time'] { width: 104px; height: 36px; padding: 0 8px; border: 1px solid #cbd7e4; border-radius: 6px; background: #fff; font-size: 13px; }
-.hours-row i { color: #94a3b8; font-style: normal; }
-.lunch-break { color: #a16207; font-size: 11px; font-weight: 800; text-align: center; }
-.closed-day { color: #94a3b8; font-size: 13px; }
-@media(max-width:1050px){.hours-row{grid-template-columns:130px 1fr 1fr}.lunch-break{display:none}.hours-row--closed{grid-template-columns:130px 1fr}}
-@media(max-width:720px){.hours-heading{align-items:flex-start;flex-direction:column}.hours-row,.hours-row--closed{grid-template-columns:1fr}.hours-row label{grid-template-columns:52px 1fr}.hours-actions{width:100%}.hours-actions .btn{flex:1}}
+.hours-card {
+  padding: 16px 18px;
+}
+
+.hours-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+
+  span {
+    color: v.$secondary;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+  }
+
+  h3 {
+    margin: 2px 0;
+    font-size: 18px;
+  }
+
+  p {
+    margin: 0;
+    color: v.$muted;
+    font-size: 12px;
+  }
+}
+
+.hours-list {
+  overflow: hidden;
+  border: 1px solid v.$border;
+  border-radius: 8px;
+}
+
+.hours-row {
+  display: grid;
+  grid-template-columns: 140px minmax(240px, 1fr) 72px minmax(240px, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 50px;
+  padding: 6px 12px;
+  border-bottom: 1px solid #edf0f2;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+
+  label {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    gap: 6px;
+    align-items: center;
+    margin: 0;
+    color: v.$muted;
+    font-size: 11px;
+  }
+
+  label div {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  input[type='time'] {
+    width: 96px;
+    min-height: 32px;
+    height: 32px;
+    padding: 0 6px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  i {
+    color: #94a3b8;
+    font-style: normal;
+  }
+}
+
+.hours-row--closed {
+  grid-template-columns: 140px 1fr;
+  background: #f8fafc;
+}
+
+.hours-day {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.day-toggle {
+  min-width: 54px;
+  min-height: 28px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 10px;
+}
+
+.day-toggle--open {
+  background: #dff5f0;
+  color: #08756d;
+}
+
+.lunch-break {
+  color: #a16207;
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.closed-day {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+@media (max-width: 1180px) {
+  .machine-management-grid > .ui-card:first-child,
+  .counter-management-grid > .operations-form-stack {
+    grid-column: span 5;
+  }
+
+  .machine-management-grid > .ui-card:last-child,
+  .counter-management-grid > .counter-list-card {
+    grid-column: span 7;
+  }
+
+  .hours-row {
+    grid-template-columns: 130px 1fr 1fr;
+  }
+
+  .lunch-break {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-panel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .machine-management-grid > .ui-card,
+  .counter-management-grid > .operations-form-stack,
+  .counter-management-grid > .counter-list-card {
+    grid-column: 1;
+  }
+}
+
+@media (max-width: 720px) {
+  .operations-metrics,
+  .hours-row,
+  .hours-row--closed {
+    grid-template-columns: 1fr;
+  }
+
+  .full-row {
+    grid-column: 1;
+  }
+
+  .hours-heading,
+  .table-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hours-actions .btn {
+    flex: 1;
+  }
+}

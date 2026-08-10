@@ -72,6 +72,10 @@
             {{ counter.ticketNumber || '-' }}
           </div>
 
+          <div class="counter-card__staff">
+            <span>Nhân viên trực quầy</span>
+            <strong>{{ counter.staffName || 'Chưa có nhân viên' }}</strong>
+          </div>
           <p>{{ counter.queueMachineName || 'Chưa gán máy bốc số' }}</p>
         </article>
       </div>

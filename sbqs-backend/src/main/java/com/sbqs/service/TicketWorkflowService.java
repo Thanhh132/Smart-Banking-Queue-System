@@ -117,11 +117,19 @@ public class TicketWorkflowService {
 
     /** Hủy process đang chạy tương ứng khi khách hàng hủy phiếu. */
     public void cancelTicket(Ticket ticket) {
+        cancelProcess(ticket, "Customer cancelled ticket ");
+    }
+
+    public void closeNoShow(Ticket ticket) {
+        cancelProcess(ticket, "Customer did not arrive for ticket ");
+    }
+
+    private void cancelProcess(Ticket ticket, String reason) {
         ProcessInstance processInstance = findActiveProcess(ticket.getTicketId());
         if (processInstance != null) {
             runtimeService.deleteProcessInstance(
                     processInstance.getId(),
-                    "Customer cancelled ticket " + ticket.getTicketId());
+                    reason + ticket.getTicketId());
         }
     }
 

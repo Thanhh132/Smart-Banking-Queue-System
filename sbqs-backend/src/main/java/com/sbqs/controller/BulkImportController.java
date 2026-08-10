@@ -37,6 +37,11 @@ public class BulkImportController {
         return template(bulkImportService.serviceTemplate(), "sbqs-services-import-template.xlsx");
     }
 
+    @GetMapping("/templates/service-catalog")
+    public ResponseEntity<byte[]> serviceCatalogTemplate() {
+        return template(bulkImportService.serviceCatalogTemplate(), "sbqs-service-catalog-import-template.xlsx");
+    }
+
     @PostMapping(value = "/staff", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportResult> importStaff(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(bulkImportService.importStaff(file));
@@ -45,6 +50,11 @@ public class BulkImportController {
     @PostMapping(value = "/services", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportResult> importServices(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(bulkImportService.importServices(file));
+    }
+
+    @PostMapping(value = "/service-catalog", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ImportResult> importServiceCatalog(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(bulkImportService.importServiceCatalog(file));
     }
 
     private ResponseEntity<byte[]> template(byte[] content, String fileName) {

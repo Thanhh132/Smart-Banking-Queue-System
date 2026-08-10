@@ -30,13 +30,18 @@
               }
             ],
             "styles": [
-              "node_modules/bootstrap/dist/css/bootstrap-grid.min.css",
-              "node_modules/bootstrap/dist/css/bootstrap-utilities.min.css",
               "src/styles.scss"
             ]
           },
           "configurations": {
             "production": {
+              "assets": [
+                {
+                  "glob": "**/*",
+                  "input": "public",
+                  "ignore": ["dev-login-accounts.local.json"]
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",

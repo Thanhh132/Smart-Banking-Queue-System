@@ -38,8 +38,12 @@ export class ApiErrorService {
       return 'Email đã tồn tại. Vui lòng dùng email khác.';
     }
 
-    if (lower.includes('so dien thoai da ton tai') || lower.includes('số điện thoại đã tồn tại') || lower.includes('phone')) {
+    if (lower.includes('so dien thoai da ton tai') || lower.includes('số điện thoại đã tồn tại')) {
       return 'Số điện thoại đã tồn tại. Vui lòng dùng số khác.';
+    }
+
+    if (lower.includes('identity_provider') || lower.includes('sqlgrammar')) {
+      return 'Cấu trúc dữ liệu hệ thống chưa được cập nhật. Vui lòng khởi động lại backend và thử lại.';
     }
 
     if (lower.includes('invalid_grant') || lower.includes('email hoac mat khau khong dung')) {

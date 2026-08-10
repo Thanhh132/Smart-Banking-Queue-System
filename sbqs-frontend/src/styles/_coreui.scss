@@ -1,0 +1,16 @@
+// CoreUI foundation for SBQS. Keep this import before legacy application styles
+// so existing screens retain their current cascade until they are migrated.
+@use '@coreui/coreui/scss/coreui' as * with (
+  $primary: #087d74,
+  $secondary: #60777d,
+  $success: #0b9b78,
+  $warning: #f59e0b,
+  $danger: #ef4444,
+  $body-bg: #f3f7f7,
+  $body-color: #13353d,
+  $body-secondary-color: #60777d,
+  $body-tertiary-bg: #f3f7f7,
+  $border-color: #dce6e7,
+  $enable-gradients: false,
+  $enable-shadows: false
+);

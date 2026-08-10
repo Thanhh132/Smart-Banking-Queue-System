@@ -2,11 +2,18 @@ import { Routes } from '@angular/router';
 
 import { roleGuard } from './core/guards/role.guard';
 import { homeRedirectGuard } from './core/guards/home-redirect.guard';
+import { customerProfileGuard } from './core/guards/customer-profile.guard';
+import { branchOpenGuard } from './core/guards/branch-open.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'home', loadComponent: () => import('./pages/public/home/home').then((m) => m.Home) },
   { path: 'login', loadComponent: () => import('./pages/auth/login/login').then((m) => m.Login) },
+  {
+    path: 'auth/google/callback',
+    loadComponent: () =>
+      import('./pages/auth/google-callback/google-callback').then((m) => m.GoogleCallback),
+  },
   {
     path: 'register',
     loadComponent: () => import('./pages/auth/register/register').then((m) => m.Register),
@@ -38,15 +45,21 @@ export const routes: Routes = [
     canActivate: [roleGuard(['CUSTOMER', 'STAFF', 'BRANCH_ADMIN', 'SUPER_ADMIN'])],
   },
   {
+    path: 'complete-profile',
+    loadComponent: () =>
+      import('./pages/account/complete-profile/complete-profile').then((m) => m.CompleteProfile),
+    canActivate: [roleGuard(['CUSTOMER'])],
+  },
+  {
     path: 'customer',
     loadComponent: () => import('./pages/customer/portal/customer').then((m) => m.Customer),
-    canActivate: [roleGuard(['CUSTOMER'])],
+    canActivate: [roleGuard(['CUSTOMER']), customerProfileGuard],
   },
   {
     path: 'branches',
     loadComponent: () =>
       import('./pages/customer/branch-selection/branch-selection').then((m) => m.BranchSelection),
-    canActivate: [roleGuard(['CUSTOMER'])],
+    canActivate: [roleGuard(['CUSTOMER']), customerProfileGuard],
   },
   {
     path: 'services',
@@ -54,18 +67,18 @@ export const routes: Routes = [
       import('./pages/customer/service-selection/service-selection').then(
         (m) => m.ServiceSelection,
       ),
-    canActivate: [roleGuard(['CUSTOMER'])],
+    canActivate: [roleGuard(['CUSTOMER']), customerProfileGuard, branchOpenGuard],
   },
   {
     path: 'ticket',
     loadComponent: () =>
       import('./pages/customer/ticket-result/ticket-result').then((m) => m.TicketResult),
-    canActivate: [roleGuard(['CUSTOMER'])],
+    canActivate: [roleGuard(['CUSTOMER']), customerProfileGuard],
   },
   {
     path: 'delegations',
     loadComponent: () => import('./pages/customer/delegations/customer-delegations').then((m) => m.CustomerDelegations),
-    canActivate: [roleGuard(['CUSTOMER'])],
+    canActivate: [roleGuard(['CUSTOMER']), customerProfileGuard],
   },
   {
     path: 'monitor',
@@ -106,6 +119,12 @@ export const routes: Routes = [
   {
     path: 'admin/users',
     loadComponent: () => import('./pages/admin/users/admin-users').then((m) => m.AdminUsers),
+    canActivate: [roleGuard(['BRANCH_ADMIN'])],
+  },
+  {
+    path: 'admin/history',
+    loadComponent: () =>
+      import('./pages/admin/history/admin-history').then((m) => m.AdminHistory),
     canActivate: [roleGuard(['BRANCH_ADMIN'])],
   },
   {

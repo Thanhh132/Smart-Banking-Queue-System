@@ -1,17 +1,45 @@
-<header class="topbar">
-  <div>
-    <h1>{{ title }}</h1>
-    <p>{{ subtitle }}</p>
-  </div>
+<header class="topbar header header-sticky border-bottom">
+  <div class="topbar__main">
+    <button type="button" class="topbar__toggle" (click)="toggleSidebar()" aria-label="Mở hoặc thu gọn menu">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </button>
 
-  <div class="topbar__profile">
-    <div class="topbar__avatar">
-      {{ username.charAt(0) }}
+    <div class="topbar__location">
+      <nav class="topbar__breadcrumb" aria-label="Breadcrumb">
+        <a [routerLink]="homeRoute">Trang chủ</a>
+        <span aria-hidden="true">/</span>
+        <span aria-current="page">{{ title }}</span>
+      </nav>
+      <h1>{{ title }}</h1>
+      <p>{{ subtitle }}</p>
     </div>
 
-    <div>
-      <strong>{{ username }}</strong>
-      <span>{{ roleLabel }}</span>
-    </div>
+    <details class="topbar__profile">
+      <summary aria-label="Mở menu tài khoản">
+        <span class="topbar__avatar">{{ username.charAt(0) }}</span>
+        <span class="topbar__identity">
+          <strong>{{ username }}</strong>
+          <small>{{ roleLabel }}</small>
+        </span>
+        <span class="topbar__caret" aria-hidden="true"></span>
+      </summary>
+
+      <div class="topbar__profile-menu">
+        <div class="topbar__profile-heading">
+          <strong>{{ username }}</strong>
+          <span>{{ roleLabel }}</span>
+        </div>
+        <a routerLink="/account">
+          <app-icon name="users" [size]="17" />
+          Tài khoản của tôi
+        </a>
+        <button type="button" (click)="logout()">
+          <app-icon name="logout" [size]="17" />
+          Đăng xuất
+        </button>
+      </div>
+    </details>
   </div>
 </header>

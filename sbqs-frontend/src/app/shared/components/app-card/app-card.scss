@@ -1,3 +1,8 @@
 :host {
   display: block;
 }
+
+:host(.fill-height),
+:host(.fill-height) .ui-card {
+  height: 100%;
+}
