@@ -4,12 +4,12 @@ import { finalize } from 'rxjs';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { ReportFormat, ReportService, ReportType } from '../../../core/services/report.service';
-import { AppIcon } from '../app-icon/app-icon';
+import { AppButton } from '../app-button/app-button';
 
 @Component({
   selector: 'app-report-export-buttons',
   standalone: true,
-  imports: [CommonModule, AppIcon],
+  imports: [CommonModule, AppButton],
   templateUrl: './report-export-buttons.html',
   styleUrl: './report-export-buttons.scss',
 })

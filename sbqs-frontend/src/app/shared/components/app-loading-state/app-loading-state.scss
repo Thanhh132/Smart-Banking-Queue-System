@@ -1,0 +1,24 @@
+:host { display: block; }
+
+.app-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+  min-height: 4.5rem;
+  padding: 1rem;
+  color: var(--cui-secondary-color, #60777d);
+  font-size: 0.8125rem;
+}
+
+.app-loading-state__spinner {
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid var(--cui-border-color, #dce6e7);
+  border-top-color: var(--cui-primary, #087d74);
+  border-radius: 50%;
+  animation: app-loading-spin 0.7s linear infinite;
+}
+
+@keyframes app-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .app-loading-state__spinner { animation-duration: 1.5s; } }

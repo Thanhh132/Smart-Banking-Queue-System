@@ -10,4 +10,5 @@ import { Component, Input } from '@angular/core';
 export class AppPageHeader {
   @Input() title = '';
   @Input() subtitle = '';
+  @Input() description = '';
 }

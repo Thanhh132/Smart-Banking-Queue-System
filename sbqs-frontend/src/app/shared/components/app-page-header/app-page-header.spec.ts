@@ -19,4 +19,14 @@ describe('AppPageHeader', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('keeps subtitle compatibility and prefers description', () => {
+    fixture.componentRef.setInput('title', 'Quản lý hàng đợi');
+    fixture.componentRef.setInput('subtitle', 'Nội dung cũ');
+    fixture.componentRef.setInput('description', 'Mô tả chuẩn');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Quản lý hàng đợi');
+    expect(fixture.nativeElement.querySelector('p').textContent).toContain('Mô tả chuẩn');
+  });
 });

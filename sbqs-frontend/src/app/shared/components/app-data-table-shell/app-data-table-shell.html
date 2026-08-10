@@ -1,0 +1,27 @@
+<section class="app-data-table-shell">
+  @if (title() || description()) {
+    <header class="app-data-table-shell__header">
+      <div>
+        @if (title()) {
+          <h2>{{ title() }}</h2>
+        }
+        @if (description()) {
+          <p>{{ description() }}</p>
+        }
+      </div>
+      <div class="app-data-table-shell__actions">
+        <ng-content select="[table-actions]"></ng-content>
+      </div>
+    </header>
+  }
+
+  @if (loading()) {
+    <app-loading-state [label]="loadingLabel()" />
+  } @else if (empty()) {
+    <app-empty-state [title]="emptyTitle()" [message]="emptyMessage()" />
+  } @else {
+    <div class="app-data-table-shell__responsive">
+      <ng-content></ng-content>
+    </div>
+  }
+</section>

@@ -169,13 +169,15 @@ button:disabled,
 }
 
 .btn-primary,
-button[type='submit'] {
+/* Temporary compatibility for existing, unmigrated forms. New shared buttons
+   use explicit CoreUI classes through app-button. */
+button[type='submit']:not(.app-button) {
   background: var(--primary-color);
   color: #ffffff;
 }
 
 .btn-primary:hover,
-button[type='submit']:hover {
+button[type='submit']:not(.app-button):hover {
   background: var(--primary-dark);
 }
 

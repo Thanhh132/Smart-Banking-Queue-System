@@ -4,10 +4,14 @@
       <span class="excel-import__kicker">Excel</span>
       <h3 id="excel-import-title"><app-icon name="file-spreadsheet" [size]="20" />{{ title }}</h3>
     </div>
-    <button class="btn-secondary" type="button" (click)="downloadTemplate()" [disabled]="isDownloading">
-      <app-icon name="download" [size]="17" />
-      {{ isDownloading ? 'Đang tải...' : 'Tải file mẫu' }}
-    </button>
+    <app-button
+      variant="outline"
+      size="sm"
+      icon="download"
+      label="Tải file mẫu"
+      [loading]="isDownloading"
+      (clicked)="downloadTemplate()"
+    />
   </div>
 
   <div class="excel-import__controls d-flex flex-wrap align-items-center gap-3">
@@ -17,10 +21,14 @@
       <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="selectFile($event)" />
     </label>
     <span class="file-name" [class.file-name--selected]="selectedFile">{{ selectedFileName }}</span>
-    <button class="btn-primary" type="button" (click)="submit()" [disabled]="isImporting || !selectedFile">
-      <app-icon name="upload" [size]="17" />
-      {{ isImporting ? 'Đang nhập...' : 'Nhập dữ liệu' }}
-    </button>
+    <app-button
+      size="sm"
+      icon="upload"
+      label="Nhập dữ liệu"
+      [loading]="isImporting"
+      [disabled]="!selectedFile"
+      (clicked)="submit()"
+    />
   </div>
 
   <div *ngIf="errorMessage" class="import-message import-message--error">{{ errorMessage }}</div>

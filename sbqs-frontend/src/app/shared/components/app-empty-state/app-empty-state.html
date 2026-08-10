@@ -1,0 +1,12 @@
+<div class="app-empty-state" role="status">
+  <app-icon [name]="icon()" [size]="22" />
+  <div>
+    <strong>{{ title() }}</strong>
+    @if (message()) {
+      <p>{{ message() }}</p>
+    }
+  </div>
+  <div class="app-empty-state__actions">
+    <ng-content></ng-content>
+  </div>
+</div>

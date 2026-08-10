@@ -1,21 +1,43 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
+
+import { AppIcon, AppIconName } from '../app-icon/app-icon';
+
+export type AppButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'success'
+  | 'warning'
+  | 'danger';
 
 @Component({
   selector: 'app-button',
-  imports: [],
+  imports: [AppIcon],
   templateUrl: './app-button.html',
   styleUrl: './app-button.scss'
 })
 export class AppButton {
+  readonly label = input('');
+  readonly variant = input<AppButtonVariant>('primary');
+  readonly size = input<'sm' | 'md'>('md');
+  readonly type = input<'button' | 'submit' | 'reset'>('button');
+  readonly icon = input<AppIconName | null>(null);
+  readonly loading = input(false);
+  readonly disabled = input(false);
+  readonly outline = input(false);
+  readonly ariaLabel = input('');
 
-  label = input('');
-  variant = input<'primary' | 'secondary' | 'success' | 'danger'>('primary');
-  disabled = input(false);
+  readonly clicked = output<void>();
 
-  clicked = output<void>();
+  readonly buttonClass = computed(() => {
+    const variant = this.variant();
+    const color = variant === 'outline' ? 'secondary' : variant;
+    const prefix = this.outline() || variant === 'outline' ? 'btn-outline-' : 'btn-';
+    return `${prefix}${color}`;
+  });
 
-  onClick() {
-    if (this.disabled()) {
+  onClick(): void {
+    if (this.disabled() || this.loading()) {
       return;
     }
 

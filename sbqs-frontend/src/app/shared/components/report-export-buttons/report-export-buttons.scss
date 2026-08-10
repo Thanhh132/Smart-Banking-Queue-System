@@ -1,9 +1,15 @@
-.report-export { display: grid; gap: 6px; }
-.report-export__buttons { display: flex; gap: 8px; flex-wrap: wrap; }
-.report-button { min-height: 38px; padding: 0 13px; gap: 7px; border: 1px solid; border-radius: 6px; background: #fff; font-size: 14px; font-weight: 800; cursor: pointer; }
-.report-button:disabled { cursor: wait; opacity: .65; }
-.report-button--pdf { border-color: #e6b8b8; color: #a61b1b; }
-.report-button--pdf:hover:not(:disabled) { background: #fff1f1; }
-.report-button--excel { border-color: #a8d6bf; color: #08734f; }
-.report-button--excel:hover:not(:disabled) { background: #eefbf4; }
-.report-export small { color: #b42318; font-size: 12px; }
+.report-export {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.report-export__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.report-export small {
+  color: var(--cui-danger-text-emphasis, #991b1b);
+  font-size: 0.75rem;
+}

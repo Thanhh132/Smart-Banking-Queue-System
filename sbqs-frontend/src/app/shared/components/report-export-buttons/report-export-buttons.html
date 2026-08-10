@@ -1,13 +1,25 @@
 <div class="report-export">
-  <div class="report-export__buttons d-flex flex-wrap gap-2">
-    <button type="button" class="report-button report-button--pdf" (click)="export('pdf')" [disabled]="loadingFormat !== null">
-      <app-icon name="file-text" [size]="17" />
-      {{ loadingFormat === 'pdf' ? 'Đang tạo...' : 'Xuất PDF' }}
-    </button>
-    <button type="button" class="report-button report-button--excel" (click)="export('xlsx')" [disabled]="loadingFormat !== null">
-      <app-icon name="file-spreadsheet" [size]="17" />
-      {{ loadingFormat === 'xlsx' ? 'Đang tạo...' : 'Xuất Excel' }}
-    </button>
+  <div class="report-export__buttons">
+    <app-button
+      variant="danger"
+      size="sm"
+      icon="file-text"
+      label="Xuất PDF"
+      [outline]="true"
+      [loading]="loadingFormat === 'pdf'"
+      [disabled]="loadingFormat !== null"
+      (clicked)="export('pdf')"
+    />
+    <app-button
+      variant="success"
+      size="sm"
+      icon="file-spreadsheet"
+      label="Xuất Excel"
+      [outline]="true"
+      [loading]="loadingFormat === 'xlsx'"
+      [disabled]="loadingFormat !== null"
+      (clicked)="export('xlsx')"
+    />
   </div>
   <small *ngIf="errorMessage">{{ errorMessage }}</small>
 </div>

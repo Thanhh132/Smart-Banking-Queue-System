@@ -1,0 +1,21 @@
+:host { display: inline-flex; }
+
+.app-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 50rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.app-status-badge--primary { background: var(--cui-primary-bg-subtle); border-color: var(--cui-primary-border-subtle); color: var(--cui-primary-text-emphasis); }
+.app-status-badge--secondary { background: var(--cui-secondary-bg-subtle); border-color: var(--cui-secondary-border-subtle); color: var(--cui-secondary-text-emphasis); }
+.app-status-badge--success { background: var(--cui-success-bg-subtle); border-color: var(--cui-success-border-subtle); color: var(--cui-success-text-emphasis); }
+.app-status-badge--warning { background: var(--cui-warning-bg-subtle); border-color: var(--cui-warning-border-subtle); color: var(--cui-warning-text-emphasis); }
+.app-status-badge--danger { background: var(--cui-danger-bg-subtle); border-color: var(--cui-danger-border-subtle); color: var(--cui-danger-text-emphasis); }
+.app-status-badge--info { background: var(--cui-info-bg-subtle); border-color: var(--cui-info-border-subtle); color: var(--cui-info-text-emphasis); }
