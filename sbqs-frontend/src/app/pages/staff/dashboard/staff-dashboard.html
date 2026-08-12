@@ -1,299 +1,291 @@
-<app-dashboard-layout title="Quầy phục vụ">
-  <section class="admin-grid">
+<app-dashboard-layout title="Vận hành tại quầy">
+  <section class="staff-workspace">
     <app-page-header
-      title="Màn hình giao dịch viên"
-      subtitle="Vào quầy, gọi số, hoàn tất phục vụ và theo dõi lịch sử trong ca làm."
+      title="Quầy phục vụ"
+      subtitle="Theo dõi ca làm việc, tiếp nhận khách và xử lý giao dịch tại quầy."
     >
+      <div class="staff-page-actions">
+        <span class="staff-live-status" role="status">
+          <span aria-hidden="true"></span>
+          Đồng bộ trực tiếp
+          <time *ngIf="lastUpdatedAt">{{ lastUpdatedAt | date: 'HH:mm:ss' }}</time>
+        </span>
+        <app-button
+          variant="outline"
+          size="sm"
+          icon="refresh"
+          label="Tải lại"
+          [disabled]="isLiveRefreshing"
+          (clicked)="loadDashboard()"
+        />
+      </div>
     </app-page-header>
 
-    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success" role="status">{{ successMessage }}</div>
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
 
-    <app-card>
-      <div class="card-header">
-        <div>
-          <h2>Xác minh ủy quyền giao dịch</h2>
-          <p>
-            Đối chiếu CCCD bản gốc trước khi nhập số. Hệ thống không hiển thị hoặc lưu CCCD dạng rõ.
-          </p>
-        </div>
-      </div>
-      <div class="assign-panel">
-        <label>Mã ủy quyền<input [(ngModel)]="delegationCode" placeholder="UQ-XXXXXXXX" /></label
-        ><label
-          >Số CCCD trên bản gốc<input [(ngModel)]="delegationIdentity" inputmode="numeric" /></label
-        ><button
-          type="button"
-          class="btn btn-primary"
-          (click)="verifyDelegation()"
-          [disabled]="isVerifyingDelegation"
-        >
-          {{ isVerifyingDelegation ? 'Đang xác minh...' : 'Xác minh' }}
-        </button>
-      </div>
-      <div class="ticket-current" *ngIf="verifiedDelegation">
-        <div class="ticket-detail">
-          <span>Chủ tài khoản ủy quyền</span
-          ><strong
-            >{{ verifiedDelegation.ownerName }} · {{ verifiedDelegation.maskedOwnerEmail }}</strong
-          >
-        </div>
-        <div class="ticket-detail">
-          <span>Người được ủy quyền</span
-          ><strong
-            >{{ verifiedDelegation.delegateName }} · {{ verifiedDelegation.maskedIdentity }}</strong
-          ><small
-            >Sinh {{ verifiedDelegation.delegateDateOfBirth | date: 'dd/MM/yyyy' }} ·
-            {{ verifiedDelegation.delegatePhone }} · {{ verifiedDelegation.relationship }}</small
-          >
-        </div>
-        <div class="ticket-detail">
-          <span>CCCD đối chiếu</span
-          ><strong
-            >Cấp {{ verifiedDelegation.identityIssueDate | date: 'dd/MM/yyyy' }} tại
-            {{ verifiedDelegation.identityIssuePlace }}</strong
-          ><small>Hết hạn {{ verifiedDelegation.identityExpiryDate | date: 'dd/MM/yyyy' }}</small>
-        </div>
-        <div class="ticket-detail">
-          <span>Phạm vi</span><strong>{{ verifiedDelegation.transactionScope }}</strong>
-        </div>
-        <div class="ticket-detail">
-          <span>Dịch vụ</span
-          ><strong
-            >{{ verifiedDelegation.serviceName }} · {{ verifiedDelegation.branchName }}</strong
-          >
-        </div>
-        <button type="button" class="btn btn-success" (click)="acceptDelegation()">
-          Tiếp nhận và đánh dấu đã sử dụng
-        </button>
-      </div>
-    </app-card>
+    <app-card
+      title="Trạng thái làm việc"
+      [subtitle]="selectedCounter ? 'Quầy đang được gán cho ca làm việc hiện tại.' : 'Chọn một quầy đang rảnh để bắt đầu tiếp nhận khách.'"
+    >
+      <app-status-badge
+        card-actions
+        [status]="selectedCounter ? 'ACTIVE' : 'INACTIVE'"
+        [label]="selectedCounter ? 'Đang hoạt động' : 'Chưa nhận quầy'"
+      />
 
-    <div class="staff-live-status">
-      <span></span>
-      Đang đồng bộ trực tiếp
-      <time>{{ lastUpdatedAt | date: 'HH:mm:ss' }}</time>
-    </div>
-
-    <div class="staff-summary">
-      <div class="summary-item summary-item--primary">
-        <span>Ca hiện tại</span>
-        <strong>{{ selectedCounter?.counterName || 'Chưa vào quầy' }}</strong>
-        <small>{{ selectedCounter ? 'Đang phục vụ' : 'Chọn quầy để bắt đầu nhận khách' }}</small>
-      </div>
-      <div class="summary-item">
-        <span>Phiếu đang xử lý</span>
-        <strong>{{ currentTicket ? '#' + currentTicket.ticketNumber : '-' }}</strong>
-        <small>{{ currentTicket?.service?.serviceName || 'Chưa có khách tại quầy' }}</small>
-      </div>
-      <div class="summary-item">
-        <span>Chờ duyệt</span>
-        <strong>{{ pendingApprovalTasks.length }}</strong>
-        <small>Phiếu sẵn sàng gọi vào quầy</small>
-      </div>
-      <div class="summary-item">
-        <span>Hoàn tất hôm nay</span>
-        <strong>{{ todayCompletedCount }}</strong>
-        <small>Lịch sử thuộc tài khoản của bạn</small>
-      </div>
-    </div>
-
-    <div class="staff-grid">
-      <app-card class="fill-height">
-        <div class="card-header">
+      <div *ngIf="selectedCounter; else counterSelection" class="staff-session">
+        <dl class="staff-session__details sbqs-details-grid">
           <div>
-            <h2>{{ selectedCounter ? 'Thông tin ca làm' : 'Bắt đầu ca phục vụ' }}</h2>
-            <p>
-              {{
-                selectedCounter
-                  ? 'Quầy chỉ hoạt động trong thời gian bạn đang assign.'
-                  : 'Chọn một quầy đang rảnh để bắt đầu phục vụ khách hàng.'
-              }}
-            </p>
+            <dt>Quầy hiện tại</dt>
+            <dd>{{ selectedCounter.counterName }}</dd>
           </div>
-          <span class="status-pill" [class.status-pill--active]="selectedCounter">
-            {{ selectedCounter ? 'Đang hoạt động' : 'Chưa hoạt động' }}
-          </span>
-        </div>
+          <div>
+            <dt>Máy bốc số</dt>
+            <dd>{{ selectedCounter.queueMachine?.machineName || 'Chưa gán máy bốc số' }}</dd>
+          </div>
+        </dl>
+        <app-button
+          variant="outline"
+          icon="circle-stop"
+          label="Kết thúc ca"
+          (clicked)="unassignCounter()"
+        />
+      </div>
 
-        <div *ngIf="!selectedCounter" class="assign-panel">
-          <label>
+      <ng-template #counterSelection>
+        <div class="staff-counter-selection">
+          <label class="sbqs-field">
             Quầy giao dịch
-            <select [(ngModel)]="selectedCounterId">
+            <select class="sbqs-form-control" [(ngModel)]="selectedCounterId">
               <option [ngValue]="null">Chọn quầy</option>
               <option *ngFor="let counter of availableCounters" [ngValue]="counter.counterId">
-                {{ counter.counterName }} ·
-                {{ counter.queueMachine?.machineName || 'Chưa gán máy' }}
+                {{ counter.counterName }} · {{ counter.queueMachine?.machineName || 'Chưa gán máy' }}
               </option>
             </select>
           </label>
-
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="assignCounter()"
+          <app-button
+            icon="login"
+            label="Vào quầy"
             [disabled]="availableCounters.length === 0"
-          >
-            <app-icon name="login" [size]="16" />
-            Vào quầy
-          </button>
+            (clicked)="assignCounter()"
+          />
         </div>
 
-        <div *ngIf="selectedCounter" class="session-panel">
-          <div>
-            <span>Quầy đang phục vụ</span>
-            <strong>{{ selectedCounter.counterName }}</strong>
-            <small>{{ selectedCounter.queueMachine?.machineName || 'Chưa có máy bốc số' }}</small>
-          </div>
-          <button type="button" class="btn btn-secondary" (click)="unassignCounter()">
-            <app-icon name="circle-stop" [size]="16" />
-            Kết thúc ca
-          </button>
+        <app-empty-state
+          *ngIf="counters.length > 0 && availableCounters.length === 0"
+          title="Chưa có quầy trống"
+          message="Tất cả quầy hiện đang có nhân viên phục vụ."
+          icon="briefcase"
+        />
+      </ng-template>
+    </app-card>
+
+    <div class="staff-operational-grid">
+      <app-card
+        class="staff-current-ticket"
+        title="Khách hàng hiện tại"
+        [subtitle]="currentTicket ? 'Thông tin phiếu đang được phục vụ tại quầy.' : 'Quầy đang sẵn sàng tiếp nhận khách tiếp theo.'"
+      >
+        <app-status-badge
+          card-actions
+          [status]="currentTicket?.status || 'IDLE'"
+          [label]="currentTicket ? 'Đang phục vụ' : 'Đang rảnh'"
+        />
+
+        <div *ngIf="!currentTicket" class="staff-ticket-empty">
+          <app-empty-state
+            [title]="selectedCounter ? 'Chưa có khách tại quầy' : 'Chưa bắt đầu ca làm việc'"
+            [message]="selectedCounter ? 'Gọi khách tiếp theo khi bạn sẵn sàng phục vụ.' : 'Nhận một quầy trước khi gọi khách.'"
+            icon="ticket"
+          />
+          <app-button
+            *ngIf="selectedCounter"
+            icon="megaphone"
+            label="Gọi khách tiếp theo"
+            [loading]="isCallingNext"
+            (clicked)="callNext()"
+          />
         </div>
 
-        <div
-          *ngIf="!selectedCounter && counters.length > 0 && availableCounters.length === 0"
-          class="admin-empty"
-        >
-          Tất cả quầy đang có nhân viên phục vụ.
-        </div>
-      </app-card>
-
-      <app-card class="fill-height">
-        <div class="card-header">
-          <div>
-            <h2>Khách hàng hiện tại</h2>
-            <p>Phiếu đang được phục vụ tại quầy của bạn.</p>
-          </div>
-          <span class="status-pill" [class.status-pill--active]="currentTicket">
-            {{ currentTicket ? 'Đang phục vụ' : 'Đang rảnh' }}
-          </span>
-        </div>
-
-        <div *ngIf="!currentTicket" class="next-ticket-panel">
-          <strong>-</strong>
-          <p>Chưa có phiếu tại quầy.</p>
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="callNext()"
-            [disabled]="!selectedCounter || isCallingNext"
-          >
-            <app-icon name="megaphone" [size]="16" />
-            {{ isCallingNext ? 'Đang gọi số...' : 'Gọi khách tiếp theo' }}
-          </button>
-        </div>
-
-        <div *ngIf="currentTicket" class="ticket-current">
-          <div class="ticket-number">#{{ currentTicket.ticketNumber }}</div>
-          <div class="ticket-detail">
-            <span>Dịch vụ</span>
-            <strong>{{ currentTicket.service?.serviceName || '-' }}</strong>
-          </div>
-          <div class="ticket-detail">
-            <span>Trạng thái</span>
-            <strong>{{ currentTicket.status }}</strong>
-          </div>
-          <section *ngIf="currentTicket.hasPaperlessProfile" class="ticket-paperless">
-            <div class="ticket-paperless__heading">
-              <span>Thông tin giấy tờ</span>
-              <strong>Hồ sơ khách đã khai báo</strong>
+        <div *ngIf="currentTicket" class="staff-ticket">
+          <header class="staff-ticket__summary">
+            <div class="staff-ticket__number">
+              <span>Số thứ tự</span>
+              <strong>#{{ currentTicket.ticketNumber }}</strong>
             </div>
-            <dl>
+            <dl class="staff-ticket__metadata sbqs-details-grid">
+              <div>
+                <dt>Dịch vụ</dt>
+                <dd>{{ currentTicket.service?.serviceName || '-' }}</dd>
+              </div>
+              <div>
+                <dt>Trạng thái</dt>
+                <dd><app-status-badge [status]="currentTicket.status" /></dd>
+              </div>
+              <div *ngIf="currentTicket.customer">
+                <dt>Khách hàng</dt>
+                <dd>{{ currentTicket.customer.fullName || '-' }}</dd>
+              </div>
+              <div *ngIf="currentTicket.customer?.phone">
+                <dt>Số điện thoại</dt>
+                <dd>{{ currentTicket.customer?.phone }}</dd>
+              </div>
+              <div *ngIf="currentTicket.servingStartedAt">
+                <dt>Bắt đầu phục vụ</dt>
+                <dd>{{ formatDate(currentTicket.servingStartedAt) }}</dd>
+              </div>
+            </dl>
+          </header>
+
+          <section *ngIf="currentTicket.hasPaperlessProfile" class="staff-prepared-information sbqs-section-divider">
+            <header class="sbqs-section-heading">
+              <h3>Thông tin khách đã khai báo</h3>
+              <p>Dữ liệu chỉ đọc được khách hàng chuẩn bị trước khi lấy số.</p>
+            </header>
+            <dl *ngIf="currentTicket.paperlessFields.length; else emptyPreparedInformation" class="sbqs-details-grid">
               <div *ngFor="let field of currentTicket.paperlessFields">
                 <dt>{{ field.label }}</dt>
                 <dd>{{ field.value || '-' }}</dd>
               </div>
             </dl>
+            <ng-template #emptyPreparedInformation>
+              <app-empty-state
+                title="Chưa có thông tin khai báo"
+                message="Phiếu này không có dữ liệu bổ sung để hiển thị."
+                icon="file-text"
+              />
+            </ng-template>
           </section>
-          <div class="ticket-actions">
-            <button
-              type="button"
-              class="btn btn-success"
-              (click)="complete()"
+
+          <div class="staff-ticket__actions">
+            <app-button
+              icon="check-circle"
+              label="Hoàn thành phục vụ"
+              [loading]="isCompleting"
+              (clicked)="complete()"
+            />
+            <app-button
+              variant="danger"
+              [outline]="true"
+              icon="x"
+              label="Khách không đến"
               [disabled]="isCompleting"
-            >
-              <app-icon name="check-circle" [size]="16" />
-              {{ isCompleting ? 'Đang hoàn tất...' : 'Hoàn thành phục vụ' }}
-            </button>
-            <button
-              type="button"
-              class="btn btn-danger"
-              (click)="markNoShow()"
-              [disabled]="isSkipping || isCompleting"
-            >
-              <app-icon name="x" [size]="16" />
-              {{ isSkipping ? 'Đang xử lý...' : 'Khách không đến' }}
-            </button>
+              [loading]="isSkipping"
+              (clicked)="markNoShow()"
+            />
           </div>
+        </div>
+      </app-card>
+
+      <app-card
+        class="staff-waiting-list"
+        title="Hàng chờ gọi"
+        subtitle="Các phiếu đã duyệt và sẵn sàng gọi vào quầy."
+      >
+        <span card-actions class="sbqs-table-count">{{ pendingApprovalTasks.length }} khách đang chờ</span>
+
+        <app-empty-state
+          *ngIf="pendingApprovalTasks.length === 0"
+          title="Hàng chờ đang trống"
+          message="Hiện chưa có khách hàng chờ gọi."
+          icon="list-checks"
+        />
+
+        <div *ngIf="pendingApprovalTasks.length > 0" class="staff-queue-list">
+          <article class="staff-queue-item" *ngFor="let task of pendingApprovalTasks | slice: 0 : 6">
+            <strong>#{{ task.ticketNumber }}</strong>
+            <div>
+              <h3>{{ task.serviceName || 'Chưa xác định dịch vụ' }}</h3>
+              <p>{{ task.queueMachineName || 'Chưa xác định máy' }}</p>
+              <small *ngIf="task.customerEmail">{{ task.customerEmail }}</small>
+            </div>
+            <app-status-badge [status]="task.status || 'WAITING'" />
+          </article>
         </div>
       </app-card>
     </div>
 
-    <app-card *ngIf="selectedCounter">
-      <div class="card-header">
-        <div>
-          <h2>Phiếu chờ gọi</h2>
-          <p>Danh sách phiếu Camunda đã duyệt và đang chờ nhân viên gọi vào quầy.</p>
-        </div>
-        <strong class="count-badge">{{ pendingApprovalTasks.length }}</strong>
+    <app-card
+      title="Xác minh ủy quyền giao dịch"
+      subtitle="Đối chiếu CCCD bản gốc trước khi tiếp nhận giao dịch được ủy quyền."
+    >
+      <div class="staff-delegation-form">
+        <label class="sbqs-field">
+          Mã ủy quyền
+          <input class="sbqs-form-control" [(ngModel)]="delegationCode" placeholder="UQ-XXXXXXXX" />
+        </label>
+        <label class="sbqs-field">
+          Số CCCD trên bản gốc
+          <input class="sbqs-form-control" [(ngModel)]="delegationIdentity" inputmode="numeric" />
+        </label>
+        <app-button
+          variant="outline"
+          label="Xác minh"
+          icon="search"
+          [loading]="isVerifyingDelegation"
+          [disabled]="!delegationCode.trim() || !delegationIdentity.trim()"
+          (clicked)="verifyDelegation()"
+        />
       </div>
+      <p class="staff-delegation-help">Hệ thống không hiển thị hoặc lưu số CCCD ở dạng rõ.</p>
 
-      <div *ngIf="pendingApprovalTasks.length === 0" class="admin-empty">
-        Hiện chưa có khách hàng chờ gọi.
-      </div>
-
-      <div *ngIf="pendingApprovalTasks.length > 0" class="workflow-list">
-        <div class="workflow-item" *ngFor="let task of pendingApprovalTasks | slice: 0 : 6">
-          <span>#{{ task.ticketNumber }}</span>
+      <section *ngIf="verifiedDelegation" class="staff-delegation-result sbqs-section-divider">
+        <header>
           <div>
-            <strong>{{ task.serviceName }}</strong>
-            <small>{{ task.queueMachineName }} · {{ task.customerEmail }}</small>
+            <div class="sbqs-section-heading">
+              <h3>Thông tin ủy quyền đã xác minh</h3>
+              <p>Kiểm tra thông tin trước khi tiếp nhận và đóng lệnh ủy quyền.</p>
+            </div>
           </div>
-          <em>{{ task.status }}</em>
+          <app-status-badge status="ACTIVE" label="Hợp lệ" />
+        </header>
+        <dl class="sbqs-details-grid">
+          <div>
+            <dt>Chủ tài khoản</dt>
+            <dd>{{ verifiedDelegation.ownerName }} · {{ verifiedDelegation.maskedOwnerEmail }}</dd>
+          </div>
+          <div>
+            <dt>Người được ủy quyền</dt>
+            <dd>{{ verifiedDelegation.delegateName }} · {{ verifiedDelegation.maskedIdentity }}</dd>
+            <small>Sinh {{ verifiedDelegation.delegateDateOfBirth | date: 'dd/MM/yyyy' }} · {{ verifiedDelegation.delegatePhone }} · {{ verifiedDelegation.relationship }}</small>
+          </div>
+          <div>
+            <dt>CCCD đối chiếu</dt>
+            <dd>Cấp {{ verifiedDelegation.identityIssueDate | date: 'dd/MM/yyyy' }} tại {{ verifiedDelegation.identityIssuePlace }}</dd>
+            <small>Hết hạn {{ verifiedDelegation.identityExpiryDate | date: 'dd/MM/yyyy' }}</small>
+          </div>
+          <div>
+            <dt>Phạm vi</dt>
+            <dd>{{ verifiedDelegation.transactionScope }}</dd>
+          </div>
+          <div>
+            <dt>Dịch vụ và chi nhánh</dt>
+            <dd>{{ verifiedDelegation.serviceName }} · {{ verifiedDelegation.branchName }}</dd>
+          </div>
+        </dl>
+        <div class="staff-delegation-result__actions">
+          <app-button
+            variant="success"
+            icon="check-circle"
+            label="Tiếp nhận và đánh dấu đã sử dụng"
+            (clicked)="acceptDelegation()"
+          />
         </div>
-      </div>
+      </section>
     </app-card>
 
-    <app-card>
-      <div class="card-header">
-        <div>
-          <h2>Lịch sử phục vụ</h2>
-          <p>Chỉ hiển thị các phiếu liên quan tới tài khoản giao dịch viên hiện tại.</p>
-        </div>
-        <app-report-export-buttons reportType="history"></app-report-export-buttons>
-      </div>
-
-      <div *ngIf="histories.length === 0" class="admin-empty">Chưa có lịch sử phục vụ.</div>
-
-      <div *ngIf="histories.length > 0" class="table-wrapper">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Số phiếu</th>
-              <th>Dịch vụ</th>
-              <th>Quầy</th>
-              <th>Khách hàng</th>
-              <th>Bắt đầu</th>
-              <th>Hoàn tất</th>
-              <th>Trạng thái</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of histories | slice: 0 : 10">
-              <td>
-                <strong>#{{ item.ticketNumber }}</strong>
-              </td>
-              <td>{{ item.serviceName || '-' }}</td>
-              <td>{{ item.counterName || '-' }}</td>
-              <td>{{ item.customerEmail || '-' }}</td>
-              <td>{{ formatDate(item.startedAt) }}</td>
-              <td>{{ formatDate(item.completedAt) }}</td>
-              <td>{{ statusLabel(item.status) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </app-card>
   </section>
+
+  <app-confirm-dialog
+    [open]="isNoShowConfirmationOpen"
+    title="Xác nhận khách không đến"
+    [message]="'Ghi nhận phiếu #' + (currentTicket?.ticketNumber || '') + ' không đến quầy?'"
+    confirmLabel="Xác nhận không đến"
+    cancelLabel="Quay lại"
+    [danger]="true"
+    [loading]="isSkipping"
+    (confirmed)="confirmMarkNoShow()"
+    (cancelled)="cancelMarkNoShow()"
+  />
 </app-dashboard-layout>

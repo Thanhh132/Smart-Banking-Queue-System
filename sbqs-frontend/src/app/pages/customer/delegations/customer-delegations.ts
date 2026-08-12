@@ -10,9 +10,16 @@ import { Delegation, DelegationService } from '../../../core/services/delegation
 import { LocationService } from '../../../core/services/location.service';
 import { ServicesService } from '../../../core/services/services.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppLoadingState } from '../../../shared/components/app-loading-state/app-loading-state';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 
 @Component({ selector: 'app-customer-delegations', standalone: true,
-  imports: [CommonModule, FormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, DashboardLayout, AppButton, AppCard, AppConfirmDialog, AppEmptyState, AppLoadingState, AppPageHeader, AppStatusBadge],
   templateUrl: './customer-delegations.html', styleUrl: './customer-delegations.scss' })
 export class CustomerDelegations implements OnInit {
   private api = inject(DelegationService); private catalogApi = inject(AdminServicesService);
@@ -23,6 +30,7 @@ export class CustomerDelegations implements OnInit {
   delegations: Delegation[] = []; selectedCatalogId: number | null = null;
   selectedBranch: SmartBranchRecommendation | null = null; selectedBranchService: Service | null = null;
   isLocating = false; isRouting = false; isSaving = false; successMessage = ''; errorMessage = '';
+  pendingCancellation: Delegation | null = null;
   form = { delegateName: '', delegateIdentityNumber: '', delegateDateOfBirth: '', delegatePhone: '', identityIssueDate: '', identityExpiryDate: '', identityIssuePlace: '', relationship: '', transactionScope: '', validUntil: '', acceptedTerms: false };
 
   ngOnInit(): void {
@@ -70,7 +78,13 @@ export class CustomerDelegations implements OnInit {
     const payload = { ...this.form, branchId: this.selectedBranch.branchId, serviceId: this.selectedBranchService.serviceId };
     this.api.create(payload).subscribe({ next: (item) => { this.delegations = [item, ...this.delegations]; this.isSaving = false; this.successMessage = `Đã tạo mã ${item.referenceCode}. Chỉ cung cấp mã cho đúng người được ủy quyền.`; this.reset(); this.cdr.detectChanges(); }, error: (e) => { this.errorMessage = this.errors.getMessage(e, 'Không tạo được ủy quyền.'); this.isSaving = false; this.cdr.detectChanges(); } });
   }
-  cancel(item: Delegation): void { if (!confirm(`Hủy ủy quyền ${item.referenceCode}?`)) return; this.api.cancel(item.delegationId).subscribe({ next: (saved) => { this.delegations = this.delegations.map((x) => x.delegationId === saved.delegationId ? saved : x); this.cdr.detectChanges(); }, error: (e) => { this.errorMessage = this.errors.getMessage(e, 'Không hủy được ủy quyền.'); this.cdr.detectChanges(); } }); }
+  cancel(item: Delegation): void { this.pendingCancellation = item; }
+  closeCancellation(): void { this.pendingCancellation = null; }
+  confirmCancellation(): void {
+    const item = this.pendingCancellation;
+    if (!item) return;
+    this.api.cancel(item.delegationId).subscribe({ next: (saved) => { this.delegations = this.delegations.map((x) => x.delegationId === saved.delegationId ? saved : x); this.pendingCancellation = null; this.cdr.detectChanges(); }, error: (e) => { this.errorMessage = this.errors.getMessage(e, 'Không hủy được ủy quyền.'); this.cdr.detectChanges(); } });
+  }
   statusLabel(status: string): string { return ({ ACTIVE: 'Đang hiệu lực', VERIFIED: 'Đã xác minh', USED: 'Đã sử dụng', CANCELLED: 'Đã hủy', EXPIRED: 'Hết hạn' } as Record<string,string>)[status] || status; }
   private loadRecommendations(latitude: number, longitude: number): void {
     if (!this.selectedCatalog) return; this.isRouting = true;

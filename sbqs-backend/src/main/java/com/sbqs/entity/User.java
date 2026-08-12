@@ -103,6 +103,10 @@ public class User {
     @JoinColumn(name = "branch_id")
     private Branch branch;
 
+    @JsonIgnore
+    @OneToOne(mappedBy = "user")
+    private CustomerProfile customerProfile;
+
     @PrePersist
     public void prePersist() {
 

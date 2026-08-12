@@ -2,12 +2,18 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { BranchService } from '../../../core/services/branch.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppDataTableShell } from '../../../shared/components/app-data-table-shell/app-data-table-shell';
+import { AppModalShell } from '../../../shared/components/app-modal-shell/app-modal-shell';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
@@ -20,10 +26,15 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterLink,
     DashboardLayout,
+    AppButton,
+    AppCard,
+    AppConfirmDialog,
+    AppDataTableShell,
     ReportExportButtons,
     AppIcon,
+    AppModalShell,
+    AppPageHeader,
     PreventAutofillDirective,
   ],
   templateUrl: './super-admin.html',
@@ -35,6 +46,7 @@ export class SuperAdmin implements OnInit {
   private userService = inject(UserManagementService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
+  private router = inject(Router);
 
   branches: any[] = [];
   adminBranches: any[] = [];
@@ -46,6 +58,9 @@ export class SuperAdmin implements OnInit {
   searchTerm = '';
   showPassword = false;
   showConfirmPassword = false;
+  isAdminModalOpen = false;
+  pendingDeleteAdmin: any | null = null;
+  isDeleting = false;
 
   get filteredAdmins(): any[] {
     const keyword = this.searchTerm.trim().toLocaleLowerCase('vi');
@@ -152,6 +167,7 @@ export class SuperAdmin implements OnInit {
         this.successMessage = 'Đã tạo tài khoản quản trị chi nhánh.';
         this.isSubmitting = false;
         this.resetAdminBranchForm();
+        this.isAdminModalOpen = false;
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
@@ -186,6 +202,7 @@ export class SuperAdmin implements OnInit {
       confirmPassword: '',
       branchId: admin.branch?.branchId || null,
     });
+    this.isAdminModalOpen = true;
     this.cdr.detectChanges();
   }
 
@@ -217,6 +234,7 @@ export class SuperAdmin implements OnInit {
         this.successMessage = 'Đã cập nhật tài khoản quản trị chi nhánh.';
         this.isSubmitting = false;
         this.resetAdminBranchForm();
+        this.isAdminModalOpen = false;
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
@@ -232,7 +250,9 @@ export class SuperAdmin implements OnInit {
   }
 
   cancelEditAdminBranch(): void {
+    if (this.isSubmitting) return;
     this.resetAdminBranchForm();
+    this.isAdminModalOpen = false;
     this.successMessage = '';
     this.errorMessage = '';
     this.cdr.detectChanges();
@@ -262,18 +282,23 @@ export class SuperAdmin implements OnInit {
   }
 
   deleteAdminBranch(user: any): void {
-    if (!confirm(
-      `Xóa vĩnh viễn quản trị chi nhánh "${user.fullName}" khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.`,
-    )) {
-      return;
-    }
+    if (this.isDeleting) return;
+    this.pendingDeleteAdmin = user;
+  }
+
+  confirmDeleteAdminBranch(): void {
+    const user = this.pendingDeleteAdmin;
+    if (!user || this.isDeleting) return;
 
     this.successMessage = '';
     this.errorMessage = '';
+    this.isDeleting = true;
 
     this.userService.deleteUser(user.userId).subscribe({
       next: () => {
         this.successMessage = 'Đã xóa vĩnh viễn tài khoản quản trị chi nhánh.';
+        this.isDeleting = false;
+        this.pendingDeleteAdmin = null;
         this.loadAdminBranches();
         this.cdr.detectChanges();
       },
@@ -282,9 +307,27 @@ export class SuperAdmin implements OnInit {
           err,
           'Không xóa được tài khoản quản trị chi nhánh.',
         );
+        this.isDeleting = false;
         this.cdr.detectChanges();
       },
     });
+  }
+
+  cancelDeleteAdminBranch(): void {
+    if (!this.isDeleting) {
+      this.pendingDeleteAdmin = null;
+    }
+  }
+
+  openCreateAdminBranch(): void {
+    this.resetAdminBranchForm();
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.isAdminModalOpen = true;
+  }
+
+  navigateToBranches(): void {
+    void this.router.navigate(['/super-admin/branches']);
   }
 
   togglePasswordVisibility(field: 'password' | 'confirmPassword'): void {

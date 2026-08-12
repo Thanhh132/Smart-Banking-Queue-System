@@ -15,6 +15,10 @@
     </header>
   }
 
+  <div class="app-data-table-shell__toolbar">
+    <ng-content select="[table-toolbar]"></ng-content>
+  </div>
+
   @if (loading()) {
     <app-loading-state [label]="loadingLabel()" />
   } @else if (empty()) {

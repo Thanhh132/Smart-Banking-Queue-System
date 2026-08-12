@@ -30,6 +30,7 @@
 }
 
 .app-data-table-shell__actions { display: flex; align-items: center; gap: 0.5rem; }
+.app-data-table-shell__toolbar:empty { display: none; }
 .app-data-table-shell__responsive { width: 100%; overflow-x: auto; }
 
 @media (max-width: 767.98px) {

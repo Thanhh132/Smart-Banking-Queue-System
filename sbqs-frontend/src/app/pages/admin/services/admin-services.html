@@ -1,76 +1,258 @@
-<app-dashboard-layout title="Thiết lập phiếu khai báo">
-  <main class="form-settings-page">
-    <header class="page-introduction">
-      <div><h1>Thiết lập thông tin khách hàng khai trước</h1><p>Chọn một dịch vụ, thêm các mục khách cần điền rồi bấm <strong>Lưu và áp dụng</strong>.</p></div>
-      <div class="instruction-steps"><span><b>1</b> Chọn dịch vụ</span><span><b>2</b> Sửa nội dung</span><span><b>3</b> Lưu và áp dụng</span></div>
-    </header>
+<app-dashboard-layout title="Quản trị chi nhánh">
+  <div class="admin-services-page">
+    <app-page-header
+      title="Thiết lập phiếu khai báo"
+      description="Cấu hình các thông tin khách hàng cần khai trước khi lấy số cho từng dịch vụ."
+    >
+      <app-button
+        icon="save"
+        label="Lưu và áp dụng"
+        [loading]="isSaving"
+        [disabled]="!selectedService"
+        (clicked)="save()"
+      />
+    </app-page-header>
 
-    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <section
+      class="service-toolbar d-flex flex-column flex-md-row align-items-stretch align-items-md-end justify-content-between gap-3"
+      aria-label="Dịch vụ đang cấu hình"
+    >
+      <label class="service-toolbar__selector">
+        <span>Dịch vụ</span>
+        <select
+          class="sbqs-form-control"
+          [ngModel]="selectedService"
+          (ngModelChange)="select($event)"
+          [disabled]="isLoading || services.length === 0"
+        >
+          <option *ngIf="services.length === 0" [ngValue]="null" disabled>
+            {{ isLoading ? 'Đang tải dịch vụ...' : 'Chưa có dịch vụ' }}
+          </option>
+          <option *ngFor="let service of services" [ngValue]="service">
+            {{ service.serviceName }}
+          </option>
+        </select>
+      </label>
 
-    <div class="settings-layout">
-      <aside class="service-picker">
-        <div class="service-picker__heading"><div><strong>Chọn dịch vụ</strong><small>{{ services.length }} dịch vụ tại chi nhánh</small></div><button type="button" (click)="loadServices()" aria-label="Tải lại">↻</button></div>
-        <div *ngIf="isLoading" class="admin-empty">Đang tải danh sách...</div>
-        <button type="button" class="service-choice" *ngFor="let service of services; let index = index" [class.active]="service.serviceId === selectedService?.serviceId" (click)="select(service)">
-          <span>{{ index + 1 }}</span><div><strong>{{ service.serviceName }}</strong><small>{{ service.formSchema?.length || 0 }} mục cần khai</small></div><i [class.off]="service.status !== 'ACTIVE'"></i>
-        </button>
-      </aside>
+      <div class="d-flex flex-wrap align-items-center gap-2" *ngIf="selectedService">
+        <app-status-badge [status]="selectedService.status" />
+        <app-button
+          [variant]="selectedService.status === 'ACTIVE' ? 'warning' : 'success'"
+          size="sm"
+          [icon]="selectedService.status === 'ACTIVE' ? 'circle-stop' : 'check-circle'"
+          [label]="selectedService.status === 'ACTIVE' ? 'Tạm ngừng' : 'Kích hoạt'"
+          [disabled]="isSaving"
+          (clicked)="toggleService()"
+        />
+      </div>
+    </section>
 
-      <section class="editor-panel" *ngIf="selectedService">
-        <header class="editor-panel__heading">
-          <div><small>Đang chỉnh sửa biểu mẫu</small><h2>{{ selectedService.serviceName }}</h2><p>Các mục bên dưới sẽ xuất hiện theo đúng thứ tự trên màn hình khách hàng.</p></div>
-          <div class="editor-actions"><button type="button" class="btn btn-secondary" (click)="toggleService()">{{ selectedService.status === 'ACTIVE' ? 'Tạm ngừng dịch vụ' : 'Mở lại dịch vụ' }}</button><button type="button" class="btn btn-primary" (click)="save()" [disabled]="isSaving">{{ isSaving ? 'Đang lưu...' : 'Lưu và áp dụng' }}</button></div>
+    <div *ngIf="successMessage" class="alert alert-success" role="status">
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <div *ngIf="isLoading" class="workspace-state">
+      <app-loading-state label="Đang tải danh sách dịch vụ..." />
+    </div>
+
+    <div *ngIf="!isLoading && selectedService" class="editor-workspace">
+      <app-card class="schema-editor">
+        <section class="editor-section" aria-labelledby="automatic-fields-title">
+          <header class="section-heading">
+            <div>
+              <span>Thông tin tự động</span>
+              <h2 id="automatic-fields-title">Thông tin được lấy từ hồ sơ khách hàng</h2>
+              <p>Các trường này luôn được áp dụng và không cần cấu hình lại theo dịch vụ.</p>
+            </div>
+          </header>
+
+          <div class="row g-2">
+            <div class="automatic-field col-md-6 d-grid" *ngFor="let field of defaultProfileFields">
+              <strong>{{ field.label }}</strong>
+              <small>{{ field.note }}</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="editor-section" aria-labelledby="additional-fields-title">
+          <header
+            class="section-heading d-flex flex-column flex-md-row align-items-stretch align-items-md-start justify-content-between gap-2"
+          >
+            <div>
+              <span>Mục khai báo thêm</span>
+              <h2 id="additional-fields-title">Thông tin riêng của dịch vụ</h2>
+              <p>Các mục được hiển thị theo đúng thứ tự trên màn hình khách hàng.</p>
+            </div>
+            <app-button
+              variant="outline"
+              size="sm"
+              icon="plus"
+              label="Thêm mục"
+              (clicked)="addField()"
+            />
+          </header>
+
+          <app-empty-state
+            *ngIf="draftFields.length === 0"
+            title="Chưa có mục khai báo thêm"
+            message="Dịch vụ hiện chỉ sử dụng thông tin được lấy từ hồ sơ khách hàng."
+            icon="list-checks"
+          />
+
+          <article
+            class="schema-field"
+            *ngFor="let field of draftFields; let index = index"
+            [attr.aria-labelledby]="'schema-field-title-' + index"
+          >
+            <header
+              class="schema-field__header d-flex flex-column flex-md-row align-items-stretch align-items-md-center justify-content-between gap-2"
+            >
+              <h3 [id]="'schema-field-title-' + index">Mục {{ index + 1 }}</h3>
+              <div class="d-flex flex-wrap justify-content-start justify-content-md-end gap-1">
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  label="Lên"
+                  [disabled]="index === 0"
+                  (clicked)="move(index, -1)"
+                />
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  label="Xuống"
+                  [disabled]="index === draftFields.length - 1"
+                  (clicked)="move(index, 1)"
+                />
+                <app-button
+                  variant="danger"
+                  size="sm"
+                  icon="trash"
+                  label="Xóa"
+                  (clicked)="removeField(index)"
+                />
+              </div>
+            </header>
+
+            <div class="schema-field__form sbqs-form-grid">
+              <label class="sbqs-field schema-field__full">
+                <span>Nội dung khách hàng cần điền</span>
+                <input
+                  class="sbqs-form-control"
+                  [(ngModel)]="field.label"
+                  placeholder="Ví dụ: Số tài khoản liên kết"
+                />
+              </label>
+
+              <label class="sbqs-field">
+                <span>Khách hàng sẽ trả lời bằng</span>
+                <select class="sbqs-form-control" [(ngModel)]="field.type">
+                  <option *ngFor="let type of fieldTypes" [value]="type.value">
+                    {{ type.label }}
+                  </option>
+                </select>
+              </label>
+
+              <label class="sbqs-field">
+                <span>Thuộc nhóm thông tin</span>
+                <input
+                  class="sbqs-form-control"
+                  [(ngModel)]="field.section"
+                  placeholder="Ví dụ: Thông tin thẻ"
+                />
+              </label>
+
+              <label class="sbqs-field schema-field__full" *ngIf="field.type !== 'CHECKBOX'">
+                <span>Chữ gợi ý trong ô nhập</span>
+                <input
+                  class="sbqs-form-control"
+                  [(ngModel)]="field.placeholder"
+                  placeholder="Ví dụ: Nhập 12 chữ số"
+                />
+              </label>
+
+              <label class="sbqs-field schema-field__full" *ngIf="needsOptions(field)">
+                <span>Các phương án để khách chọn</span>
+                <input
+                  class="sbqs-form-control"
+                  [ngModel]="optionsText(field)"
+                  (ngModelChange)="setOptions(field, $event)"
+                  placeholder="Phương án 1 | Phương án 2 | Phương án 3"
+                />
+                <small>Ngăn cách mỗi phương án bằng dấu |</small>
+              </label>
+
+              <label class="required-toggle schema-field__full">
+                <input type="checkbox" [(ngModel)]="field.required" />
+                <span>
+                  <strong>Bắt buộc trả lời</strong>
+                  <small>Khách không thể lấy số nếu bỏ trống mục này.</small>
+                </span>
+              </label>
+
+              <details class="advanced-setting schema-field__full">
+                <summary>Cài đặt nâng cao</summary>
+                <label class="sbqs-field">
+                  <span>Mã lưu dữ liệu</span>
+                  <input
+                    class="sbqs-form-control"
+                    [(ngModel)]="field.key"
+                    pattern="[A-Za-z0-9_]+"
+                  />
+                  <small>Hệ thống tự tạo. Chỉ thay đổi khi tích hợp với hệ thống khác.</small>
+                </label>
+              </details>
+            </div>
+          </article>
+        </section>
+      </app-card>
+
+      <aside class="preview-panel" aria-label="Xem trước màn hình khách hàng">
+        <header class="preview-panel__header p-3">
+          <span>Xem trước</span>
+          <h2>Màn hình khách hàng</h2>
+          <p>Cập nhật ngay khi chỉnh sửa.</p>
         </header>
 
-        <div class="editor-content">
-          <div class="question-editor">
-            <section class="default-profile-card">
-              <header>
-                <div><span>Hồ sơ mặc định</span><strong>Luôn áp dụng cho mọi dịch vụ</strong></div>
-                <em>Không thể xóa</em>
-              </header>
-              <div class="default-profile-list">
-                <div *ngFor="let field of defaultProfileFields">
-                  <span>✓</span>
-                  <p><strong>{{ field.label }}</strong><small>{{ field.note }}</small></p>
-                </div>
-              </div>
-            </section>
-            <article class="question-card" *ngFor="let field of draftFields; let index = index">
-              <header><span>Mục {{ index + 1 }}</span><div><button type="button" (click)="move(index,-1)" [disabled]="index === 0" title="Đưa lên">↑</button><button type="button" (click)="move(index,1)" [disabled]="index === draftFields.length-1" title="Đưa xuống">↓</button><button type="button" class="delete-question" (click)="removeField(index)">Xóa</button></div></header>
-              <div class="question-fields">
-                <label class="full"><span>Nội dung khách hàng cần điền</span><input [(ngModel)]="field.label" placeholder="Ví dụ: Số tài khoản liên kết" /></label>
-                <label><span>Khách hàng sẽ trả lời bằng</span><select [(ngModel)]="field.type"><option *ngFor="let type of fieldTypes" [value]="type.value">{{ type.label }}</option></select></label>
-                <label><span>Thuộc nhóm thông tin</span><input [(ngModel)]="field.section" placeholder="Ví dụ: Thông tin thẻ" /></label>
-                <label class="full" *ngIf="field.type !== 'CHECKBOX'"><span>Chữ gợi ý trong ô nhập</span><input [(ngModel)]="field.placeholder" placeholder="Ví dụ: Nhập 12 chữ số" /></label>
-                <label class="full" *ngIf="needsOptions(field)"><span>Các phương án để khách chọn</span><input [ngModel]="optionsText(field)" (ngModelChange)="setOptions(field,$event)" placeholder="Phương án 1 | Phương án 2 | Phương án 3" /><small>Ngăn cách mỗi phương án bằng dấu |</small></label>
-                <label class="required-toggle"><input type="checkbox" [(ngModel)]="field.required" /><span><strong>Bắt buộc trả lời</strong><small>Khách không thể lấy số nếu bỏ trống mục này</small></span></label>
-                <details class="advanced-setting full"><summary>Cài đặt nâng cao</summary><label><span>Mã lưu dữ liệu</span><input [(ngModel)]="field.key" pattern="[A-Za-z0-9_]+" /><small>Hệ thống tự tạo. Chỉ thay đổi khi tích hợp với hệ thống khác.</small></label></details>
-              </div>
-            </article>
-            <button type="button" class="add-question" (click)="addField()"><strong>＋ Thêm mục cần khai</strong><span>Thêm ô nhập, danh sách lựa chọn hoặc ô tích</span></button>
+        <div class="preview-panel__body p-3">
+          <div class="preview-title pb-2 border-bottom">
+            <small>Thông tin cần chuẩn bị</small>
+            <h3>{{ selectedService.serviceName }}</h3>
           </div>
 
-          <aside class="customer-preview">
-            <div class="customer-preview__heading"><span>Xem trước</span><strong>Màn hình khách hàng</strong><small>Cập nhật ngay khi bạn chỉnh sửa</small></div>
-            <div class="preview-form">
-              <div class="preview-title"><small>Thông tin cần chuẩn bị</small><h3>{{ selectedService.serviceName }}</h3></div>
-              <div class="preview-defaults">
-                <strong>Hồ sơ tự động</strong>
-                <span *ngFor="let field of defaultProfileFields">✓ {{ field.label }}</span>
-              </div>
-              <div class="preview-item" *ngFor="let field of draftFields">
-                <label>{{ field.label }} <em *ngIf="field.required">*</em></label>
-                <div class="preview-input" *ngIf="!needsOptions(field) && field.type !== 'CHECKBOX'">{{ field.placeholder || fieldTypeLabel(field) }}</div>
-                <div class="preview-options" *ngIf="needsOptions(field)"><span *ngFor="let option of field.options">○ {{ option }}</span></div>
-                <div class="preview-checkbox" *ngIf="field.type === 'CHECKBOX'">□ {{ field.label }}</div>
-              </div>
-              <button type="button" disabled>Xác nhận và lấy số</button>
+          <div class="preview-automatic p-2 bg-success-subtle text-success-emphasis small">
+            <strong>Hồ sơ tự động</strong>
+            <span *ngFor="let field of defaultProfileFields">✓ {{ field.label }}</span>
+          </div>
+
+          <div class="preview-item" *ngFor="let field of draftFields">
+            <label>{{ field.label }} <em *ngIf="field.required">*</em></label>
+            <div
+              class="preview-control p-2 border rounded text-body-secondary small"
+              *ngIf="!needsOptions(field) && field.type !== 'CHECKBOX'"
+            >
+              {{ field.placeholder || fieldTypeLabel(field) }}
             </div>
-          </aside>
+            <div class="preview-options" *ngIf="needsOptions(field)">
+              <span *ngFor="let option of field.options">○ {{ option }}</span>
+            </div>
+            <div class="preview-checkbox" *ngIf="field.type === 'CHECKBOX'">
+              □ {{ field.label }}
+            </div>
+          </div>
+
+          <app-button label="Xác nhận và lấy số" [disabled]="true" />
         </div>
-      </section>
+      </aside>
     </div>
-  </main>
+
+    <app-card *ngIf="!isLoading && !selectedService" class="workspace-empty">
+      <app-empty-state
+        title="Chưa có dịch vụ để cấu hình"
+        message="Chi nhánh chưa có dịch vụ khả dụng cho phiếu khai báo."
+      />
+    </app-card>
+  </div>
 </app-dashboard-layout>

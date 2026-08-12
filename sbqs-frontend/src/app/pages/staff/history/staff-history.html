@@ -1,0 +1,67 @@
+<app-dashboard-layout title="Lịch sử phục vụ">
+  <section class="staff-history-page">
+    <app-page-header
+      title="Lịch sử phục vụ"
+      description="Tra cứu các phiếu đã được xử lý bởi tài khoản giao dịch viên hiện tại."
+    >
+      <app-report-export-buttons reportType="history" />
+    </app-page-header>
+
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+
+    <div class="sbqs-metric-grid" aria-label="Tóm tắt lịch sử">
+      <div class="sbqs-metric">
+        <span>Tổng lượt phục vụ</span>
+        <strong>{{ histories.length }} lượt</strong>
+      </div>
+      <div class="sbqs-metric">
+        <span>Đã hoàn thành</span>
+        <strong>{{ completedCount }} lượt</strong>
+      </div>
+      <div class="sbqs-metric">
+        <span>Khách không đến</span>
+        <strong>{{ missedCount }} lượt</strong>
+      </div>
+    </div>
+
+    <app-data-table-shell
+      title="Các lượt đã xử lý"
+      description="Dữ liệu lịch sử thuộc tài khoản của bạn."
+      [loading]="isLoading"
+      loadingLabel="Đang tải lịch sử phục vụ..."
+      [empty]="!isLoading && histories.length === 0"
+      emptyTitle="Chưa có lịch sử phục vụ"
+      emptyMessage="Các phiếu đã xử lý sẽ xuất hiện tại đây."
+    >
+      <table class="table sbqs-data-table staff-history-table">
+        <thead>
+          <tr>
+            <th>Số phiếu</th>
+            <th>Dịch vụ</th>
+            <th>Quầy</th>
+            <th>Khách hàng</th>
+            <th>Bắt đầu</th>
+            <th>Hoàn tất</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of histories">
+            <td><strong>#{{ item.ticketNumber }}</strong></td>
+            <td>{{ item.serviceName || '-' }}</td>
+            <td>{{ item.counterName || '-' }}</td>
+            <td>{{ item.customerEmail || '-' }}</td>
+            <td>{{ formatDate(item.startedAt) }}</td>
+            <td>{{ formatDate(item.completedAt) }}</td>
+            <td>
+              <app-status-badge
+                [status]="item.status || 'UNKNOWN'"
+                [label]="statusLabel(item.status)"
+              />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </app-data-table-shell>
+  </section>
+</app-dashboard-layout>

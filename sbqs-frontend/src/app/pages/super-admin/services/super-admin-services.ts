@@ -5,13 +5,31 @@ import { ServiceCatalogItem } from '../../../core/models/service.model';
 import { AdminServicesService } from '../../../core/services/admin-services.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppDataTableShell } from '../../../shared/components/app-data-table-shell/app-data-table-shell';
 import { ExcelImportPanel } from '../../../shared/components/excel-import-panel/excel-import-panel';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppModalShell } from '../../../shared/components/app-modal-shell/app-modal-shell';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 
 @Component({
   selector: 'app-super-admin-services',
   standalone: true,
-  imports: [CommonModule, FormsModule, DashboardLayout, ExcelImportPanel, AppIcon],
+  imports: [
+    CommonModule,
+    FormsModule,
+    DashboardLayout,
+    AppButton,
+    AppConfirmDialog,
+    AppDataTableShell,
+    AppIcon,
+    AppModalShell,
+    AppPageHeader,
+    AppStatusBadge,
+    ExcelImportPanel,
+  ],
   templateUrl: './super-admin-services.html',
   styleUrl: './super-admin-services.scss',
 })
@@ -27,6 +45,9 @@ export class SuperAdminServices implements OnInit {
   typeFilter = 'ALL';
   isLoading = true;
   isSaving = false;
+  isEditorOpen = false;
+  isImportOpen = false;
+  pendingDelete: ServiceCatalogItem | null = null;
   successMessage = '';
   errorMessage = '';
   form = {
@@ -100,6 +121,7 @@ export class SuperAdminServices implements OnInit {
         ].sort((a, b) => a.serviceName.localeCompare(b.serviceName, 'vi'));
         const wasEditing = this.editingCatalogId !== null;
         this.resetForm();
+        this.isEditorOpen = false;
         this.successMessage = wasEditing
           ? 'Đã cập nhật dịch vụ dùng chung.'
           : 'Đã tạo và tự động đồng bộ dịch vụ đến tất cả chi nhánh.';
@@ -125,6 +147,18 @@ export class SuperAdminServices implements OnInit {
       estimatedTime: item.estimatedTime,
       delegatable: item.delegatable,
     };
+    this.isEditorOpen = true;
+  }
+
+  openCreate(): void {
+    this.resetForm();
+    this.isEditorOpen = true;
+  }
+
+  closeEditor(): void {
+    if (this.isSaving) return;
+    this.isEditorOpen = false;
+    this.resetForm();
   }
 
   resetForm(): void {
@@ -140,11 +174,13 @@ export class SuperAdminServices implements OnInit {
   }
 
   remove(item: ServiceCatalogItem): void {
-    if (
-      this.deletingCatalogId !== null ||
-      !confirm(`Xóa dịch vụ “${item.serviceName}” khỏi toàn bộ hệ thống?`)
-    )
-      return;
+    if (this.deletingCatalogId !== null) return;
+    this.pendingDelete = item;
+  }
+
+  confirmRemove(): void {
+    const item = this.pendingDelete;
+    if (!item || this.deletingCatalogId !== null) return;
     this.deletingCatalogId = item.catalogId;
     this.errorMessage = '';
     this.api.deleteCatalogItem(item.catalogId).subscribe({
@@ -153,6 +189,7 @@ export class SuperAdminServices implements OnInit {
         this.successMessage =
           'Đã xóa dịch vụ khỏi hệ thống vận hành và vẫn giữ nguyên lịch sử đã phát sinh.';
         this.deletingCatalogId = null;
+        this.pendingDelete = null;
         this.loadCatalog();
       },
       error: (error) => {
@@ -161,6 +198,12 @@ export class SuperAdminServices implements OnInit {
         this.cdr.detectChanges();
       },
     });
+  }
+
+  cancelRemove(): void {
+    if (this.deletingCatalogId === null) {
+      this.pendingDelete = null;
+    }
   }
 
   restore(item: ServiceCatalogItem): void {
@@ -184,5 +227,6 @@ export class SuperAdminServices implements OnInit {
     this.successMessage =
       'Đã nhập danh mục và tự động đồng bộ các dòng hợp lệ đến tất cả chi nhánh.';
     this.loadCatalog();
+    this.isImportOpen = false;
   }
 }

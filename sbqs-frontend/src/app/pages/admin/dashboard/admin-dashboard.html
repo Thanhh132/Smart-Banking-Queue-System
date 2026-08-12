@@ -1,89 +1,95 @@
 <app-dashboard-layout title="Quản trị chi nhánh">
-  <div class="page-section">
-    <section class="page-heading">
-      <span class="page-kicker">Xin chào, {{ fullName }}</span>
-      <h1>Quản lý vận hành chi nhánh</h1>
-      <p>Cấu hình dịch vụ, gán dịch vụ cho máy bốc số và cấp tài khoản nhân viên cho chi nhánh của bạn.</p>
-    </section>
+  <div class="admin-dashboard-page">
+    <app-page-header
+      title="Tổng quan chi nhánh"
+      [description]="
+        'Xin chào, ' +
+        fullName +
+        '. Truy cập nhanh các khu vực quản trị và xuất dữ liệu vận hành của chi nhánh.'
+      "
+    >
+      <app-button
+        variant="outline"
+        icon="download"
+        label="Xuất báo cáo"
+        (clicked)="branchReports.scrollIntoView()"
+      />
+    </app-page-header>
 
-    <section class="ui-card-grid">
-      <a routerLink="/admin/services" class="ui-card ui-action-card">
-        <span class="ui-action-card__icon"><app-icon name="briefcase" [size]="22" /></span>
-        <span>Dịch vụ</span>
-        <strong>Quản lý dịch vụ</strong>
-        <p>Tạo, cập nhật và theo dõi danh sách dịch vụ của chi nhánh.</p>
-      </a>
-
-      <a routerLink="/admin/operations" class="ui-card ui-action-card">
-        <span class="ui-action-card__icon"><app-icon name="settings" [size]="22" /></span>
-        <span>Vận hành</span>
-        <strong>Máy bốc số và quầy</strong>
-        <p>Quản lý kiosk, quầy giao dịch và tài nguyên phục vụ khách hàng.</p>
-      </a>
-
-      <a routerLink="/admin/mappings" class="ui-card ui-action-card">
-        <span class="ui-action-card__icon"><app-icon name="link" [size]="22" /></span>
-        <span>Máy bốc số</span>
-        <strong>Gán dịch vụ</strong>
-        <p>Thiết lập dịch vụ được phục vụ tại từng máy bốc số.</p>
-      </a>
-
-      <a routerLink="/admin/users" class="ui-card ui-action-card">
-        <span class="ui-action-card__icon"><app-icon name="users" [size]="22" /></span>
-        <span>Nhân viên</span>
-        <strong>Cấp tài khoản staff</strong>
-        <p>Tạo và quản lý tài khoản nhân viên giao dịch.</p>
-      </a>
-      <a routerLink="/admin/history" class="ui-card ui-action-card">
-        <span class="ui-action-card__icon"><app-icon name="file-text" [size]="22" /></span>
-        <span>Kiểm soát phục vụ</span>
-        <strong>Lịch sử theo nhân viên</strong>
-        <p>Xem giao dịch hoàn thành và các lượt khách không đến quầy.</p>
-      </a>
-    </section>
-
-    <section class="report-center">
-      <div class="report-center__heading">
+    <section class="dashboard-section" aria-labelledby="dashboard-actions-title">
+      <header class="dashboard-section__heading">
         <div>
-          <span>BÁO CÁO CHI NHÁNH</span>
-          <h2>Xuất dữ liệu vận hành</h2>
+          <h2 id="dashboard-actions-title">Khu vực quản trị</h2>
+          <p>Các tác vụ đang có dành cho quản trị viên chi nhánh.</p>
         </div>
-        <p>Dữ liệu chỉ thuộc chi nhánh đang đăng nhập.</p>
-      </div>
+      </header>
 
-      <div class="report-center__grid">
-        <div class="report-center__item">
-          <div>
-            <strong>Nhân viên</strong>
-            <p>Danh sách tài khoản trong chi nhánh</p>
-          </div>
-          <app-report-export-buttons reportType="users" />
-        </div>
+      <nav class="dashboard-action-grid" aria-label="Khu vực quản trị chi nhánh">
+        <a *ngFor="let action of actions" [routerLink]="action.route" class="dashboard-action">
+          <span class="dashboard-action__icon">
+            <app-icon [name]="action.icon" [size]="18" />
+          </span>
+          <span class="dashboard-action__content">
+            <small>{{ action.label }}</small>
+            <strong>{{ action.title }}</strong>
+            <span>{{ action.description }}</span>
+          </span>
+          <app-icon class="dashboard-action__arrow" name="arrow-right" [size]="16" />
+        </a>
+      </nav>
+    </section>
 
-        <div class="report-center__item">
-          <div>
-            <strong>Dịch vụ</strong>
-            <p>Dịch vụ đang được cấu hình</p>
-          </div>
-          <app-report-export-buttons reportType="services" />
-        </div>
+    <section #branchReports id="branch-reports" class="dashboard-reports">
+      <app-card
+        title="Báo cáo chi nhánh"
+        subtitle="Xuất dữ liệu thực tế thuộc phạm vi chi nhánh đang đăng nhập."
+      >
+        <div class="dashboard-report-grid">
+          <section class="dashboard-report-item">
+            <span class="dashboard-report-item__icon">
+              <app-icon name="users" [size]="18" />
+            </span>
+            <div class="dashboard-report-item__content">
+              <strong>Nhân viên</strong>
+              <p>Danh sách tài khoản trong chi nhánh.</p>
+            </div>
+            <app-report-export-buttons reportType="users" />
+          </section>
 
-        <div class="report-center__item">
-          <div>
-            <strong>Phiếu</strong>
-            <p>Phiếu và trạng thái phục vụ</p>
-          </div>
-          <app-report-export-buttons reportType="tickets" />
-        </div>
+          <section class="dashboard-report-item">
+            <span class="dashboard-report-item__icon">
+              <app-icon name="briefcase" [size]="18" />
+            </span>
+            <div class="dashboard-report-item__content">
+              <strong>Dịch vụ</strong>
+              <p>Dịch vụ đang được cấu hình tại chi nhánh.</p>
+            </div>
+            <app-report-export-buttons reportType="services" />
+          </section>
 
-        <div class="report-center__item">
-          <div>
-            <strong>Lịch sử giao dịch</strong>
-            <p>Phiếu đã hoàn thành hoặc đã hủy</p>
-          </div>
-          <app-report-export-buttons reportType="history" />
+          <section class="dashboard-report-item">
+            <span class="dashboard-report-item__icon">
+              <app-icon name="ticket" [size]="18" />
+            </span>
+            <div class="dashboard-report-item__content">
+              <strong>Phiếu</strong>
+              <p>Phiếu và trạng thái phục vụ.</p>
+            </div>
+            <app-report-export-buttons reportType="tickets" />
+          </section>
+
+          <section class="dashboard-report-item">
+            <span class="dashboard-report-item__icon">
+              <app-icon name="file-text" [size]="18" />
+            </span>
+            <div class="dashboard-report-item__content">
+              <strong>Lịch sử giao dịch</strong>
+              <p>Phiếu đã hoàn thành, hủy hoặc khách không đến.</p>
+            </div>
+            <app-report-export-buttons reportType="history" />
+          </section>
         </div>
-      </div>
+      </app-card>
     </section>
   </div>
 </app-dashboard-layout>

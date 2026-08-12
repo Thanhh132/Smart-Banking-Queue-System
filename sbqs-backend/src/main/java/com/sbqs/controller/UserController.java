@@ -2,6 +2,7 @@ package com.sbqs.controller;
 
 import com.sbqs.dto.CreateStaffRequest;
 import com.sbqs.entity.User;
+import com.sbqs.dto.UserManagementResponse;
 import com.sbqs.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,47 +25,44 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getUsers(
+    public ResponseEntity<List<UserManagementResponse>> getUsers(
             @RequestParam(required = false) Long branchId,
             @RequestParam(required = false) String role) {
 
         if (role != null && !role.isBlank()) {
-            return ResponseEntity.ok(
-                    userService.getUsersByRole(role));
+            return ResponseEntity.ok(userService.getUsersByRole(role).stream()
+                    .map(UserManagementResponse::from).toList());
         }
 
         if (branchId != null) {
-            return ResponseEntity.ok(
-                    userService.getUsersByBranch(branchId));
+            return ResponseEntity.ok(userService.getUsersByBranch(branchId).stream()
+                    .map(UserManagementResponse::from).toList());
         }
 
-        return ResponseEntity.ok(
-                userService.getAllUsers());
+        return ResponseEntity.ok(userService.getAllUsers().stream()
+                .map(UserManagementResponse::from).toList());
     }
 
     @PostMapping("/staff")
-    public ResponseEntity<User> createStaff(
+    public ResponseEntity<UserManagementResponse> createStaff(
             @Valid @RequestBody CreateStaffRequest request) {
 
-        return ResponseEntity.ok(
-                userService.createStaff(request));
+        return ResponseEntity.ok(UserManagementResponse.from(userService.createStaff(request)));
     }
 
     @PostMapping("/admin-branch")
-    public ResponseEntity<User> createAdminBranch(
+    public ResponseEntity<UserManagementResponse> createAdminBranch(
             @Valid @RequestBody CreateStaffRequest request) {
 
-        return ResponseEntity.ok(
-                userService.createAdminBranch(request));
+        return ResponseEntity.ok(UserManagementResponse.from(userService.createAdminBranch(request)));
     }
 
     @PutMapping("/{userId}")
-    public ResponseEntity<User> updateUser(
+    public ResponseEntity<UserManagementResponse> updateUser(
             @PathVariable Long userId,
             @Valid @RequestBody UpdateUserRequest request) {
 
-        return ResponseEntity.ok(
-                userService.updateUser(userId, request));
+        return ResponseEntity.ok(UserManagementResponse.from(userService.updateUser(userId, request)));
     }
 
     @DeleteMapping("/{userId}")

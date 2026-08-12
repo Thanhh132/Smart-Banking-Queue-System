@@ -1,256 +1,295 @@
-<app-dashboard-layout title="Quản lý chi nhánh">
-  <div class="super-page">
-    <header class="super-page__header">
-      <div>
-        <span>Quản trị hệ thống</span>
-        <h1>Hệ thống chi nhánh</h1>
-        <p>Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị.</p>
-      </div>
-      <button
-        type="button"
-        class="btn btn-secondary"
-        (click)="loadBranches()"
-        [disabled]="isLoading"
-      >
-        <app-icon *ngIf="!isLoading" name="refresh" [size]="16" />
-        {{ isLoading ? 'Đang tải...' : 'Làm mới dữ liệu' }}
-      </button>
-    </header>
+<app-dashboard-layout title="Quản trị hệ thống">
+  <div class="branches-page">
+    <app-page-header
+      title="Hệ thống chi nhánh"
+      description="Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị."
+    >
+      <app-button
+        variant="outline"
+        icon="refresh"
+        label="Làm mới"
+        [loading]="isLoading"
+        (clicked)="loadBranches()"
+      />
+      <app-button icon="plus" label="Thêm chi nhánh" (clicked)="openCreate()" />
+    </app-page-header>
 
-    <section class="super-stats">
-      <div>
-        <span>Tổng chi nhánh</span><strong>{{ branches.length }}</strong>
-      </div>
-      <div>
-        <span>Đang hoạt động</span><strong>{{ activeBranchCount }}</strong>
-      </div>
-      <div>
-        <span>Ngừng hoạt động</span><strong>{{ branches.length - activeBranchCount }}</strong>
-      </div>
+    <section class="sbqs-metric-grid" aria-label="Thống kê chi nhánh">
+      <article class="sbqs-metric">
+        <span>Tổng chi nhánh</span>
+        <strong>{{ branches.length }} chi nhánh</strong>
+        <small>Điểm giao dịch đã khai báo</small>
+      </article>
+      <article class="sbqs-metric">
+        <span>Đang hoạt động</span>
+        <strong>{{ activeBranchCount }} chi nhánh</strong>
+        <small>Sẵn sàng phục vụ khách hàng</small>
+      </article>
+      <article class="sbqs-metric">
+        <span>Ngừng hoạt động</span>
+        <strong>{{ branches.length - activeBranchCount }} chi nhánh</strong>
+        <small>Đang tạm dừng vận hành</small>
+      </article>
     </section>
 
-    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success" role="status">{{ successMessage }}</div>
+    <div *ngIf="errorMessage && !isEditorOpen" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
 
-    <section class="branch-management-grid">
-      <div class="super-panel branch-form-panel">
-        <div class="super-panel__heading">
-          <div>
-            <span>{{ isEditMode ? 'CHỈNH SỬA' : 'TẠO MỚI' }}</span>
-            <h2>{{ isEditMode ? 'Cập nhật chi nhánh' : 'Thêm chi nhánh' }}</h2>
+    <app-data-table-shell
+      title="Chi nhánh hiện có"
+      description="Thông tin định danh, khu vực và trạng thái vận hành của từng chi nhánh."
+      [loading]="isLoading"
+      loadingLabel="Đang tải danh sách chi nhánh..."
+      [empty]="!isLoading && filteredBranches.length === 0"
+      emptyTitle="Không có chi nhánh phù hợp"
+      emptyMessage="Thêm chi nhánh mới hoặc thay đổi từ khóa tìm kiếm."
+    >
+      <div table-actions class="branches-table-actions">
+        <span class="sbqs-table-count">{{ filteredBranches.length }} chi nhánh</span>
+      </div>
+
+      <div table-toolbar class="sbqs-table-toolbar sbqs-table-toolbar--single">
+        <label class="sbqs-table-search">
+          <span class="visually-hidden">Tìm kiếm chi nhánh</span>
+          <app-icon name="search" [size]="17" />
+          <input
+            class="sbqs-form-control"
+            type="search"
+            [(ngModel)]="searchTerm"
+            placeholder="Mã, tên, ngân hàng hoặc khu vực..."
+          />
+        </label>
+      </div>
+
+      <table class="table sbqs-data-table branches-table">
+        <thead>
+          <tr>
+            <th>Chi nhánh</th>
+            <th>Khu vực</th>
+            <th>Liên hệ</th>
+            <th>Trạng thái</th>
+            <th class="sbqs-table-actions-column">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let branch of filteredBranches">
+            <td class="sbqs-entity-cell branches-table__name">
+              <strong>{{ branch.branchName }}</strong>
+              <small>{{ branch.branchCode }} · {{ branch.bankName }}</small>
+            </td>
+            <td class="sbqs-entity-cell branches-table__region">
+              <span>{{ branch.ward || '-' }}, {{ branch.district || '-' }}</span>
+              <small>
+                {{ branch.province || '-' }} ·
+                <a [href]="branchMapUrl(branch)" target="_blank" rel="noopener">Bản đồ</a>
+              </small>
+            </td>
+            <td class="sbqs-entity-cell branches-table__contact">
+              <span>{{ branch.phone || '-' }}</span>
+              <small>{{ branch.address || '-' }}</small>
+            </td>
+            <td><app-status-badge [status]="branch.status || 'INACTIVE'" /></td>
+            <td class="sbqs-table-actions-column">
+              <div class="sbqs-row-actions">
+                <app-button
+                  variant="outline"
+                  size="sm"
+                  icon="pencil"
+                  label="Sửa"
+                  (clicked)="startEdit(branch)"
+                />
+                <app-button
+                  variant="danger"
+                  size="sm"
+                  icon="trash"
+                  label="Xóa"
+                  [disabled]="isDeleting"
+                  (clicked)="deleteBranch(branch)"
+                />
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </app-data-table-shell>
+
+    <app-modal-shell
+      [open]="isEditorOpen"
+      [title]="isEditMode ? 'Cập nhật chi nhánh' : 'Thêm chi nhánh'"
+      description="Xác định chính xác địa chỉ và tọa độ trước khi lưu dữ liệu vận hành."
+      size="xl"
+      [closeDisabled]="isSubmitting || isGeocoding"
+      (closed)="cancelEdit()"
+    >
+      <form class="sbqs-modal-form sbqs-form" [formGroup]="branchForm" (ngSubmit)="submitBranch()">
+        <div class="sbqs-modal-body">
+          <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+            {{ errorMessage }}
           </div>
-        </div>
 
-        <form class="branch-form" [formGroup]="branchForm" (ngSubmit)="submitBranch()">
-          <div class="form-group full-width">
-            <label>Ngân hàng</label>
-            <select formControlName="bankName">
-              <option *ngFor="let bank of bankOptions" [value]="bank.value">
-                {{ bank.label }}
-              </option>
-            </select>
-          </div>
+          <div class="branch-form-grid">
+            <label class="sbqs-field branch-form-grid__half">
+              <span>Ngân hàng</span>
+              <select class="sbqs-form-control" formControlName="bankName">
+                <option *ngFor="let bank of bankOptions" [value]="bank.value">
+                  {{ bank.label }}
+                </option>
+              </select>
+            </label>
 
-          <div class="form-group full-width">
-            <label>Địa chỉ chi nhánh</label>
-            <div class="address-search">
+            <div class="sbqs-field branch-form-grid__wide">
+              <label for="branch-address">Địa chỉ chi nhánh</label>
+              <div class="branch-address-search">
+                <input
+                  id="branch-address"
+                  appPreventAutofill
+                  class="sbqs-form-control"
+                  type="text"
+                  formControlName="address"
+                  placeholder="Nhập địa chỉ, tọa độ hoặc dán link Google Maps"
+                  autocomplete="street-address"
+                  (input)="markLocationUnconfirmed()"
+                  (blur)="confirmMapLocation()"
+                />
+                <app-button
+                  icon="map-pin"
+                  label="Xác định vị trí"
+                  [loading]="isGeocoding"
+                  (clicked)="confirmMapLocation()"
+                />
+              </div>
+              <small class="branch-field-help">
+                Có thể dán link Google Maps hoặc tọa độ dạng 10.7769, 106.7009.
+              </small>
+              <small
+                *ngIf="branchForm.controls.address.touched && branchForm.controls.address.invalid"
+                class="sbqs-validation-message"
+                >Địa chỉ chi nhánh là bắt buộc.</small
+              >
+            </div>
+
+            <section class="branch-map branch-form-grid__wide" aria-label="Bản đồ chi nhánh">
+              <iframe
+                title="Vị trí chi nhánh trên Google Maps"
+                [src]="mapPreviewUrl"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+              ></iframe>
+              <footer class="branch-map__footer">
+                <a
+                  class="btn btn-outline-secondary btn-sm"
+                  [href]="googleMapsUrl"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <app-icon name="external-link" [size]="15" />
+                  Mở Google Maps
+                </a>
+                <app-status-badge
+                  [status]="locationConfirmed ? 'ACTIVE' : 'WAITING'"
+                  [label]="locationConfirmed ? 'Đã xác định vị trí' : 'Chưa xác định vị trí'"
+                />
+              </footer>
+            </section>
+
+            <div class="branch-location-grid branch-form-grid__wide">
+              <label class="sbqs-field">
+                <span>Tỉnh/Thành phố</span>
+                <input class="sbqs-form-control" type="text" formControlName="province" readonly />
+              </label>
+              <label class="sbqs-field">
+                <span>Quận/Huyện/Thành phố</span>
+                <input class="sbqs-form-control" type="text" formControlName="district" readonly />
+              </label>
+              <label class="sbqs-field">
+                <span>Phường/Xã</span>
+                <input class="sbqs-form-control" type="text" formControlName="ward" readonly />
+              </label>
+            </div>
+
+            <label class="sbqs-field branch-form-grid__half">
+              <span>Mã chi nhánh</span>
+              <input class="sbqs-form-control" type="text" formControlName="branchCode" readonly />
+            </label>
+
+            <label class="sbqs-field branch-form-grid__half">
+              <span>Tên chi nhánh</span>
               <input
                 appPreventAutofill
+                class="sbqs-form-control"
                 type="text"
-                formControlName="address"
-                placeholder="Nhập địa chỉ, tọa độ hoặc dán link Google Maps"
-                autocomplete="street-address"
-                (input)="markLocationUnconfirmed()"
-                (blur)="confirmMapLocation()"
+                formControlName="branchName"
+                autocomplete="off"
               />
-              <button
-                type="button"
-                class="btn btn-primary"
-                (click)="confirmMapLocation()"
-                [disabled]="isGeocoding"
+              <small
+                *ngIf="
+                  branchForm.controls.branchName.touched && branchForm.controls.branchName.invalid
+                "
+                class="sbqs-validation-message"
+                >Tên chi nhánh là bắt buộc.</small
               >
-                <app-icon *ngIf="!isGeocoding" name="map-pin" [size]="16" />
-                {{ isGeocoding ? 'Đang tìm...' : 'Xác định vị trí' }}
-              </button>
-            </div>
-            <small
-              >Dán link Google Maps hoặc tọa độ dạng 10.7769, 106.7009 để lấy đúng vị trí
-              hơn.</small
-            >
-          </div>
+            </label>
 
-          <div class="branch-map full-width">
-            <iframe
-              title="Vị trí chi nhánh trên Google Maps"
-              [src]="mapPreviewUrl"
-              loading="lazy"
-              referrerpolicy="no-referrer-when-downgrade"
-            ></iframe>
-            <div class="branch-map__actions">
-              <a class="btn btn-secondary" [href]="googleMapsUrl" target="_blank" rel="noopener">
-                <app-icon name="external-link" [size]="16" />
-                Mở Google Maps
-              </a>
-              <span class="location-status" [class.location-status--confirmed]="locationConfirmed">
-                {{ locationConfirmed ? 'Đã xác định vị trí' : 'Chưa xác định vị trí' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="address-grid full-width">
-            <div class="form-group">
-              <label>Tỉnh/Thành phố</label><input type="text" formControlName="province" readonly />
-            </div>
-            <div class="form-group">
-              <label>Quận/Huyện/Thành phố</label
-              ><input type="text" formControlName="district" readonly />
-            </div>
-            <div class="form-group">
-              <label>Phường/Xã</label><input type="text" formControlName="ward" readonly />
-            </div>
-          </div>
-
-          <div class="form-group code-field">
-            <label>Mã chi nhánh</label><input type="text" formControlName="branchCode" readonly />
-          </div>
-          <div class="form-group name-field">
-            <label>Tên chi nhánh</label
-            ><input
-              appPreventAutofill
-              type="text"
-              formControlName="branchName"
-              autocomplete="off"
-            />
-          </div>
-          <div class="form-group">
-            <label>Số điện thoại</label
-            ><input
-              appPreventAutofill
-              type="tel"
-              formControlName="phone"
-              placeholder="0900000000"
-              autocomplete="off"
-            />
-          </div>
-          <div class="form-group">
-            <label>Trạng thái</label>
-            <select formControlName="status">
-              <option value="ACTIVE">Đang hoạt động</option>
-              <option value="INACTIVE">Ngừng hoạt động</option>
-            </select>
-          </div>
-
-          <div class="form-actions full-width">
-            <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || isGeocoding">
-              <app-icon
-                *ngIf="!isSubmitting && !isGeocoding"
-                [name]="isEditMode ? 'save' : 'plus'"
-                [size]="16"
+            <label class="sbqs-field branch-form-grid__half">
+              <span>Số điện thoại</span>
+              <input
+                appPreventAutofill
+                class="sbqs-form-control"
+                type="tel"
+                formControlName="phone"
+                placeholder="0900000000"
+                autocomplete="off"
               />
-              {{
-                isSubmitting || isGeocoding
-                  ? 'Đang xử lý...'
-                  : isEditMode
-                    ? 'Lưu thay đổi'
-                    : 'Tạo chi nhánh'
-              }}
-            </button>
-            <button
-              *ngIf="isEditMode"
-              type="button"
-              class="btn btn-secondary"
-              (click)="cancelEdit()"
-            >
-              <app-icon name="x" [size]="16" />
-              Hủy chỉnh sửa
-            </button>
+              <small
+                *ngIf="branchForm.controls.phone.touched && branchForm.controls.phone.invalid"
+                class="sbqs-validation-message"
+                >Vui lòng nhập số điện thoại hợp lệ.</small
+              >
+            </label>
+
+            <label class="sbqs-field branch-form-grid__half">
+              <span>Trạng thái</span>
+              <select class="sbqs-form-control" formControlName="status">
+                <option value="ACTIVE">Đang hoạt động</option>
+                <option value="INACTIVE">Ngừng hoạt động</option>
+              </select>
+            </label>
           </div>
-        </form>
-      </div>
-
-      <div class="super-panel branch-list-panel">
-        <div class="super-panel__heading list-heading">
-          <div>
-            <span>DANH SÁCH</span>
-            <h2>Chi nhánh hiện có</h2>
-          </div>
-          <label class="branch-search">
-            <span>Tìm kiếm</span>
-            <input
-              type="search"
-              [(ngModel)]="searchTerm"
-              placeholder="Mã, tên, ngân hàng, khu vực..."
-            />
-          </label>
         </div>
 
-        <div *ngIf="isLoading" class="admin-empty">Đang tải danh sách chi nhánh...</div>
-        <div *ngIf="!isLoading && filteredBranches.length === 0" class="admin-empty">
-          Không có chi nhánh phù hợp.
-        </div>
+        <footer class="sbqs-modal-footer">
+          <app-button
+            variant="outline"
+            label="Hủy"
+            [disabled]="isSubmitting || isGeocoding"
+            (clicked)="cancelEdit()"
+          />
+          <app-button
+            type="submit"
+            [icon]="isEditMode ? 'save' : 'plus'"
+            [label]="isEditMode ? 'Lưu thay đổi' : 'Tạo chi nhánh'"
+            [loading]="isSubmitting || isGeocoding"
+          />
+        </footer>
+      </form>
+    </app-modal-shell>
 
-        <div *ngIf="!isLoading && filteredBranches.length > 0" class="table-wrapper">
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Chi nhánh</th>
-                <th>Khu vực</th>
-                <th>Liên hệ</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let branch of filteredBranches">
-                <td>
-                  <strong>{{ branch.branchName }}</strong
-                  ><small>{{ branch.branchCode }} · {{ branch.bankName }}</small>
-                </td>
-                <td>
-                  {{ branch.ward || '-' }}, {{ branch.district || '-' }}
-                  <small
-                    >{{ branch.province || '-' }} ·
-                    <a [href]="branchMapUrl(branch)" target="_blank" rel="noopener"
-                      >Bản đồ</a
-                    ></small
-                  >
-                </td>
-                <td>
-                  {{ branch.phone || '-' }}<small>{{ branch.address || '-' }}</small>
-                </td>
-                <td>
-                  <span
-                    class="admin-badge"
-                    [ngClass]="branch.status === 'ACTIVE' ? 'badge-success' : 'badge-danger'"
-                  >
-                    {{ branch.status === 'ACTIVE' ? 'Hoạt động' : 'Tạm ngừng' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="row-actions">
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      (click)="startEdit(branch)"
-                    >
-                      <app-icon name="pencil" [size]="14" />
-                      Sửa
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-danger btn-sm"
-                      (click)="deleteBranch(branch)"
-                    >
-                      <app-icon name="trash" [size]="14" />
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+    <app-confirm-dialog
+      [open]="pendingDeleteBranch !== null"
+      title="Xóa chi nhánh"
+      [message]="
+        'Xóa vĩnh viễn chi nhánh “' +
+        (pendingDeleteBranch?.branchName || '') +
+        '”? Thao tác này không thể hoàn tác.'
+      "
+      confirmLabel="Xóa vĩnh viễn"
+      cancelLabel="Hủy"
+      [danger]="true"
+      [loading]="isDeleting"
+      (confirmed)="confirmDeleteBranch()"
+      (cancelled)="cancelDeleteBranch()"
+    />
   </div>
 </app-dashboard-layout>

@@ -1,0 +1,31 @@
+@if (open()) {
+  <div class="app-modal-shell__backdrop" (click)="close()">
+    <section
+      class="app-modal-shell"
+      [class]="'app-modal-shell app-modal-shell--' + size()"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="app-modal-shell-title"
+      [attr.aria-describedby]="description() ? 'app-modal-shell-description' : null"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="app-modal-shell__header">
+        <div>
+          <h2 id="app-modal-shell-title">{{ title() }}</h2>
+          @if (description()) {
+            <p id="app-modal-shell-description">{{ description() }}</p>
+          }
+        </div>
+        <app-button
+          variant="outline"
+          size="sm"
+          icon="x"
+          ariaLabel="Đóng"
+          [disabled]="closeDisabled()"
+          (clicked)="close()"
+        />
+      </header>
+      <ng-content></ng-content>
+    </section>
+  </div>
+}

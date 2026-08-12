@@ -1,9 +1,16 @@
-<section class="excel-import" aria-labelledby="excel-import-title">
+<section
+  class="excel-import"
+  [class.excel-import--compact]="compact"
+  [attr.aria-labelledby]="showTitle ? 'excel-import-title' : null"
+  [attr.aria-label]="showTitle ? null : title"
+>
   <div class="excel-import__heading">
-    <div>
-      <span class="excel-import__kicker">Excel</span>
-      <h3 id="excel-import-title"><app-icon name="file-spreadsheet" [size]="20" />{{ title }}</h3>
-    </div>
+    @if (showTitle) {
+      <div>
+        <span class="excel-import__kicker">Excel</span>
+        <h3 id="excel-import-title"><app-icon name="file-spreadsheet" [size]="20" />{{ title }}</h3>
+      </div>
+    }
     <app-button
       variant="outline"
       size="sm"
@@ -14,11 +21,15 @@
     />
   </div>
 
-  <div class="excel-import__controls d-flex flex-wrap align-items-center gap-3">
+  <div class="excel-import__controls">
     <label class="file-picker">
       <app-icon name="upload" [size]="16" />
       <span>Chọn file .xlsx</span>
-      <input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" (change)="selectFile($event)" />
+      <input
+        type="file"
+        accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        (change)="selectFile($event)"
+      />
     </label>
     <span class="file-name" [class.file-name--selected]="selectedFile">{{ selectedFileName }}</span>
     <app-button
@@ -33,7 +44,11 @@
 
   <div *ngIf="errorMessage" class="import-message import-message--error">{{ errorMessage }}</div>
 
-  <div *ngIf="result" class="import-result" [class.import-result--warning]="result.failureCount > 0">
+  <div
+    *ngIf="result"
+    class="import-result"
+    [class.import-result--warning]="result.failureCount > 0"
+  >
     <strong>{{ result.successCount }}/{{ result.totalRows }} dòng thành công</strong>
     <span *ngIf="result.failureCount > 0 && result.errors.length > 0">
       {{ result.failureCount }} dòng lỗi: {{ result.errors[0].message }}

@@ -1,426 +1,551 @@
-<app-dashboard-layout title="Vận hành chi nhánh">
-  <div class="page-section operations-page">
-    <section class="page-heading">
-      <span class="page-kicker">Quản trị chi nhánh</span>
-      <h1>Vận hành chi nhánh</h1>
-      <p>Quản lý máy bốc số và quầy giao dịch theo đúng cấu trúc thực tế của chi nhánh.</p>
-    </section>
+<app-dashboard-layout title="Quản trị chi nhánh">
+  <div class="admin-operations-page">
+    <app-page-header
+      title="Vận hành chi nhánh"
+      description="Cấu hình giờ phục vụ, máy bốc số, quầy giao dịch và phân bổ máy cho từng quầy."
+    />
 
-    <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="alert alert-success operations-alert" role="status">
+      {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger operations-alert" role="alert">
+      {{ errorMessage }}
+    </div>
 
-    <section class="ui-card hours-card">
-      <div class="hours-heading">
-        <div>
-          <span>LỊCH LÀM VIỆC</span>
-          <h3>Giờ phục vụ trong tuần</h3>
-          <p>Khách chỉ có thể lấy số trong các ca đang mở.</p>
+    <nav class="operations-tabs" role="tablist" aria-label="Khu vực vận hành chi nhánh">
+      <button
+        class="operations-tab"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'hours'"
+        [class.operations-tab--active]="activeTab === 'hours'"
+        (click)="setActiveTab('hours')"
+      >
+        Giờ hoạt động
+      </button>
+      <button
+        class="operations-tab"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'machines'"
+        [class.operations-tab--active]="activeTab === 'machines'"
+        (click)="setActiveTab('machines')"
+      >
+        Máy bốc số
+        <span>{{ queueMachines.length }} máy</span>
+      </button>
+      <button
+        class="operations-tab"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'counters'"
+        [class.operations-tab--active]="activeTab === 'counters'"
+        (click)="setActiveTab('counters')"
+      >
+        Quầy giao dịch
+        <span>{{ counters.length }} quầy</span>
+      </button>
+      <button
+        class="operations-tab"
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab === 'assignments'"
+        [class.operations-tab--active]="activeTab === 'assignments'"
+        (click)="setActiveTab('assignments')"
+      >
+        Phân bổ máy
+      </button>
+    </nav>
+
+    <section *ngIf="activeTab === 'hours'" class="operations-panel" role="tabpanel">
+      <app-card
+        title="Giờ phục vụ trong tuần"
+        subtitle="Khách chỉ có thể lấy số trong các ca chi nhánh đang mở."
+      >
+        <div card-actions class="operations-card-actions">
+          <app-button
+            variant="outline"
+            size="sm"
+            label="Mẫu hành chính"
+            [disabled]="isSavingHours || isLoadingHours"
+            (clicked)="applyWeekdayTemplate()"
+          />
+          <app-button
+            size="sm"
+            icon="save"
+            label="Lưu lịch"
+            [loading]="isSavingHours"
+            [disabled]="branchHours.length !== 7 || isLoadingHours"
+            (clicked)="saveBranchHours()"
+          />
         </div>
-        <div class="hours-actions">
-          <button type="button" class="btn btn-secondary btn-sm" (click)="applyWeekdayTemplate()">
-            Mẫu hành chính</button
-          ><button
-            type="button"
-            class="btn btn-primary btn-sm"
-            (click)="saveBranchHours()"
-            [disabled]="isSavingHours || branchHours.length !== 7"
+
+        <app-loading-state *ngIf="isLoadingHours" label="Đang tải giờ phục vụ..." />
+        <app-empty-state
+          *ngIf="!isLoadingHours && branchHours.length !== 7"
+          title="Chưa có lịch phục vụ"
+          message="Không tải được đầy đủ lịch phục vụ trong tuần."
+        />
+
+        <div *ngIf="!isLoadingHours && branchHours.length === 7" class="hours-list sbqs-form">
+          <section
+            class="hours-row"
+            *ngFor="let hours of branchHours"
+            [class.hours-row--closed]="hours.closed"
           >
-            {{ isSavingHours ? 'Đang lưu...' : 'Lưu lịch' }}
-          </button>
-        </div>
-      </div>
-      <div class="hours-list" *ngIf="branchHours.length === 7">
-        <div
-          class="hours-row"
-          *ngFor="let hours of branchHours"
-          [class.hours-row--closed]="hours.closed"
-        >
-          <div class="hours-day">
-            <strong>{{ dayNames[hours.dayOfWeek] }}</strong
-            ><button
-              type="button"
-              class="day-toggle"
-              [class.day-toggle--open]="!hours.closed"
-              (click)="toggleDay(hours)"
-            >
-              {{ hours.closed ? 'Nghỉ' : 'Mở cửa' }}
-            </button>
-          </div>
-          <ng-container *ngIf="!hours.closed; else closedDay">
-            <label
-              ><span>Ca sáng</span>
+            <header class="hours-day">
               <div>
-                <input type="time" [(ngModel)]="hours.morningOpen" /><i>–</i
-                ><input type="time" [(ngModel)]="hours.morningClose" /></div
-            ></label>
-            <span class="lunch-break">Nghỉ trưa</span>
-            <label
-              ><span>Ca chiều</span>
-              <div>
-                <input type="time" [(ngModel)]="hours.afternoonOpen" /><i>–</i
-                ><input type="time" [(ngModel)]="hours.afternoonClose" /></div
-            ></label>
-          </ng-container>
-          <ng-template #closedDay><div class="closed-day">Không tiếp nhận khách</div></ng-template>
-        </div>
-      </div>
-    </section>
-
-    <section class="ui-card-grid operations-metrics">
-      <div class="ui-card metric-card">
-        <span>Máy bốc số</span>
-        <strong>{{ queueMachines.length }}</strong>
-        <p>Thiết bị/khu vực lấy số trong chi nhánh.</p>
-      </div>
-
-      <div class="ui-card metric-card">
-        <span>Quầy giao dịch</span>
-        <strong>{{ counters.length }}</strong>
-        <p>Có thể đặt theo số quầy thực tế như 101, 202, 203.</p>
-      </div>
-    </section>
-
-    <section class="admin-panel-grid machine-management-grid">
-      <div class="ui-card">
-        <div class="card-heading eb-panel-heading">
-          <h3>{{ machineFormTitle }}</h3>
-          <p>Đặt tên theo vị trí thực tế, ví dụ: Máy tầng 2, Máy sảnh chính, Máy khu khách VIP.</p>
-        </div>
-
-        <div class="ui-form split-form eb-compact-form">
-          <label>
-            Mã máy
-            <input type="text" [(ngModel)]="machineCode" placeholder="Bỏ trống để tự sinh" />
-          </label>
-
-          <label>
-            Tên máy
-            <input type="text" [(ngModel)]="machineName" placeholder="Ví dụ: Máy bốc số tầng 2" />
-          </label>
-
-          <label class="full-row">
-            Ghi chú vị trí
-            <input
-              type="text"
-              [(ngModel)]="machineNote"
-              placeholder="Ví dụ: sảnh chính, tầng 2, khu ưu tiên"
-            />
-          </label>
-
-          <div class="full-row form-actions">
-            <button
-              type="button"
-              class="btn btn-primary"
-              (click)="saveMachine()"
-              [disabled]="isSubmittingMachine"
-            >
-              <app-icon
-                *ngIf="!isSubmittingMachine"
-                [name]="editingMachineId ? 'save' : 'plus'"
-                [size]="16"
+                <strong>{{ dayNames[hours.dayOfWeek] }}</strong>
+                <app-status-badge
+                  [status]="hours.closed ? 'CLOSED' : 'OPEN'"
+                  [label]="hours.closed ? 'Nghỉ' : 'Mở cửa'"
+                />
+              </div>
+              <app-button
+                variant="outline"
+                size="sm"
+                [label]="hours.closed ? 'Mở ngày' : 'Đóng ngày'"
+                (clicked)="toggleDay(hours)"
               />
-              {{
-                isSubmittingMachine ? 'Đang lưu...' : editingMachineId ? 'Cập nhật máy' : 'Thêm máy'
-              }}
-            </button>
-            <button
-              *ngIf="editingMachineId"
-              type="button"
-              class="btn btn-secondary"
-              (click)="resetMachineForm()"
-            >
-              <app-icon name="x" [size]="16" />
-              Hủy sửa
-            </button>
-          </div>
-        </div>
-      </div>
+            </header>
 
-      <div class="ui-card">
-        <div class="table-heading eb-panel-heading">
-          <div>
-            <h3>Danh sách máy</h3>
-            <p>Máy thuộc chi nhánh hiện tại.</p>
-          </div>
+            <ng-container *ngIf="!hours.closed; else closedDay">
+              <div class="hours-shift">
+                <span>Ca sáng</span>
+                <div>
+                  <input
+                    class="sbqs-form-control"
+                    type="time"
+                    [(ngModel)]="hours.morningOpen"
+                    [attr.aria-label]="'Giờ mở cửa buổi sáng ' + dayNames[hours.dayOfWeek]"
+                  />
+                  <span>đến</span>
+                  <input
+                    class="sbqs-form-control"
+                    type="time"
+                    [(ngModel)]="hours.morningClose"
+                    [attr.aria-label]="'Giờ đóng cửa buổi sáng ' + dayNames[hours.dayOfWeek]"
+                  />
+                </div>
+              </div>
+              <div class="hours-shift">
+                <span>Ca chiều</span>
+                <div>
+                  <input
+                    class="sbqs-form-control"
+                    type="time"
+                    [(ngModel)]="hours.afternoonOpen"
+                    [attr.aria-label]="'Giờ mở cửa buổi chiều ' + dayNames[hours.dayOfWeek]"
+                  />
+                  <span>đến</span>
+                  <input
+                    class="sbqs-form-control"
+                    type="time"
+                    [(ngModel)]="hours.afternoonClose"
+                    [attr.aria-label]="'Giờ đóng cửa buổi chiều ' + dayNames[hours.dayOfWeek]"
+                  />
+                </div>
+              </div>
+            </ng-container>
 
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="loadQueueMachines()"
-            [disabled]="isLoadingMachines"
-          >
-            <app-icon *ngIf="!isLoadingMachines" name="refresh" [size]="16" />
-            {{ isLoadingMachines ? 'Đang tải...' : 'Tải lại' }}
-          </button>
+            <ng-template #closedDay>
+              <p class="hours-closed-message">Không tiếp nhận khách trong ngày này.</p>
+            </ng-template>
+          </section>
         </div>
-
-        <div *ngIf="isLoadingMachines" class="admin-empty">Đang tải máy...</div>
-        <div *ngIf="!isLoadingMachines && queueMachines.length === 0" class="admin-empty">
-          Chưa có máy nào.
-        </div>
-
-        <div
-          *ngIf="!isLoadingMachines && queueMachines.length > 0"
-          class="table-wrapper eb-compact-table-shell"
-        >
-          <table class="admin-table eb-compact-table">
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Tên</th>
-                <th>Ghi chú</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let machine of queueMachines">
-                <td>
-                  <strong>{{ machine.machineCode }}</strong>
-                </td>
-                <td>{{ machine.machineName }}</td>
-                <td>{{ machine.locationNote || '-' }}</td>
-                <td>
-                  <div class="row-actions">
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      (click)="startEditMachine(machine)"
-                    >
-                      <app-icon name="pencil" [size]="14" />
-                      Sửa
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-danger btn-sm"
-                      (click)="deleteMachine(machine)"
-                    >
-                      <app-icon name="trash" [size]="14" />
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      </app-card>
     </section>
 
-    <section class="admin-panel-grid counter-management-grid">
-      <div class="operations-form-stack">
-        <div class="ui-card">
-          <div class="card-heading eb-panel-heading">
-            <h3>Thêm quầy linh hoạt</h3>
-            <p>
-              Tạo nhanh theo dải số hoặc nhập danh sách quầy cụ thể. Quầy mới mặc định chưa hoạt
-              động.
-            </p>
-          </div>
+    <section *ngIf="activeTab === 'machines'" class="operations-panel" role="tabpanel">
+      <app-data-table-shell
+        title="Máy bốc số"
+        description="Các máy hoặc khu vực lấy số thuộc chi nhánh hiện tại."
+        [loading]="isLoadingMachines"
+        loadingLabel="Đang tải danh sách máy bốc số..."
+        [empty]="!isLoadingMachines && queueMachines.length === 0"
+        emptyTitle="Chưa có máy bốc số"
+        emptyMessage="Thêm máy đầu tiên để bắt đầu cấu hình quầy và dịch vụ."
+      >
+        <div table-actions class="operations-table-actions">
+          <span>{{ queueMachines.length }} máy</span>
+          <app-button
+            variant="outline"
+            size="sm"
+            icon="refresh"
+            label="Tải lại"
+            [loading]="isLoadingMachines"
+            (clicked)="loadQueueMachines()"
+          />
+          <app-button size="sm" icon="plus" label="Thêm máy" (clicked)="openCreateMachineModal()" />
+        </div>
 
-          <div class="ui-form split-form eb-compact-form">
-            <label>
-              Gắn vào máy
-              <select [(ngModel)]="selectedMachineForCounters">
+        <table class="table operations-table machines-table">
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Tên</th>
+              <th>Ghi chú vị trí</th>
+              <th class="operations-table__actions-heading">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let machine of queueMachines">
+              <td>
+                <strong>{{ machine.machineCode }}</strong>
+              </td>
+              <td>{{ machine.machineName }}</td>
+              <td>{{ machine.locationNote || '-' }}</td>
+              <td class="operations-table__actions-cell">
+                <div class="operations-row-actions">
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    icon="pencil"
+                    label="Sửa"
+                    (clicked)="startEditMachine(machine)"
+                  />
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    icon="trash"
+                    label="Xóa"
+                    (clicked)="deleteMachine(machine)"
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </app-data-table-shell>
+    </section>
+
+    <section *ngIf="activeTab === 'counters'" class="operations-panel" role="tabpanel">
+      <app-card
+        *ngIf="isCounterBatchOpen"
+        class="counter-batch-card"
+        title="Tạo nhiều quầy"
+        subtitle="Tạo theo dải số hoặc nhập danh sách quầy cụ thể; quầy mới mặc định chưa hoạt động."
+      >
+        <div card-actions>
+          <app-button
+            variant="outline"
+            size="sm"
+            icon="x"
+            ariaLabel="Đóng khu vực tạo quầy"
+            [disabled]="isSubmittingCounter"
+            (clicked)="closeCounterBatch()"
+          />
+        </div>
+
+        <div class="sbqs-form">
+          <div class="sbqs-form-grid operations-form-grid">
+            <label class="sbqs-field">
+              <span>Gắn vào máy</span>
+              <select class="sbqs-form-control" [(ngModel)]="selectedMachineForCounters">
                 <option [ngValue]="null">Chọn máy bốc số</option>
                 <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
-                  {{ machine.machineName }} - {{ machine.machineCode }}
+                  {{ machine.machineName }} — {{ machine.machineCode }}
                 </option>
               </select>
             </label>
-
-            <label>
-              Tiền tố tên quầy
-              <input type="text" [(ngModel)]="counterNamePrefix" placeholder="Quầy" />
+            <label class="sbqs-field">
+              <span>Tiền tố tên quầy</span>
+              <input class="sbqs-form-control" type="text" [(ngModel)]="counterNamePrefix" />
             </label>
-
-            <label>
-              Số bắt đầu
-              <input type="number" min="1" [(ngModel)]="counterStartNumber" />
+            <label class="sbqs-field">
+              <span>Số bắt đầu</span>
+              <input
+                class="sbqs-form-control"
+                type="number"
+                min="1"
+                [(ngModel)]="counterStartNumber"
+              />
             </label>
-
-            <label>
-              Số lượng
-              <input type="number" min="1" max="50" [(ngModel)]="counterCount" />
+            <label class="sbqs-field">
+              <span>Số lượng</span>
+              <input
+                class="sbqs-form-control"
+                type="number"
+                min="1"
+                max="50"
+                [(ngModel)]="counterCount"
+              />
             </label>
-
-            <label>
-              Tiền tố mã
-              <input type="text" [(ngModel)]="counterCodePrefix" placeholder="Q" />
+            <label class="sbqs-field">
+              <span>Tiền tố mã</span>
+              <input class="sbqs-form-control" type="text" [(ngModel)]="counterCodePrefix" />
             </label>
-
-            <label class="full-row">
-              Danh sách quầy cụ thể
+            <label class="sbqs-field operations-form-grid__full">
+              <span>Danh sách quầy cụ thể</span>
               <textarea
+                class="sbqs-form-control"
                 rows="3"
                 [(ngModel)]="counterNumbersText"
                 placeholder="Ví dụ: 202, 203, 204 hoặc VIP, KHDN"
               ></textarea>
             </label>
+          </div>
 
-            <div class="full-row hint-line">Sẽ tạo: {{ counterNumbersPreview || '-' }}</div>
+          <div class="counter-preview">
+            <span>Sẽ tạo</span>
+            <strong>{{ counterNumbersPreview || '-' }}</strong>
+          </div>
 
-            <div class="full-row form-actions">
-              <button
-                type="button"
-                class="btn btn-primary"
-                (click)="quickCreateCounters()"
-                [disabled]="isSubmittingCounter"
-              >
-                <app-icon *ngIf="!isSubmittingCounter" name="plus" [size]="16" />
-                {{ isSubmittingCounter ? 'Đang tạo...' : 'Tạo quầy' }}
-              </button>
-            </div>
+          <div class="sbqs-form-actions">
+            <app-button
+              variant="outline"
+              label="Hủy"
+              [disabled]="isSubmittingCounter"
+              (clicked)="closeCounterBatch()"
+            />
+            <app-button
+              icon="plus"
+              label="Tạo quầy"
+              [loading]="isSubmittingCounter"
+              (clicked)="quickCreateCounters()"
+            />
+          </div>
+        </div>
+      </app-card>
+
+      <app-data-table-shell
+        title="Quầy giao dịch"
+        description="Quầy được nhân viên nhận khi bắt đầu ca làm."
+        [loading]="isLoadingCounters"
+        loadingLabel="Đang tải danh sách quầy..."
+        [empty]="!isLoadingCounters && counters.length === 0"
+        emptyTitle="Chưa có quầy giao dịch"
+        emptyMessage="Tạo quầy theo dải số hoặc danh sách thực tế của chi nhánh."
+      >
+        <div table-actions class="operations-table-actions">
+          <span>{{ counters.length }} quầy</span>
+          <app-button
+            variant="outline"
+            size="sm"
+            icon="refresh"
+            label="Tải lại"
+            [loading]="isLoadingCounters"
+            (clicked)="loadCounters()"
+          />
+          <app-button size="sm" icon="plus" label="Tạo nhiều quầy" (clicked)="openCounterBatch()" />
+        </div>
+
+        <table class="table operations-table counters-table">
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Tên</th>
+              <th>Máy hiện tại</th>
+              <th>Trạng thái</th>
+              <th class="operations-table__actions-heading">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let counter of counters">
+              <td>
+                <strong>{{ counter.counterCode }}</strong>
+              </td>
+              <td>{{ counter.counterName }}</td>
+              <td>{{ counter.queueMachine?.machineName || 'Chưa gán máy' }}</td>
+              <td><app-status-badge [status]="counter.status || 'INACTIVE'" /></td>
+              <td class="operations-table__actions-cell">
+                <div class="operations-row-actions">
+                  <app-button
+                    variant="outline"
+                    size="sm"
+                    icon="pencil"
+                    label="Sửa"
+                    (clicked)="startEditCounter(counter)"
+                  />
+                  <app-button
+                    variant="danger"
+                    size="sm"
+                    icon="trash"
+                    label="Xóa"
+                    (clicked)="deleteCounter(counter)"
+                  />
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </app-data-table-shell>
+    </section>
+
+    <section *ngIf="activeTab === 'assignments'" class="operations-panel" role="tabpanel">
+      <app-data-table-shell
+        title="Phân bổ máy cho quầy"
+        description="Chọn máy bốc số phục vụ từng quầy; có thể để quầy ở trạng thái chưa gán máy."
+        [loading]="isLoadingCounters || isLoadingMachines"
+        loadingLabel="Đang tải cấu hình phân bổ..."
+        [empty]="!isLoadingCounters && !isLoadingMachines && counters.length === 0"
+        emptyTitle="Chưa có quầy để phân bổ"
+        emptyMessage="Tạo quầy giao dịch trước khi thiết lập máy bốc số cho quầy."
+      >
+        <div table-actions class="operations-table-actions">
+          <span>{{ counters.length }} quầy</span>
+          <app-button
+            variant="outline"
+            size="sm"
+            icon="refresh"
+            label="Tải lại"
+            [loading]="isLoadingCounters || isLoadingMachines"
+            (clicked)="loadOperations()"
+          />
+        </div>
+
+        <table class="table operations-table assignments-table">
+          <thead>
+            <tr>
+              <th>Quầy giao dịch</th>
+              <th>Trạng thái</th>
+              <th>Máy bốc số được phân bổ</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let counter of counters">
+              <td>
+                <strong>{{ counter.counterName }}</strong>
+                <small>{{ counter.counterCode }}</small>
+              </td>
+              <td><app-status-badge [status]="counter.status || 'INACTIVE'" /></td>
+              <td>
+                <select
+                  class="sbqs-form-control assignment-select"
+                  [ngModel]="counter.queueMachine?.queueMachineId || null"
+                  (ngModelChange)="assignQueueMachine(counter, $event)"
+                  [disabled]="updatingCounterId === counter.counterId"
+                  [attr.aria-label]="'Máy bốc số của ' + counter.counterName"
+                >
+                  <option [ngValue]="null">Chưa gán máy</option>
+                  <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
+                    {{ machine.machineName }} — {{ machine.machineCode }}
+                  </option>
+                </select>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </app-data-table-shell>
+    </section>
+
+    <app-modal-shell
+      [open]="isMachineModalOpen"
+      [title]="machineFormTitle"
+      description="Đặt tên và vị trí nhận diện máy trong chi nhánh."
+      [closeDisabled]="isSubmittingMachine"
+      (closed)="closeMachineModal()"
+    >
+        <div class="sbqs-modal-body sbqs-form">
+          <div class="sbqs-form-grid">
+            <label class="sbqs-field">
+              <span>Mã máy</span>
+              <input
+                class="sbqs-form-control"
+                type="text"
+                [(ngModel)]="machineCode"
+                placeholder="Bỏ trống để tự sinh"
+              />
+            </label>
+            <label class="sbqs-field">
+              <span>Tên máy</span>
+              <input
+                class="sbqs-form-control"
+                type="text"
+                [(ngModel)]="machineName"
+                placeholder="Ví dụ: Máy bốc số tầng 2"
+              />
+            </label>
+            <label class="sbqs-field operations-form-grid__full">
+              <span>Ghi chú vị trí</span>
+              <input
+                class="sbqs-form-control"
+                type="text"
+                [(ngModel)]="machineNote"
+                placeholder="Ví dụ: sảnh chính, tầng 2, khu ưu tiên"
+              />
+            </label>
           </div>
         </div>
 
-        <div class="ui-card" *ngIf="editingCounterId">
-          <div class="card-heading eb-panel-heading">
-            <h3>Sửa quầy</h3>
-            <p>Cập nhật mã, tên, máy bốc số hoặc trạng thái quầy.</p>
-          </div>
+        <footer class="sbqs-modal-footer">
+          <app-button
+            variant="outline"
+            label="Hủy"
+            [disabled]="isSubmittingMachine"
+            (clicked)="closeMachineModal()"
+          />
+          <app-button
+            [icon]="editingMachineId ? 'save' : 'plus'"
+            [label]="editingMachineId ? 'Cập nhật máy' : 'Thêm máy'"
+            [loading]="isSubmittingMachine"
+            (clicked)="saveMachine()"
+          />
+        </footer>
+    </app-modal-shell>
 
-          <div class="ui-form split-form eb-compact-form">
-            <label>
-              Mã quầy
-              <input type="text" [(ngModel)]="counterForm.counterCode" />
+    <app-modal-shell
+      [open]="isCounterModalOpen"
+      title="Cập nhật quầy"
+      description="Cập nhật mã, tên, máy bốc số hoặc trạng thái quầy."
+      [closeDisabled]="isSubmittingCounter"
+      (closed)="closeCounterModal()"
+    >
+        <div class="sbqs-modal-body sbqs-form">
+          <div class="sbqs-form-grid">
+            <label class="sbqs-field">
+              <span>Mã quầy</span>
+              <input class="sbqs-form-control" type="text" [(ngModel)]="counterForm.counterCode" />
             </label>
-
-            <label>
-              Tên quầy
-              <input type="text" [(ngModel)]="counterForm.counterName" />
+            <label class="sbqs-field">
+              <span>Tên quầy</span>
+              <input class="sbqs-form-control" type="text" [(ngModel)]="counterForm.counterName" />
             </label>
-
-            <label>
-              Máy bốc số
-              <select [(ngModel)]="counterForm.queueMachineId">
+            <label class="sbqs-field">
+              <span>Máy bốc số</span>
+              <select class="sbqs-form-control" [(ngModel)]="counterForm.queueMachineId">
                 <option [ngValue]="null">Chưa gán máy</option>
                 <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
-                  {{ machine.machineName }} - {{ machine.machineCode }}
+                  {{ machine.machineName }} — {{ machine.machineCode }}
                 </option>
               </select>
             </label>
-
-            <label>
-              Trạng thái
-              <select [(ngModel)]="counterForm.status">
+            <label class="sbqs-field">
+              <span>Trạng thái</span>
+              <select class="sbqs-form-control" [(ngModel)]="counterForm.status">
                 <option value="INACTIVE">Chưa hoạt động</option>
                 <option value="ACTIVE">Đang hoạt động</option>
               </select>
             </label>
-
-            <div class="full-row form-actions">
-              <button
-                type="button"
-                class="btn btn-primary"
-                (click)="updateCounter()"
-                [disabled]="isSubmittingCounter"
-              >
-                <app-icon *ngIf="!isSubmittingCounter" name="save" [size]="16" />
-                {{ isSubmittingCounter ? 'Đang lưu...' : 'Cập nhật quầy' }}
-              </button>
-              <button type="button" class="btn btn-secondary" (click)="resetCounterForm()">
-                <app-icon name="x" [size]="16" />
-                Hủy sửa
-              </button>
-            </div>
           </div>
         </div>
-      </div>
 
-      <section class="ui-card counter-list-card">
-        <div class="table-heading eb-panel-heading">
-          <div>
-            <h3>Danh sách quầy</h3>
-            <p>Quầy sẽ được nhân viên assign khi bắt đầu ca làm.</p>
-          </div>
+        <footer class="sbqs-modal-footer">
+          <app-button
+            variant="outline"
+            label="Hủy"
+            [disabled]="isSubmittingCounter"
+            (clicked)="closeCounterModal()"
+          />
+          <app-button
+            icon="save"
+            label="Cập nhật quầy"
+            [loading]="isSubmittingCounter"
+            (clicked)="updateCounter()"
+          />
+        </footer>
+    </app-modal-shell>
 
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="loadCounters()"
-            [disabled]="isLoadingCounters"
-          >
-            <app-icon *ngIf="!isLoadingCounters" name="refresh" [size]="16" />
-            {{ isLoadingCounters ? 'Đang tải...' : 'Tải lại' }}
-          </button>
-        </div>
-
-        <div *ngIf="isLoadingCounters" class="admin-empty">Đang tải quầy...</div>
-        <div *ngIf="!isLoadingCounters && counters.length === 0" class="admin-empty">
-          Chưa có quầy nào.
-        </div>
-
-        <div
-          *ngIf="!isLoadingCounters && counters.length > 0"
-          class="table-wrapper eb-compact-table-shell"
-        >
-          <table class="admin-table eb-compact-table">
-            <thead>
-              <tr>
-                <th>Mã</th>
-                <th>Tên</th>
-                <th>Máy</th>
-                <th>Trạng thái</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let counter of counters">
-                <td>
-                  <strong>{{ counter.counterCode }}</strong>
-                </td>
-                <td>{{ counter.counterName }}</td>
-                <td>
-                  <select
-                    class="table-select eb-table-select"
-                    [ngModel]="counter.queueMachine?.queueMachineId || null"
-                    (ngModelChange)="assignQueueMachine(counter, $event)"
-                    [disabled]="updatingCounterId === counter.counterId"
-                  >
-                    <option [ngValue]="null">Chưa gán máy</option>
-                    <option
-                      *ngFor="let machine of queueMachines"
-                      [ngValue]="machine.queueMachineId"
-                    >
-                      {{ machine.machineName }}
-                    </option>
-                  </select>
-                </td>
-                <td>
-                  <span
-                    class="status-chip"
-                    [ngClass]="
-                      counter.status === 'ACTIVE' ? 'status-chip--active' : 'status-chip--inactive'
-                    "
-                  >
-                    {{ counter.status === 'ACTIVE' ? 'Đang hoạt động' : 'Chưa hoạt động' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="row-actions">
-                    <button
-                      type="button"
-                      class="btn btn-secondary btn-sm"
-                      (click)="startEditCounter(counter)"
-                    >
-                      <app-icon name="pencil" [size]="14" />
-                      Sửa
-                    </button>
-                    <button
-                      type="button"
-                      class="btn btn-danger btn-sm"
-                      (click)="deleteCounter(counter)"
-                    >
-                      <app-icon name="trash" [size]="14" />
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </section>
+    <app-confirm-dialog
+      [open]="pendingDelete !== null"
+      [title]="deleteDialogTitle"
+      [message]="deleteDialogMessage"
+      confirmLabel="Xóa vĩnh viễn"
+      cancelLabel="Hủy"
+      [danger]="true"
+      [loading]="isDeleting"
+      (confirmed)="confirmDelete()"
+      (cancelled)="cancelDelete()"
+    />
   </div>
 </app-dashboard-layout>

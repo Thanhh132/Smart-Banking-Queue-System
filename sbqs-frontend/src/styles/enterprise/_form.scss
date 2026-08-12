@@ -1,21 +1,15 @@
-// Class-based form primitives for migrated screens. The eb-* selectors remain as
-// compatibility aliases until their current consumers are migrated.
-.sbqs-form,
-.eb-compact-form {
+.sbqs-form {
   display: grid;
   gap: 1rem;
 }
 
-.sbqs-form-grid,
-.eb-compact-form {
+.sbqs-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.75rem 1rem;
 }
 
-.sbqs-field,
-.eb-field,
-.eb-compact-form label {
+.sbqs-field {
   display: grid;
   gap: 0.375rem;
   margin: 0;
@@ -27,13 +21,7 @@
 .sbqs-form-control,
 .sbqs-field input,
 .sbqs-field select,
-.sbqs-field textarea,
-.eb-field input,
-.eb-field select,
-.eb-field textarea,
-.eb-compact-form input,
-.eb-compact-form select,
-.eb-compact-form textarea {
+.sbqs-field textarea {
   width: 100%;
   min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
@@ -46,9 +34,7 @@
   line-height: 1.35;
 }
 
-.sbqs-field textarea,
-.eb-field textarea,
-.eb-compact-form textarea {
+.sbqs-field textarea {
   min-height: 4.5rem;
   resize: vertical;
 }
@@ -78,9 +64,46 @@
   gap: 0.5rem;
 }
 
+.sbqs-password-control {
+  position: relative;
+  display: block;
+}
+
+.sbqs-password-control .sbqs-form-control {
+  padding-right: 2.75rem;
+}
+
+.sbqs-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.25rem;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: var(--cui-border-radius-sm);
+  background: transparent;
+  color: var(--cui-secondary-color);
+}
+
+.sbqs-password-toggle:hover,
+.sbqs-password-toggle:focus-visible {
+  background: var(--cui-tertiary-bg);
+  color: var(--cui-primary);
+}
+
+.sbqs-password-toggle:focus-visible {
+  outline: 2px solid var(--cui-primary);
+  outline-offset: 1px;
+}
+
 @media (max-width: 767.98px) {
-  .sbqs-form-grid,
-  .eb-compact-form {
+  .sbqs-form-grid {
     grid-template-columns: 1fr;
   }
 }

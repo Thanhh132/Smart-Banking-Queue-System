@@ -7,6 +7,7 @@ import com.sbqs.dto.CustomerPaperlessProfileResponse;
 import com.sbqs.dto.CustomerProfileFieldResponse;
 import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
 import com.sbqs.entity.Services;
+import com.sbqs.entity.CustomerProfile;
 import com.sbqs.entity.User;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.UserRepository;
@@ -15,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,6 +28,7 @@ public class AccountService {
     private final KeycloakAdminService keycloakAdminService;
     private final PasswordEncoder passwordEncoder;
     private final ServiceRepository serviceRepository;
+    private final CustomerProfileService customerProfileService;
 
     private static final Map<String, CustomerProfileFieldResponse> PAPERLESS_FIELDS = Map.ofEntries(
             Map.entry("FULL_NAME", new CustomerProfileFieldResponse(
@@ -69,11 +70,7 @@ public class AccountService {
             Map.entry("MONTHLY_INCOME", new CustomerProfileFieldResponse(
                     "MONTHLY_INCOME", "Thu nhập trung bình hàng tháng", "number", "Nhập số tiền thu nhập mỗi tháng", true)),
             Map.entry("SALARY_PAYMENT_METHOD", new CustomerProfileFieldResponse(
-                    "SALARY_PAYMENT_METHOD", "Hình thức nhận lương", "text", "Chuyển khoản qua ngân hàng nào hoặc tiền mặt", true)),
-            Map.entry("ACCOUNT_NUMBER", new CustomerProfileFieldResponse(
-                    "ACCOUNT_NUMBER", "Số tài khoản liên kết", "text", "Số tài khoản ngân hàng dùng để liên kết thẻ", true)),
-            Map.entry("CARD_DELIVERY_ADDRESS", new CustomerProfileFieldResponse(
-                    "CARD_DELIVERY_ADDRESS", "Địa chỉ nhận thẻ", "textarea", "Tự điền theo địa chỉ liên hệ nếu để trống", true)));
+                    "SALARY_PAYMENT_METHOD", "Hình thức nhận lương", "text", "Chuyển khoản qua ngân hàng nào hoặc tiền mặt", true)));
 
     public AccountService(
             CurrentUserService currentUserService,
@@ -81,13 +78,15 @@ public class AccountService {
             KeycloakService keycloakService,
             KeycloakAdminService keycloakAdminService,
             PasswordEncoder passwordEncoder,
-            ServiceRepository serviceRepository) {
+            ServiceRepository serviceRepository,
+            CustomerProfileService customerProfileService) {
         this.currentUserService = currentUserService;
         this.userRepository = userRepository;
         this.keycloakService = keycloakService;
         this.keycloakAdminService = keycloakAdminService;
         this.passwordEncoder = passwordEncoder;
         this.serviceRepository = serviceRepository;
+        this.customerProfileService = customerProfileService;
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +106,7 @@ public class AccountService {
     public CustomerPaperlessProfileResponse getPaperlessProfile(Long serviceId) {
         User user = requireCustomer();
         List<String> requiredFieldKeys = getRequiredFieldKeys(serviceId);
-        Map<String, String> values = toPaperlessValues(user);
+        Map<String, String> values = customerProfileService.values(user);
         List<CustomerProfileFieldResponse> requiredFields = requiredFieldKeys.stream()
                 .map(PAPERLESS_FIELDS::get)
                 .filter(field -> field != null)
@@ -142,16 +141,18 @@ public class AccountService {
             }
         }
 
-        applyPaperlessValues(user, values);
+        CustomerProfile profile = customerProfileService.requireForUpdate(user);
+        applyPaperlessValues(user, profile, values);
 
         List<String> requiredFieldKeys = getRequiredFieldKeys(request.serviceId());
         List<String> missingFields = requiredFieldKeys.stream()
-                .filter(key -> isBlank(getPaperlessValue(user, key)))
+                .filter(key -> isBlank(customerProfileService.value(user, key)))
                 .toList();
         if (!missingFields.isEmpty()) {
             throw new RuntimeException("Vui long bo sung day du thong tin bat buoc truoc khi lay so");
         }
 
+        customerProfileService.save(profile);
         userRepository.save(user);
         return getPaperlessProfile(request.serviceId());
     }
@@ -165,8 +166,10 @@ public class AccountService {
 
         user.setFullName(request.fullName().trim());
         user.setPhone(request.phone().trim());
-        user.setPermanentAddress(request.permanentAddress().trim());
-        user.setContactAddress(request.contactAddress().trim());
+        CustomerProfile profile = customerProfileService.requireForUpdate(user);
+        profile.setPermanentAddress(request.permanentAddress().trim());
+        profile.setContactAddress(request.contactAddress().trim());
+        customerProfileService.save(profile);
         user = userRepository.save(user);
         keycloakAdminService.updateUserProfile(
                 user.getKeycloakUserId(), user.getFullName(), user.getEmail(), user.getRole());
@@ -216,67 +219,14 @@ public class AccountService {
                         .toList();
     }
 
-    private Map<String, String> toPaperlessValues(User user) {
-        Map<String, String> values = new LinkedHashMap<>();
-        PAPERLESS_FIELDS.keySet().forEach(key -> values.put(key, getPaperlessValue(user, key)));
-        return values;
-    }
-
-    private String getPaperlessValue(User user, String key) {
-        return switch (key) {
-            case "FULL_NAME" -> user.getFullName();
-            case "DATE_OF_BIRTH" -> user.getDateOfBirth();
-            case "GENDER" -> user.getGender();
-            case "NATIONALITY" -> user.getNationality();
-            case "IDENTITY_NUMBER" -> user.getIdentityNumber();
-            case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
-            case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
-            case "PASSPORT_NUMBER" -> user.getPassportNumber();
-            case "VISA_NUMBER" -> user.getVisaNumber();
-            case "MOBILE_PHONE" -> user.getPhone();
-            case "EMAIL_ADDRESS" -> user.getEmail();
-            case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
-            case "CONTACT_ADDRESS" -> user.getContactAddress();
-            case "OCCUPATION" -> user.getOccupation();
-            case "EMPLOYMENT_STATUS" -> user.getEmploymentStatus();
-            case "EMPLOYER_NAME" -> user.getEmployerName();
-            case "WORK_PHONE" -> user.getWorkPhone();
-            case "JOB_TITLE" -> user.getJobTitle();
-            case "MONTHLY_INCOME" -> user.getMonthlyIncome();
-            case "SALARY_PAYMENT_METHOD" -> user.getSalaryPaymentMethod();
-            case "ACCOUNT_NUMBER" -> user.getAccountNumber();
-            case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
-            default -> "";
-        };
-    }
-
-    private void applyPaperlessValues(User user, Map<String, String> values) {
+    private void applyPaperlessValues(User user, CustomerProfile profile, Map<String, String> values) {
         values.forEach((key, value) -> {
             String normalized = normalizeProfileValue(value);
             switch (key) {
                 case "FULL_NAME", "MOBILE_PHONE" ->
                         throw new RuntimeException("Họ tên và số điện thoại chỉ được thay đổi tại Thông tin tài khoản");
-                case "DATE_OF_BIRTH" -> user.setDateOfBirth(normalized);
-                case "GENDER" -> user.setGender(normalized);
-                case "NATIONALITY" -> user.setNationality(isBlank(normalized) ? "Việt Nam" : normalized);
-                case "IDENTITY_NUMBER" -> user.setIdentityNumber(normalized);
-                case "IDENTITY_ISSUE_DATE" -> user.setIdentityIssueDate(normalized);
-                case "IDENTITY_ISSUE_PLACE" -> user.setIdentityIssuePlace(normalized);
-                case "PASSPORT_NUMBER" -> user.setPassportNumber(normalized);
-                case "VISA_NUMBER" -> user.setVisaNumber(normalized);
                 case "EMAIL_ADDRESS" -> applyPaperlessEmail(user, normalized);
-                case "PERMANENT_ADDRESS" -> user.setPermanentAddress(normalized);
-                case "CONTACT_ADDRESS" -> user.setContactAddress(normalized);
-                case "OCCUPATION" -> user.setOccupation(normalized);
-                case "EMPLOYMENT_STATUS" -> user.setEmploymentStatus(normalized);
-                case "EMPLOYER_NAME" -> user.setEmployerName(normalized);
-                case "WORK_PHONE" -> user.setWorkPhone(normalized);
-                case "JOB_TITLE" -> user.setJobTitle(normalized);
-                case "MONTHLY_INCOME" -> user.setMonthlyIncome(normalized);
-                case "SALARY_PAYMENT_METHOD" -> user.setSalaryPaymentMethod(normalized);
-                case "ACCOUNT_NUMBER" -> user.setAccountNumber(normalized);
-                case "CARD_DELIVERY_ADDRESS" -> user.setCardDeliveryAddress(normalized);
-                default -> throw new RuntimeException("Truong ho so khong hop le: " + key);
+                default -> customerProfileService.apply(profile, key, normalized);
             }
         });
     }

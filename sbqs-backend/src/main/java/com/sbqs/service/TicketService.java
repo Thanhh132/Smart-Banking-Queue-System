@@ -100,7 +100,7 @@ public class TicketService {
         ticket.setService(service);
         Ticket savedTicket = createTicket(ticket);
 
-        preparedTransactionService.saveDraft(savedTicket, service, sanitizedValues);
+        preparedTransactionService.saveDraft(savedTicket, service, savedTicket.getCustomer(), sanitizedValues);
         return savedTicket;
     }
 
@@ -120,9 +120,14 @@ public class TicketService {
             throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
         }
 
-        List<Ticket> activeTickets = ticketRepository.findByCustomerEmailAndStatusIn(
-                customerEmail,
-                List.of("WAITING", "SERVING"));
+        User customer = currentUserService.requireUser();
+        List<Ticket> activeTickets = ticketRepository.findByCustomerUserIdAndStatusIn(
+                customer.getUserId(), List.of("WAITING", "SERVING"));
+        if (activeTickets.isEmpty()) {
+            // Compatibility fallback for active tickets created before customer_id existed.
+            activeTickets = ticketRepository.findByCustomerEmailAndStatusIn(
+                    customerEmail, List.of("WAITING", "SERVING"));
+        }
 
         if (!activeTickets.isEmpty()) {
             throw new RuntimeException("Ban dang co ticket chua hoan thanh. Hay cho hoan thanh hoac huy ticket truoc.");
@@ -141,7 +146,6 @@ public class TicketService {
         operatingHoursService.requireOpen(branch.getBranchId());
         Services service = serviceRepository.findById(ticket.getService().getServiceId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
-        User customer = currentUserService.requireUser();
         preparedTransactionService.requireCompleteProfile(customer, service);
 
         if (service.getBranch() == null
@@ -170,6 +174,7 @@ public class TicketService {
 
         ticket.setTicketNumber(nextTicketNumber);
         ticket.setStatus("WAITING");
+        ticket.setCustomer(customer);
         ticket.setCustomerEmail(customerEmail);
 
         Ticket savedTicket = ticketRepository.save(ticket);
@@ -200,10 +205,11 @@ public class TicketService {
             throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
         }
 
-        return ticketRepository
-                .findFirstByCustomerEmailAndStatusInOrderByCreatedAtDesc(
-                        customerEmail,
-                        List.of("WAITING", "SERVING"))
+        User customer = currentUserService.requireUser();
+        return ticketRepository.findFirstByCustomerUserIdAndStatusInOrderByCreatedAtDesc(
+                        customer.getUserId(), List.of("WAITING", "SERVING"))
+                .or(() -> ticketRepository.findFirstByCustomerEmailAndStatusInOrderByCreatedAtDesc(
+                        customerEmail, List.of("WAITING", "SERVING")))
                 .orElse(null);
     }
 
@@ -211,11 +217,8 @@ public class TicketService {
     public TicketTrackingResponse trackCustomerTicket(Long ticketId) {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu"));
-        String customerEmail = getCurrentEmail();
-
-        if (customerEmail == null
-                || ticket.getCustomerEmail() == null
-                || !ticket.getCustomerEmail().equalsIgnoreCase(customerEmail)) {
+        User currentCustomer = currentUserService.requireUser();
+        if (!ownsTicket(ticket, currentCustomer)) {
             throw new RuntimeException("Bạn không có quyền theo dõi phiếu này");
         }
 
@@ -421,10 +424,8 @@ public class TicketService {
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Khong tim thay ticket"));
 
-        String customerEmail = getCurrentEmail();
-        if (ticket.getCustomerEmail() != null
-                && customerEmail != null
-                && !ticket.getCustomerEmail().equalsIgnoreCase(customerEmail)) {
+        User currentCustomer = currentUserService.requireUser();
+        if (!ownsTicket(ticket, currentCustomer)) {
             throw new RuntimeException("Ban khong co quyen huy ticket nay");
         }
 
@@ -464,6 +465,16 @@ public class TicketService {
         }
 
         return email;
+    }
+
+    /** customer_id is authoritative; email is used only by pre-migration tickets. */
+    private boolean ownsTicket(Ticket ticket, User customer) {
+        if (ticket.getCustomer() != null) {
+            return ticket.getCustomer().getUserId().equals(customer.getUserId());
+        }
+        return ticket.getCustomerEmail() != null
+                && customer.getEmail() != null
+                && ticket.getCustomerEmail().equalsIgnoreCase(customer.getEmail());
     }
 
     /** Bao dam nhan vien chi thao tac tren quay dang duoc chinh minh nhan trong ca hien tai. */

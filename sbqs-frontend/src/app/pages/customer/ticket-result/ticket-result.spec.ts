@@ -10,6 +10,10 @@ import { TicketResult } from './ticket-result';
 describe('TicketResult', () => {
   let component: TicketResult;
   let fixture: ComponentFixture<TicketResult>;
+  const ticketService = {
+    getCurrentTicket: vi.fn(() => of(null)),
+    cancelTicket: vi.fn(() => of({ ticketId: 9, ticketNumber: 108, status: 'CANCELLED' })),
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -18,7 +22,7 @@ describe('TicketResult', () => {
         provideRouter([]),
         { provide: HistoryService, useValue: { getHistory: () => of([]) } },
         { provide: QueueMonitorService, useValue: { getMonitor: () => of(null) } },
-        { provide: TicketService, useValue: { getCurrentTicket: () => of(null) } },
+        { provide: TicketService, useValue: ticketService },
       ],
     }).compileComponents();
 
@@ -29,5 +33,17 @@ describe('TicketResult', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('uses shared confirmation before cancelling a waiting ticket', async () => {
+    component.ticket = { ticketId: 9, ticketNumber: 108, status: 'WAITING' };
+    component.cancelTicket();
+    fixture.changeDetectorRef.markForCheck();
+    await fixture.whenStable();
+
+    expect(ticketService.cancelTicket).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('app-confirm-dialog [role="dialog"]')).toBeTruthy();
+    component.confirmCancelTicket();
+    expect(ticketService.cancelTicket).toHaveBeenCalledWith(9);
   });
 });

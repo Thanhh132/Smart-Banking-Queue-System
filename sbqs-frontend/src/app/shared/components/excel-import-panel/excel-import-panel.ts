@@ -16,6 +16,9 @@ import { AppIcon } from '../app-icon/app-icon';
   imports: [CommonModule, AppButton, AppIcon],
   templateUrl: './excel-import-panel.html',
   styleUrl: './excel-import-panel.scss',
+  host: {
+    '[class.excel-import-host--compact]': 'compact',
+  },
 })
 export class ExcelImportPanel {
   private bulkImportService = inject(BulkImportService);
@@ -23,6 +26,8 @@ export class ExcelImportPanel {
 
   @Input({ required: true }) type!: ImportType;
   @Input() title = 'Nhập dữ liệu từ Excel';
+  @Input() compact = false;
+  @Input() showTitle = true;
   @Output() imported = new EventEmitter<ImportResult>();
 
   selectedFile: File | null = null;
@@ -92,7 +97,10 @@ export class ExcelImportPanel {
         this.imported.emit(result);
       },
       error: (error) => {
-        this.errorMessage = this.apiError.getMessage(error, 'Không thể nhập dữ liệu từ file Excel.');
+        this.errorMessage = this.apiError.getMessage(
+          error,
+          'Không thể nhập dữ liệu từ file Excel.',
+        );
         this.isImporting = false;
       },
     });

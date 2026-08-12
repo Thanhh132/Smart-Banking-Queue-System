@@ -5,12 +5,18 @@ import { FormsModule } from '@angular/forms';
 import { FormFieldDefinition, FormFieldType, Service } from '../../../core/models/service.model';
 import { AdminServicesService } from '../../../core/services/admin-services.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppLoadingState } from '../../../shared/components/app-loading-state/app-loading-state';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
   selector: 'app-admin-services',
   standalone: true,
-  imports: [CommonModule, FormsModule, DashboardLayout],
+  imports: [CommonModule, FormsModule, DashboardLayout, AppButton, AppCard, AppEmptyState, AppLoadingState, AppPageHeader, AppStatusBadge],
   templateUrl: './admin-services.html',
   styleUrl: './admin-services.scss',
 })

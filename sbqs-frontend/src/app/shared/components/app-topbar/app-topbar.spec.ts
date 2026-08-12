@@ -41,4 +41,14 @@ describe('AppTopbar', () => {
 
     expect(toggleCount).toBe(1);
   });
+
+  it('keeps the page title in the breadcrumb without rendering a duplicate h1', () => {
+    fixture.componentRef.setInput('title', 'Quản lý nhân viên');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.topbar__breadcrumb').textContent).toContain(
+      'Quản lý nhân viên',
+    );
+    expect(fixture.nativeElement.querySelector('h1')).toBeFalsy();
+  });
 });

@@ -28,12 +28,15 @@ public class PreparedTransactionService {
 
     private final TransactionDraftRepository transactionDraftRepository;
     private final UserRepository userRepository;
+    private final CustomerProfileService customerProfileService;
 
     public PreparedTransactionService(
             TransactionDraftRepository transactionDraftRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CustomerProfileService customerProfileService) {
         this.transactionDraftRepository = transactionDraftRepository;
         this.userRepository = userRepository;
+        this.customerProfileService = customerProfileService;
     }
 
     /**
@@ -72,12 +75,14 @@ public class PreparedTransactionService {
 
     /** Lưu cả schema lẫn giá trị tại thời điểm lấy số để hồ sơ cũ luôn tái hiện đúng. */
     @Transactional
-    public void saveDraft(Ticket ticket, Services service, Map<String, Object> values) {
+    public void saveDraft(Ticket ticket, Services service, User customer, Map<String, Object> values) {
         TransactionDraft draft = new TransactionDraft();
         draft.setTicket(ticket);
         draft.setServiceId(service.getServiceId());
         draft.setServiceName(service.getServiceName());
         draft.setSchemaSnapshot(new ArrayList<>(service.getFormSchema()));
+        draft.setProfileSnapshot(customerProfileService.snapshot(
+                customer, CustomerProfilePolicy.includeDefaults(service.getRequiredCustomerFields())));
         draft.setValues(values);
         draft.setCreatedBy(ticket.getCustomerEmail());
         transactionDraftRepository.save(draft);
@@ -88,8 +93,10 @@ public class PreparedTransactionService {
         List<String> requiredFields = service.getRequiredCustomerFields();
         if (requiredFields == null || requiredFields.isEmpty()) return;
 
+        Map<String, String> profileValues = customerProfileService.values(customer);
         boolean incomplete = requiredFields.stream()
-                .anyMatch(field -> isBlank(getProfileValue(customer, field)));
+                .filter(profileValues::containsKey)
+                .anyMatch(field -> isBlank(profileValues.get(field)));
         if (incomplete) {
             throw new RuntimeException("Vui long bo sung day du ho so giay to truoc khi lay so dich vu nay");
         }
@@ -102,11 +109,15 @@ public class PreparedTransactionService {
     @Transactional(readOnly = true)
     public TicketStaffViewResponse toStaffView(Ticket ticket) {
         Services service = ticket.getService();
-        User customer = ticket.getCustomerEmail() == null
-                ? null : userRepository.findByEmailIgnoreCase(ticket.getCustomerEmail()).orElse(null);
-        List<TicketPaperlessFieldResponse> profileFields = defaultProfileFields(customer);
+        User customer = ticket.getCustomer();
+        if (customer == null && ticket.getCustomerEmail() != null) {
+            // Compatibility fallback for tickets created before customer_id existed.
+            customer = userRepository.findByEmailIgnoreCase(ticket.getCustomerEmail()).orElse(null);
+        }
+        User resolvedCustomer = customer;
         TransactionDraft draft = transactionDraftRepository.findByTicketTicketId(ticket.getTicketId()).orElse(null);
         if (draft != null) {
+            List<TicketPaperlessFieldResponse> profileFields = snapshotProfileFields(draft, resolvedCustomer);
             List<TicketPaperlessFieldResponse> transactionFields = draft.getSchemaSnapshot().stream()
                     .filter(field -> !isDefaultProfileAlias(field.key()))
                     .map(field -> new TicketPaperlessFieldResponse(
@@ -114,25 +125,34 @@ public class PreparedTransactionService {
                     .toList();
             List<TicketPaperlessFieldResponse> fields = new ArrayList<>(profileFields);
             fields.addAll(transactionFields);
-            return response(ticket, service, fields);
+            return response(ticket, service, resolvedCustomer, fields);
         }
 
         List<String> requiredFields = service == null || service.getRequiredCustomerFields() == null
                 ? List.of() : service.getRequiredCustomerFields();
-        List<TicketPaperlessFieldResponse> fields = customer == null
-                ? profileFields
+        List<TicketPaperlessFieldResponse> fields = resolvedCustomer == null
+                ? List.of()
                 : requiredFields.stream()
                         .map(key -> new TicketPaperlessFieldResponse(
-                                key, getProfileLabel(key), displayProfileValue(key, getProfileValue(customer, key))))
+                                key, getProfileLabel(key), displayProfileValue(key, customerProfileService.value(resolvedCustomer, key))))
                         .toList();
-        return response(ticket, service, fields);
+        return response(ticket, service, resolvedCustomer, fields);
     }
 
-    private List<TicketPaperlessFieldResponse> defaultProfileFields(User customer) {
-        if (customer == null) return List.of();
+    private List<TicketPaperlessFieldResponse> snapshotProfileFields(TransactionDraft draft, User legacyCustomer) {
+        Map<String, Object> snapshot = draft.getProfileSnapshot();
+        if (snapshot != null && !snapshot.isEmpty()) {
+            return snapshot.entrySet().stream()
+                    .map(entry -> new TicketPaperlessFieldResponse(
+                            entry.getKey(), getProfileLabel(entry.getKey()),
+                            displayProfileValue(entry.getKey(), entry.getValue() == null ? null : String.valueOf(entry.getValue()))))
+                    .toList();
+        }
+        // Compatibility fallback: old drafts have no profile snapshot.
+        if (legacyCustomer == null) return List.of();
         return CustomerProfilePolicy.DEFAULT_REQUIRED_FIELDS.stream()
                 .map(key -> new TicketPaperlessFieldResponse(
-                        key, getProfileLabel(key), displayProfileValue(key, getProfileValue(customer, key))))
+                        key, getProfileLabel(key), displayProfileValue(key, customerProfileService.value(legacyCustomer, key))))
                 .toList();
     }
 
@@ -143,42 +163,16 @@ public class PreparedTransactionService {
     }
 
     private TicketStaffViewResponse response(
-            Ticket ticket, Services service, List<TicketPaperlessFieldResponse> fields) {
+            Ticket ticket, Services service, User customer, List<TicketPaperlessFieldResponse> fields) {
         return new TicketStaffViewResponse(
                 ticket.getTicketId(), ticket.getTicketNumber(), ticket.getStatus(),
                 ticket.getCustomerEmail(), ticket.getServingStartedAt(),
+                customer == null ? null : new TicketStaffViewResponse.CustomerSummary(
+                        customer.getUserId(), customer.getFullName(), customer.getEmail(), customer.getPhone()),
                 service == null ? null : new TicketStaffViewResponse.ServiceSummary(
                         service.getServiceId(), service.getServiceCode(),
                         service.getServiceName(), service.getServiceType()),
                 fields, !fields.isEmpty());
-    }
-
-    private String getProfileValue(User user, String field) {
-        return switch (field) {
-            case "FULL_NAME" -> user.getFullName();
-            case "DATE_OF_BIRTH" -> user.getDateOfBirth();
-            case "GENDER" -> user.getGender();
-            case "NATIONALITY" -> user.getNationality();
-            case "IDENTITY_NUMBER" -> user.getIdentityNumber();
-            case "IDENTITY_ISSUE_DATE" -> user.getIdentityIssueDate();
-            case "IDENTITY_ISSUE_PLACE" -> user.getIdentityIssuePlace();
-            case "PASSPORT_NUMBER" -> user.getPassportNumber();
-            case "VISA_NUMBER" -> user.getVisaNumber();
-            case "MOBILE_PHONE" -> user.getPhone();
-            case "EMAIL_ADDRESS" -> user.getEmail();
-            case "PERMANENT_ADDRESS" -> user.getPermanentAddress();
-            case "CONTACT_ADDRESS" -> user.getContactAddress();
-            case "OCCUPATION" -> user.getOccupation();
-            case "EMPLOYMENT_STATUS" -> user.getEmploymentStatus();
-            case "EMPLOYER_NAME" -> user.getEmployerName();
-            case "WORK_PHONE" -> user.getWorkPhone();
-            case "JOB_TITLE" -> user.getJobTitle();
-            case "MONTHLY_INCOME" -> user.getMonthlyIncome();
-            case "SALARY_PAYMENT_METHOD" -> user.getSalaryPaymentMethod();
-            case "ACCOUNT_NUMBER" -> user.getAccountNumber();
-            case "CARD_DELIVERY_ADDRESS" -> user.getCardDeliveryAddress();
-            default -> "";
-        };
     }
 
     private String getProfileLabel(String field) {

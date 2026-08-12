@@ -19,12 +19,6 @@ export class AppTopbar {
   @Input() username = sessionStorage.getItem('fullName') || 'Người dùng';
   @Output() sidebarToggle = new EventEmitter<void>();
 
-  get subtitle(): string {
-    return sessionStorage.getItem('userRole') === 'CUSTOMER'
-      ? 'Lấy số và theo dõi lượt giao dịch của bạn'
-      : 'Theo dõi và xử lý công việc tại chi nhánh';
-  }
-
   get roleLabel(): string {
     const role = sessionStorage.getItem('userRole');
 

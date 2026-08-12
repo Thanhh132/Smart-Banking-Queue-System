@@ -13,7 +13,13 @@ import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
 import { GeocodeResult, LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppDataTableShell } from '../../../shared/components/app-data-table-shell/app-data-table-shell';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppModalShell } from '../../../shared/components/app-modal-shell/app-modal-shell';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 
 @Component({
@@ -24,7 +30,13 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
     FormsModule,
     ReactiveFormsModule,
     DashboardLayout,
+    AppButton,
+    AppConfirmDialog,
+    AppDataTableShell,
     AppIcon,
+    AppModalShell,
+    AppPageHeader,
+    AppStatusBadge,
     PreventAutofillDirective,
   ],
   templateUrl: './super-admin-branches.html',
@@ -50,6 +62,9 @@ export class SuperAdminBranches implements OnInit {
   errorMessage = '';
   searchTerm = '';
   mapPreviewUrl: SafeResourceUrl = '';
+  isEditorOpen = false;
+  pendingDeleteBranch: Branch | null = null;
+  isDeleting = false;
 
   readonly bankOptions = [
     { label: 'BIDV', value: 'BIDV', code: 'BIDV' },
@@ -178,18 +193,27 @@ export class SuperAdminBranches implements OnInit {
     });
     this.isHydratingForm = false;
     this.locationConfirmed = branch.latitude != null && branch.longitude != null;
+    this.isEditorOpen = true;
     this.updateMapPreview();
     this.cdr.detectChanges();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   deleteBranch(branch: Branch): void {
-    if (!confirm(`Xóa vĩnh viễn chi nhánh "${branch.branchName}"?`)) return;
+    if (this.isDeleting) return;
+    this.pendingDeleteBranch = branch;
+  }
+
+  confirmDeleteBranch(): void {
+    const branch = this.pendingDeleteBranch;
+    if (!branch || this.isDeleting) return;
     this.successMessage = '';
     this.errorMessage = '';
+    this.isDeleting = true;
     this.branchService.deleteBranch(branch.branchId).subscribe({
       next: () => {
         this.successMessage = 'Đã xóa chi nhánh.';
+        this.isDeleting = false;
+        this.pendingDeleteBranch = null;
         this.loadBranches();
       },
       error: (err) => {
@@ -197,12 +221,27 @@ export class SuperAdminBranches implements OnInit {
           err,
           'Không xóa được chi nhánh đang được sử dụng.',
         );
+        this.isDeleting = false;
         this.cdr.detectChanges();
       },
     });
   }
 
+  cancelDeleteBranch(): void {
+    if (!this.isDeleting) {
+      this.pendingDeleteBranch = null;
+    }
+  }
+
+  openCreate(): void {
+    this.cancelEdit();
+    this.successMessage = '';
+    this.errorMessage = '';
+    this.isEditorOpen = true;
+  }
+
   cancelEdit(): void {
+    if (this.isSubmitting || this.isGeocoding) return;
     this.isEditMode = false;
     this.editingBranchId = null;
     this.isHydratingForm = true;
@@ -221,6 +260,7 @@ export class SuperAdminBranches implements OnInit {
     });
     this.isHydratingForm = false;
     this.locationConfirmed = false;
+    this.isEditorOpen = false;
     this.syncGeneratedFields();
     this.updateMapPreview();
     this.cdr.detectChanges();
@@ -303,9 +343,10 @@ export class SuperAdminBranches implements OnInit {
     this.locationService.geocode(this.addressQuery).subscribe({
       next: (result) => {
         const administrative = this.resolveAdministrativeFields(result);
-        const shouldUseResolvedAddress = this.looksLikeMapUrlOrCoordinates(this.fullAddress)
-          && !!result.formattedAddress
-          && !this.looksLikeMapUrlOrCoordinates(result.formattedAddress);
+        const shouldUseResolvedAddress =
+          this.looksLikeMapUrlOrCoordinates(this.fullAddress) &&
+          !!result.formattedAddress &&
+          !this.looksLikeMapUrlOrCoordinates(result.formattedAddress);
         this.isHydratingForm = true;
         this.branchForm.patchValue(
           {

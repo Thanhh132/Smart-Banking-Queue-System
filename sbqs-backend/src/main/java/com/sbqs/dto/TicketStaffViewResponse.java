@@ -9,9 +9,13 @@ public record TicketStaffViewResponse(
         String status,
         String customerEmail,
         LocalDateTime servingStartedAt,
+        CustomerSummary customer,
         ServiceSummary service,
         List<TicketPaperlessFieldResponse> paperlessFields,
         boolean hasPaperlessProfile) {
+
+    public record CustomerSummary(Long userId, String fullName, String email, String phone) {
+    }
 
     public record ServiceSummary(
             Long serviceId,

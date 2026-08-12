@@ -44,6 +44,7 @@ export class AppSidebar {
     ],
     STAFF: [
       { label: 'Quầy phục vụ', icon: 'briefcase', route: '/staff' },
+      { label: 'Lịch sử phục vụ', icon: 'file-text', route: '/staff/history' },
       { label: 'Màn hình hàng đợi', icon: 'monitor', route: '/monitor' },
     ],
     CUSTOMER: [

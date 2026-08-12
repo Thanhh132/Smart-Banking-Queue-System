@@ -1,5 +1,6 @@
 package com.sbqs.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,6 +41,11 @@ public class Ticket {
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Services service;
+
+    @ManyToOne
+    @JoinColumn(name = "customer_id")
+    @JsonIgnore
+    private User customer;
 
     @Column(name = "customer_email")
     private String customerEmail;

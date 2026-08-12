@@ -100,3 +100,64 @@ CREATE TABLE IF NOT EXISTS ratings (
     CONSTRAINT fk_ratings_ticket
         FOREIGN KEY (ticket_id) REFERENCES tickets(ticket_id)
 );
+
+-- Phase 1/2 account/profile expansion. Legacy customer/appointment tables above are
+-- intentionally retained until their own migration is approved.
+CREATE TABLE IF NOT EXISTS users (
+    user_id BIGSERIAL PRIMARY KEY,
+    full_name VARCHAR(255),
+    email VARCHAR(255) UNIQUE,
+    password_hash VARCHAR(255),
+    keycloak_user_id VARCHAR(255),
+    identity_provider VARCHAR(30),
+    phone VARCHAR(30),
+    role VARCHAR(255),
+    status VARCHAR(255) DEFAULT 'ACTIVE',
+    created_at TIMESTAMP,
+    branch_id BIGINT REFERENCES branches(branch_id)
+);
+
+CREATE TABLE IF NOT EXISTS customer_profiles (
+    customer_profile_id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
+    date_of_birth VARCHAR(30),
+    gender VARCHAR(30),
+    nationality VARCHAR(100),
+    passport_number VARCHAR(50),
+    visa_number VARCHAR(50),
+    identity_number VARCHAR(30),
+    identity_issue_date VARCHAR(30),
+    identity_issue_place VARCHAR(255),
+    permanent_address VARCHAR(500),
+    contact_address VARCHAR(500),
+    occupation VARCHAR(255),
+    employment_status VARCHAR(100),
+    employer_name VARCHAR(255),
+    work_phone VARCHAR(30),
+    job_title VARCHAR(100),
+    monthly_income VARCHAR(50),
+    salary_payment_method VARCHAR(255),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE services ADD COLUMN IF NOT EXISTS form_schema TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE services ADD COLUMN IF NOT EXISTS required_customer_fields VARCHAR(1000);
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS customer_id BIGINT REFERENCES users(user_id);
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS customer_email VARCHAR(255);
+ALTER TABLE tickets ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+CREATE INDEX IF NOT EXISTS idx_tickets_customer_status_created
+    ON tickets(customer_id, status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS transaction_drafts (
+    draft_id BIGSERIAL PRIMARY KEY,
+    ticket_id BIGINT NOT NULL UNIQUE REFERENCES tickets(ticket_id) ON DELETE CASCADE,
+    service_id BIGINT,
+    service_name VARCHAR(255) NOT NULL,
+    schema_snapshot TEXT NOT NULL,
+    profile_snapshot TEXT NOT NULL DEFAULT '{}',
+    values_payload TEXT NOT NULL,
+    created_by VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

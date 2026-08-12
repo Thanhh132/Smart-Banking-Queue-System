@@ -5,7 +5,12 @@ import { finalize } from 'rxjs';
 
 import { AccountProfile, AccountService } from '../../core/services/account.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
+import { AppButton } from '../../shared/components/app-button/app-button';
+import { AppCard } from '../../shared/components/app-card/app-card';
 import { AppIcon } from '../../shared/components/app-icon/app-icon';
+import { AppLoadingState } from '../../shared/components/app-loading-state/app-loading-state';
+import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../shared/components/app-status-badge/app-status-badge';
 import { PreventAutofillDirective } from '../../shared/directives/prevent-autofill.directive';
 import { DashboardLayout } from '../../shared/layouts/dashboard-layout/dashboard-layout';
 import {
@@ -20,7 +25,12 @@ import {
     CommonModule,
     ReactiveFormsModule,
     DashboardLayout,
+    AppButton,
+    AppCard,
     AppIcon,
+    AppLoadingState,
+    AppPageHeader,
+    AppStatusBadge,
     PreventAutofillDirective,
   ],
   templateUrl: './account.html',
@@ -88,29 +98,32 @@ export class Account {
   loadProfile(): void {
     this.isLoading = true;
     this.loadError = '';
-    this.accountService.getProfile().pipe(
-      finalize(() => {
-        this.isLoading = false;
-        this.cdr.detectChanges();
-      }),
-    ).subscribe({
-      next: (profile) => {
-        this.profile = profile;
-        this.profileForm.patchValue({
-          fullName: profile.fullName,
-          email: profile.email,
-          phone: profile.phone,
-        });
-        this.isEditingProfile = false;
-        this.profileForm.disable();
-        if (profile.role === 'CUSTOMER') this.loadAddresses();
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.loadError = this.apiError.getMessage(error, 'Không tải được thông tin tài khoản.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.accountService
+      .getProfile()
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (profile) => {
+          this.profile = profile;
+          this.profileForm.patchValue({
+            fullName: profile.fullName,
+            email: profile.email,
+            phone: profile.phone,
+          });
+          this.isEditingProfile = false;
+          this.profileForm.disable();
+          if (profile.role === 'CUSTOMER') this.loadAddresses();
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.loadError = this.apiError.getMessage(error, 'Không tải được thông tin tài khoản.');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   loadAddresses(): void {
@@ -138,24 +151,29 @@ export class Account {
     }
     const values = this.addressForm.getRawValue();
     this.isSavingAddresses = true;
-    this.accountService.updatePaperlessProfile({
-      values: {
-        PERMANENT_ADDRESS: values.permanentAddress || '',
-        CONTACT_ADDRESS: values.contactAddress || '',
-      },
-    }).pipe(finalize(() => {
-      this.isSavingAddresses = false;
-      this.cdr.detectChanges();
-    })).subscribe({
-      next: () => {
-        this.addressMessage = 'Đã lưu địa chỉ dùng chung cho các biểu mẫu.';
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.addressError = this.apiError.getMessage(error, 'Không lưu được địa chỉ hồ sơ.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.accountService
+      .updatePaperlessProfile({
+        values: {
+          PERMANENT_ADDRESS: values.permanentAddress || '',
+          CONTACT_ADDRESS: values.contactAddress || '',
+        },
+      })
+      .pipe(
+        finalize(() => {
+          this.isSavingAddresses = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.addressMessage = 'Đã lưu địa chỉ dùng chung cho các biểu mẫu.';
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.addressError = this.apiError.getMessage(error, 'Không lưu được địa chỉ hồ sơ.');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   /** CUSTOMER gửi yêu cầu sửa hồ sơ; nhân viên không đi vào luồng này. */
@@ -173,27 +191,31 @@ export class Account {
 
     this.isSavingProfile = true;
     const profileValue = this.profileForm.getRawValue();
-    this.accountService.requestProfileChange({
-      fullName: profileValue.fullName || '',
-      email: profileValue.email || '',
-      phone: profileValue.phone || '',
-    }).pipe(
-      finalize(() => {
-        this.isSavingProfile = false;
-        this.cdr.detectChanges();
-      }),
-    ).subscribe({
-      next: () => {
-        this.isEditingProfile = false;
-        this.profileForm.disable();
-        this.profileMessage = 'Đã gửi link xác nhận tới email hiện tại. Thông tin chỉ thay đổi sau khi bạn xác nhận.';
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.profileError = this.apiError.getMessage(error, 'Không cập nhật được thông tin.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.accountService
+      .requestProfileChange({
+        fullName: profileValue.fullName || '',
+        email: profileValue.email || '',
+        phone: profileValue.phone || '',
+      })
+      .pipe(
+        finalize(() => {
+          this.isSavingProfile = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.isEditingProfile = false;
+          this.profileForm.disable();
+          this.profileMessage =
+            'Đã gửi link xác nhận tới email hiện tại. Thông tin chỉ thay đổi sau khi bạn xác nhận.';
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.profileError = this.apiError.getMessage(error, 'Không cập nhật được thông tin.');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   /** Kiểm tra form và mật khẩu xác nhận trước khi gọi API đổi mật khẩu. */
@@ -240,22 +262,25 @@ export class Account {
     }
 
     this.isChangingPassword = true;
-    this.accountService.changePassword({ currentPassword, newPassword }).pipe(
-      finalize(() => {
-        this.isChangingPassword = false;
-        this.cdr.detectChanges();
-      }),
-    ).subscribe({
-      next: () => {
-        this.passwordForm.reset();
-        this.passwordMessage = 'Mật khẩu đã được thay đổi.';
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        this.passwordError = this.apiError.getMessage(error, 'Không thay đổi được mật khẩu.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.accountService
+      .changePassword({ currentPassword, newPassword })
+      .pipe(
+        finalize(() => {
+          this.isChangingPassword = false;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.passwordForm.reset();
+          this.passwordMessage = 'Mật khẩu đã được thay đổi.';
+          this.cdr.detectChanges();
+        },
+        error: (error) => {
+          this.passwordError = this.apiError.getMessage(error, 'Không thay đổi được mật khẩu.');
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {

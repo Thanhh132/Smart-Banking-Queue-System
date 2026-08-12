@@ -10,6 +10,12 @@ import { CustomerLiveTrackingService } from '../../../core/services/customer-liv
 import { WebPushService } from '../../../core/services/web-push.service';
 import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppDataTableShell } from '../../../shared/components/app-data-table-shell/app-data-table-shell';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
@@ -21,6 +27,12 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
     RouterLink,
     ReportExportButtons,
     AppIcon,
+    AppButton,
+    AppConfirmDialog,
+    AppDataTableShell,
+    AppEmptyState,
+    AppPageHeader,
+    AppStatusBadge,
   ],
   templateUrl: './ticket-result.html',
   styleUrl: './ticket-result.scss',
@@ -39,6 +51,7 @@ export class TicketResult implements OnInit, OnDestroy {
   histories: HistoryItem[] = [];
   errorMessage = '';
   isCancelling = false;
+  isCancelConfirmationOpen = false;
   private isMonitorLoading = false;
   private intervalId: any;
   private lastTerminalStatus = '';
@@ -162,6 +175,17 @@ export class TicketResult implements OnInit, OnDestroy {
       return;
     }
 
+    this.isCancelConfirmationOpen = true;
+  }
+
+  closeCancelConfirmation(): void {
+    this.isCancelConfirmationOpen = false;
+  }
+
+  confirmCancelTicket(): void {
+    if (!this.ticket?.ticketId || this.isCancelling) return;
+
+    this.isCancelConfirmationOpen = false;
     this.isCancelling = true;
     this.errorMessage = '';
     this.ticketService.cancelTicket(this.ticket.ticketId).subscribe({

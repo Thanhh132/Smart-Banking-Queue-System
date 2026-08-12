@@ -1,6 +1,18 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { AppDataTableShell } from './app-data-table-shell';
+
+@Component({
+  standalone: true,
+  imports: [AppDataTableShell],
+  template: `
+    <app-data-table-shell [empty]="true">
+      <div table-toolbar data-testid="filter-toolbar">Bộ lọc</div>
+    </app-data-table-shell>
+  `,
+})
+class TableShellToolbarHost {}
 
 describe('AppDataTableShell', () => {
   beforeEach(async () => {
@@ -22,6 +34,15 @@ describe('AppDataTableShell', () => {
     fixture.componentRef.setInput('empty', true);
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
+  });
+
+  it('keeps a projected filter toolbar available while the result is empty', async () => {
+    await TestBed.configureTestingModule({ imports: [TableShellToolbarHost] }).compileComponents();
+    const fixture = TestBed.createComponent(TableShellToolbarHost);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-testid="filter-toolbar"]')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-empty-state')).toBeTruthy();
   });
 });

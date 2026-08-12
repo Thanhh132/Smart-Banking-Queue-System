@@ -1,22 +1,29 @@
-import {
-  ChangeDetectorRef,
-  Component,
-  OnDestroy,
-  OnInit,
-  inject,
-} from '@angular/core';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppLoadingState } from '../../../shared/components/app-loading-state/app-loading-state';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-import { QueueMonitor } from '../../../core/models/queue-monitor.model';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
+import { QueueMonitor, ServingCounter } from '../../../core/models/queue-monitor.model';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 
 @Component({
   selector: 'app-queue-monitor',
-  imports: [CommonModule, AppCard, DashboardLayout, AppPageHeader],
+  imports: [
+    CommonModule,
+    AppCard,
+    AppEmptyState,
+    AppIcon,
+    AppLoadingState,
+    AppPageHeader,
+    AppStatusBadge,
+    DashboardLayout,
+  ],
   templateUrl: './queue-monitor.html',
   styleUrl: './queue-monitor.scss',
 })
@@ -32,35 +39,25 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
   private intervalId: any;
 
   get servingCounterCount(): number {
-    return this.monitor?.servingCounters?.filter((counter) => counter.status === 'SERVING').length || 0;
+    return (
+      this.monitor?.servingCounters?.filter((counter) => counter.status === 'SERVING').length || 0
+    );
   }
 
   get activeCounterCount(): number {
-    return this.monitor?.servingCounters?.filter((counter) => counter.status !== 'INACTIVE').length || 0;
+    return (
+      this.monitor?.servingCounters?.filter((counter) => counter.status !== 'INACTIVE').length || 0
+    );
   }
 
-  getCounterStatusLabel(status: string): string {
-    if (status === 'SERVING') {
-      return 'Đang phục vụ';
-    }
-
-    if (status === 'IDLE') {
-      return 'Đang rảnh';
-    }
-
-    return 'Không hoạt động';
+  get idleCounterCount(): number {
+    return (
+      this.monitor?.servingCounters?.filter((counter) => counter.status === 'IDLE').length || 0
+    );
   }
 
-  getCounterStatusClass(status: string): string {
-    if (status === 'SERVING') {
-      return 'counter-card--serving';
-    }
-
-    if (status === 'IDLE') {
-      return 'counter-card--idle';
-    }
-
-    return 'counter-card--inactive';
+  get currentlyServingCounters(): ServingCounter[] {
+    return this.monitor?.servingCounters?.filter((counter) => counter.status === 'SERVING') || [];
   }
 
   /** Tải ngay lần đầu và tạm ngừng refresh khi tab bị ẩn. */
@@ -99,7 +96,7 @@ export class QueueMonitorComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.errorMessage = this.apiError.getMessage(
           err,
-          'Không tải được dữ liệu màn hình hàng đợi.'
+          'Không tải được dữ liệu màn hình hàng đợi.',
         );
         this.cdr.detectChanges();
       },

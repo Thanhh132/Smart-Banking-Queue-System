@@ -1,84 +1,156 @@
-<app-dashboard-layout title="Màn hình hàng đợi">
-  <section class="monitor-page">
+<app-dashboard-layout title="Vận hành hàng đợi">
+  <div class="monitor-page">
     <app-page-header
       title="Màn hình hàng đợi"
-      subtitle="Theo dõi số đang gọi, số đang chờ và trạng thái quầy theo thời gian thực."
+      description="Theo dõi khách đang chờ, số đang phục vụ và trạng thái quầy theo thời gian thực."
     >
+      <div class="monitor-page-meta">
+        <span class="monitor-branch">
+          <app-icon name="building" [size]="16" />
+          {{ monitor?.branchName || 'Đang tải chi nhánh' }}
+        </span>
+        <app-status-badge
+          [status]="errorMessage ? 'ERROR' : monitor ? 'ACTIVE' : 'PENDING'"
+          [label]="errorMessage ? 'Tạm gián đoạn' : monitor ? 'Đang cập nhật' : 'Đang kết nối'"
+        />
+      </div>
     </app-page-header>
 
-    <div class="monitor-hero">
-      <div>
-        <span>Chi nhánh</span>
-        <strong>{{ monitor?.branchName || '-' }}</strong>
-        <p>{{ errorMessage ? 'Dữ liệu tạm thời gián đoạn' : 'Tự động cập nhật mỗi giây' }}</p>
-      </div>
-      <div class="live-indicator" [class.live-indicator--error]="errorMessage">
-        {{ errorMessage ? 'Lỗi kết nối' : 'LIVE' }}
-      </div>
+    <div *ngIf="errorMessage" class="alert alert-danger monitor-alert" role="alert">
+      {{ errorMessage }}
     </div>
 
-    <div class="monitor-summary-grid">
-      <div class="monitor-summary-card">
-        <span>Đang chờ</span>
-        <strong>{{ monitor?.waitingCount ?? 0 }}</strong>
-        <p>Khách chưa được gọi</p>
-      </div>
+    <app-loading-state *ngIf="!monitor && !errorMessage" label="Đang tải dữ liệu hàng đợi..." />
 
-      <div class="monitor-summary-card">
-        <span>Đang phục vụ</span>
-        <strong>{{ servingCounterCount }}</strong>
-        <p>Quầy có khách tại quầy</p>
-      </div>
+    <ng-container *ngIf="monitor as data">
+      <section class="monitor-summary-grid" aria-label="Tóm tắt hàng đợi hiện tại">
+        <app-card class="monitor-summary-card monitor-summary-card--waiting">
+          <div class="monitor-summary">
+            <span class="monitor-summary__icon"><app-icon name="users" [size]="18" /></span>
+            <div>
+              <span>Khách đang chờ</span>
+              <strong>{{ data.waitingCount }} khách</strong>
+              <small>Chưa được gọi phục vụ</small>
+            </div>
+          </div>
+        </app-card>
 
-      <div class="monitor-summary-card">
-        <span>Quầy đang mở</span>
-        <strong>{{ activeCounterCount }}</strong>
-        <p>Bao gồm quầy rảnh và đang phục vụ</p>
-      </div>
-    </div>
+        <app-card class="monitor-summary-card">
+          <div class="monitor-summary">
+            <span class="monitor-summary__icon"><app-icon name="ticket" [size]="18" /></span>
+            <div>
+              <span>Đang phục vụ</span>
+              <strong>{{ servingCounterCount }} quầy</strong>
+              <small>Quầy đang có khách</small>
+            </div>
+          </div>
+        </app-card>
 
-    <app-card>
-      <div class="monitor-board-heading">
-        <div>
-          <h2>Bảng gọi số hiện tại</h2>
-          <p>Khách hàng theo dõi số của mình theo đúng quầy và khu vực phục vụ.</p>
+        <app-card class="monitor-summary-card">
+          <div class="monitor-summary">
+            <span class="monitor-summary__icon"><app-icon name="check-circle" [size]="18" /></span>
+            <div>
+              <span>Quầy sẵn sàng</span>
+              <strong>{{ idleCounterCount }} quầy</strong>
+              <small>Đang mở và chưa có khách</small>
+            </div>
+          </div>
+        </app-card>
+
+        <app-card class="monitor-summary-card">
+          <div class="monitor-summary">
+            <span class="monitor-summary__icon"><app-icon name="monitor" [size]="18" /></span>
+            <div>
+              <span>Quầy đang mở</span>
+              <strong>{{ activeCounterCount }} quầy</strong>
+              <small>Bao gồm rảnh và phục vụ</small>
+            </div>
+          </div>
+        </app-card>
+      </section>
+
+      <section class="monitor-section monitor-serving" aria-labelledby="serving-title">
+        <header class="monitor-section__heading">
+          <div>
+            <h2 id="serving-title">Đang phục vụ</h2>
+            <p>Số thứ tự đang được tiếp nhận tại từng quầy.</p>
+          </div>
+          <app-status-badge status="SERVING" [label]="servingCounterCount + ' quầy đang phục vụ'" />
+        </header>
+
+        <div *ngIf="currentlyServingCounters.length; else noServing" class="serving-grid">
+          <app-card *ngFor="let counter of currentlyServingCounters" class="serving-card">
+            <article class="serving-item">
+              <div class="serving-item__ticket">
+                <span>Số thứ tự</span>
+                <strong>{{ counter.ticketNumber ?? '-' }}</strong>
+              </div>
+              <div class="serving-item__counter">
+                <span>Quầy phục vụ</span>
+                <strong>{{ counter.counterName }}</strong>
+                <small>{{ counter.queueMachineName || 'Chưa gán máy bốc số' }}</small>
+              </div>
+              <div class="serving-item__staff">
+                <span>Nhân viên</span>
+                <strong>{{ counter.staffName || 'Chưa có nhân viên' }}</strong>
+              </div>
+              <app-status-badge [status]="counter.status" />
+            </article>
+          </app-card>
         </div>
-        <span class="admin-badge" [ngClass]="errorMessage ? 'badge-danger' : 'badge-success'">
-          {{ errorMessage ? 'Tạm ngưng' : 'Đang cập nhật' }}
-        </span>
-      </div>
 
-      <div class="admin-empty" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <ng-template #noServing>
+          <app-empty-state
+            title="Chưa có quầy đang phục vụ"
+            message="Các quầy sẵn sàng sẽ xuất hiện ở khu vực trạng thái bên dưới."
+            icon="ticket"
+          />
+        </ng-template>
+      </section>
 
-      <div
-        class="admin-empty"
-        *ngIf="!errorMessage && (!monitor?.servingCounters || monitor?.servingCounters?.length === 0)"
-      >
-        Chưa có quầy nào được cấu hình cho màn hình này.
-      </div>
-
-      <div class="counter-board-grid" *ngIf="!errorMessage && monitor?.servingCounters?.length">
-        <article
-          class="counter-card"
-          *ngFor="let counter of monitor?.servingCounters"
-          [ngClass]="getCounterStatusClass(counter.status)"
-        >
-          <div class="counter-card__top">
-            <strong>{{ counter.counterName }}</strong>
-            <span>{{ getCounterStatusLabel(counter.status) }}</span>
+      <section class="monitor-section" aria-labelledby="counter-status-title">
+        <header class="monitor-section__heading">
+          <div>
+            <h2 id="counter-status-title">Trạng thái quầy</h2>
+            <p>Toàn bộ quầy, nhân viên trực và máy bốc số của chi nhánh.</p>
           </div>
+          <span class="monitor-section__count">{{ data.servingCounters.length }} quầy</span>
+        </header>
 
-          <div class="counter-card__number">
-            {{ counter.ticketNumber || '-' }}
-          </div>
+        <div *ngIf="data.servingCounters.length; else noCounters" class="counter-grid">
+          <app-card *ngFor="let counter of data.servingCounters" class="counter-status-card">
+            <article class="counter-status-item">
+              <header>
+                <strong>{{ counter.counterName }}</strong>
+                <app-status-badge [status]="counter.status" />
+              </header>
 
-          <div class="counter-card__staff">
-            <span>Nhân viên trực quầy</span>
-            <strong>{{ counter.staffName || 'Chưa có nhân viên' }}</strong>
-          </div>
-          <p>{{ counter.queueMachineName || 'Chưa gán máy bốc số' }}</p>
-        </article>
-      </div>
-    </app-card>
-  </section>
+              <dl>
+                <div>
+                  <dt>Số đang phục vụ</dt>
+                  <dd class="counter-status-item__ticket">{{ counter.ticketNumber ?? '-' }}</dd>
+                </div>
+                <div>
+                  <dt>Nhân viên</dt>
+                  <dd>{{ counter.staffName || 'Chưa có nhân viên' }}</dd>
+                </div>
+                <div>
+                  <dt>Máy bốc số</dt>
+                  <dd>{{ counter.queueMachineName || 'Chưa gán máy' }}</dd>
+                </div>
+              </dl>
+            </article>
+          </app-card>
+        </div>
+
+        <ng-template #noCounters>
+          <app-empty-state
+            title="Chưa có quầy giao dịch"
+            message="Chi nhánh chưa có quầy được cấu hình cho màn hình hàng đợi."
+            icon="monitor"
+          />
+        </ng-template>
+      </section>
+    </ng-container>
+  </div>
 </app-dashboard-layout>

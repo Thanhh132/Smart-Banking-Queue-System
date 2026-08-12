@@ -1,317 +1,221 @@
-$primary-color: #005baa;
-$warning-color: #b45309;
-$surface-color: #ffffff;
-$soft-bg: #f4f7fb;
-$border-color: #d8e2ef;
-$text-primary: #0f172a;
-$text-secondary: #64748b;
+.staff-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.staff-page-actions,
+.staff-live-status,
+.staff-session,
+.staff-ticket__actions,
+.staff-delegation-result__actions {
+  display: flex;
+  align-items: center;
+}
+
+.staff-page-actions,
+.staff-ticket__actions {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
 
 .staff-live-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #166534;
-  font-size: 13px;
-  font-weight: 800;
+  gap: 0.375rem;
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
-.staff-live-status span {
-  width: 9px;
-  height: 9px;
+.staff-live-status > span {
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
-  background: #16a34a;
-  box-shadow: 0 0 0 4px #dcfce7;
+  background: var(--cui-success);
 }
 
-.staff-live-status time {
-  margin-left: auto;
-  color: $text-secondary;
+.staff-live-status time::before {
+  content: '·';
+  margin-right: 0.375rem;
 }
 
-.staff-summary {
+.staff-session {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.staff-session__details {
+  flex: 1;
+}
+
+.staff-counter-selection,
+.staff-delegation-form {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
-
-  @media (max-width: 1100px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: minmax(14rem, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
 }
 
-.summary-item {
-  min-height: 118px;
-  padding: 18px;
-  border: 1px solid $border-color;
-  border-radius: 8px;
-  background: $surface-color;
+.staff-counter-selection {
+  max-width: 44rem;
+}
+
+.staff-operational-grid {
   display: grid;
-  align-content: space-between;
-
-  span {
-    color: $text-secondary;
-    font-size: 13px;
-    font-weight: 800;
-  }
-
-  strong {
-    color: $text-primary;
-    font-size: 28px;
-    word-break: break-word;
-  }
-
-  small {
-    color: $text-secondary;
-    font-weight: 600;
-  }
-
-  &--primary {
-    border-color: #a8cff4;
-    background: #f0f7ff;
-  }
+  grid-template-columns: minmax(0, 2fr) minmax(19rem, 1fr);
+  gap: 1rem;
+  align-items: start;
 }
 
-.staff-grid {
+.staff-ticket-empty {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-
-  @media (max-width: 980px) {
-    grid-template-columns: 1fr;
-  }
+  justify-items: center;
+  gap: 0.75rem;
 }
 
-.card-header {
+.staff-ticket {
+  display: grid;
+  gap: 1rem;
+}
+
+.staff-ticket__summary {
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.65fr) minmax(0, 2fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.staff-ticket__number {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--cui-primary-border-subtle);
+  border-radius: var(--cui-border-radius);
+  background: var(--cui-primary-bg-subtle);
+}
+
+.staff-ticket__number span {
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.staff-ticket__number strong {
+  color: var(--cui-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.staff-queue-item h3 {
+  margin: 0;
+  color: var(--cui-heading-color);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.staff-queue-item p,
+.staff-queue-item small,
+.staff-delegation-help {
+  margin: 0.1875rem 0 0;
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.staff-prepared-information .sbqs-details-grid,
+.staff-delegation-result .sbqs-details-grid {
+  margin-top: 0.75rem;
+}
+
+.staff-ticket__actions,
+.staff-delegation-result__actions {
+  justify-content: flex-end;
+}
+
+.staff-queue-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.staff-queue-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding-bottom: 0.625rem;
+  border-bottom: 1px solid var(--cui-border-color);
+}
+
+.staff-queue-item:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.staff-queue-item > strong {
+  color: var(--cui-primary);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.staff-queue-item div {
+  min-width: 0;
+}
+
+.staff-queue-item h3,
+.staff-queue-item p,
+.staff-queue-item small {
+  overflow-wrap: anywhere;
+}
+
+.staff-delegation-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+}
+
+.staff-delegation-help {
+  margin-top: 0.5rem;
+}
+
+.staff-delegation-result {
+  margin-top: 1rem;
+}
+
+.staff-delegation-result > header {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  margin-bottom: 16px;
-  border-bottom: 1px solid $border-color;
-
-  h2 {
-    margin: 0;
-    color: $text-primary;
-    font-size: 22px;
-    line-height: 1.25;
-  }
-
-  p {
-    margin: 6px 0 0;
-    color: $text-secondary;
-    font-weight: 600;
-  }
+  gap: 1rem;
 }
 
-.status-pill,
-.count-badge {
-  flex: 0 0 auto;
-  display: inline-flex;
-  min-height: 32px;
-  align-items: center;
-  justify-content: center;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: #eef2f7;
-  color: $text-secondary;
-  font-size: 12px;
-  font-weight: 900;
+.staff-delegation-result__actions {
+  margin-top: 1rem;
 }
 
-.status-pill--active {
-  background: #dcfce7;
-  color: #047857;
-}
-
-.count-badge {
-  min-width: 44px;
-  border-radius: 8px;
-  background: #eaf4fc;
-  color: $primary-color;
-  font-size: 20px;
-}
-
-.assign-panel,
-.session-panel {
-  display: grid;
-  gap: 14px;
-}
-
-.assign-panel {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-
-  label {
-    display: grid;
-    gap: 8px;
-    color: $text-primary;
-    font-weight: 800;
-  }
-
-  select {
-    min-height: 46px;
-    border: 1px solid #b9c8da;
-    border-radius: 8px;
-    padding: 0 12px;
-    font-size: 15px;
-    background: #fff;
-  }
-}
-
-.session-panel {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  padding: 16px;
-  border-radius: 8px;
-  background: $soft-bg;
-
-  @media (max-width: 640px) {
-    grid-template-columns: 1fr;
-  }
-
-  div {
-    display: grid;
-    gap: 4px;
-  }
-
-  span,
-  small {
-    color: $text-secondary;
-    font-weight: 700;
-  }
-
-  strong {
-    color: $text-primary;
-    font-size: 24px;
-  }
-}
-
-.next-ticket-panel,
-.ticket-current {
-  display: grid;
-  gap: 14px;
-  align-content: center;
-}
-
-.next-ticket-panel {
-  min-height: 132px;
-  justify-items: center;
-  text-align: center;
-
-  strong {
-    color: $primary-color;
-    font-size: 48px;
-  }
-
-  p {
-    margin: 0;
-    color: $text-secondary;
-    font-weight: 700;
-  }
-}
-
-.ticket-current {
-  min-height: 190px;
-  grid-template-columns: 150px repeat(2, minmax(0, 1fr));
-  align-items: stretch;
-
-  @media (max-width: 1120px) {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  @media (max-width: 640px) {
+@media (max-width: 991.98px) {
+  .staff-operational-grid {
     grid-template-columns: 1fr;
   }
 }
 
-.ticket-number {
-  display: grid;
-  min-height: 112px;
-  place-items: center;
-  border-radius: 8px;
-  background: #eaf4fc;
-  color: $primary-color;
-  font-size: 44px;
-  font-weight: 900;
-}
-
-.ticket-detail {
-  display: grid;
-  min-height: 134px;
-  align-content: start;
-  padding: 16px;
-  border: 1px solid $border-color;
-  border-radius: 8px;
-
-  span {
-    color: $text-secondary;
-    font-weight: 800;
+@media (max-width: 767.98px) {
+  .staff-page-actions,
+  .staff-session,
+  .staff-delegation-result > header {
+    align-items: stretch;
+    flex-direction: column;
   }
 
-  strong {
-    color: $text-primary;
-    font-size: 18px;
-  }
-}
-
-.workflow-list {
-  display: grid;
-  gap: 10px;
-}
-
-.workflow-item {
-  display: grid;
-  grid-template-columns: 88px minmax(0, 1fr) auto;
-  gap: 14px;
-  align-items: center;
-  padding: 14px;
-  border: 1px solid $border-color;
-  border-radius: 8px;
-  background: #fff;
-
-  @media (max-width: 680px) {
+  .staff-session__details,
+  .staff-counter-selection,
+  .staff-ticket__summary,
+  .staff-delegation-form {
     grid-template-columns: 1fr;
   }
 
-  span {
-    color: $primary-color;
-    font-size: 24px;
-    font-weight: 900;
+  .staff-ticket__actions,
+  .staff-delegation-result__actions {
+    justify-content: stretch;
   }
 
-  div {
-    display: grid;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  strong,
-  small {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  small {
-    color: $text-secondary;
-    font-weight: 700;
-  }
-
-  em {
-    padding: 7px 11px;
-    border-radius: 999px;
-    background: #fff7ed;
-    color: $warning-color;
-    font-size: 12px;
-    font-style: normal;
-    font-weight: 900;
+  .staff-ticket__actions app-button,
+  .staff-delegation-result__actions app-button {
+    flex: 1 1 100%;
   }
 }

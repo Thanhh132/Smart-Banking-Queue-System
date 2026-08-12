@@ -9,10 +9,15 @@ import { BranchService } from '../../../core/services/branch.service';
 import { LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppLoadingState } from '../../../shared/components/app-loading-state/app-loading-state';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 
 @Component({
   selector: 'app-branch-selection',
-  imports: [CommonModule, FormsModule, DashboardLayout, AppIcon],
+  imports: [CommonModule, FormsModule, DashboardLayout, AppIcon, AppButton, AppEmptyState, AppLoadingState, AppPageHeader, AppStatusBadge],
   templateUrl: './branch-selection.html',
   styleUrl: './branch-selection.scss',
 })

@@ -93,6 +93,12 @@ export const routes: Routes = [
     canActivate: [roleGuard(['STAFF'])],
   },
   {
+    path: 'staff/history',
+    loadComponent: () =>
+      import('./pages/staff/history/staff-history').then((m) => m.StaffHistory),
+    canActivate: [roleGuard(['STAFF'])],
+  },
+  {
     path: 'admin',
     loadComponent: () =>
       import('./pages/admin/dashboard/admin-dashboard').then((m) => m.AdminDashboard),

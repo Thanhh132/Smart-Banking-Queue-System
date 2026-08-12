@@ -1,13 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { UserManagementService } from '../../../core/services/user-management.service';
-import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppDataTableShell } from '../../../shared/components/app-data-table-shell/app-data-table-shell';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { ExcelImportPanel } from '../../../shared/components/excel-import-panel/excel-import-panel';
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppModalShell } from '../../../shared/components/app-modal-shell/app-modal-shell';
 import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
 import {
   PASSWORD_POLICY_MESSAGE,
@@ -21,9 +26,14 @@ import {
     CommonModule,
     ReactiveFormsModule,
     DashboardLayout,
-    AppCard,
+    AppButton,
+    AppConfirmDialog,
+    AppDataTableShell,
+    AppPageHeader,
+    AppStatusBadge,
     ExcelImportPanel,
     AppIcon,
+    AppModalShell,
     PreventAutofillDirective,
   ],
   templateUrl: './admin-users.html',
@@ -36,12 +46,24 @@ export class AdminUsers implements OnInit {
   isListLoading = false;
   isSubmitting = false;
   isEditMode = false;
+  isUserModalOpen = false;
+  isImportModalOpen = false;
   showPassword = false;
   showConfirmPassword = false;
 
   editingUserId: number | null = null;
+  pendingDeleteUser: any | null = null;
+  isDeleting = false;
   successMessage = '';
   errorMessage = '';
+
+  get deleteConfirmationMessage(): string {
+    if (!this.pendingDeleteUser) {
+      return '';
+    }
+
+    return `Xóa vĩnh viễn nhân viên "${this.pendingDeleteUser.fullName}" khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.`;
+  }
 
   constructor(
     private fb: FormBuilder,
@@ -138,6 +160,7 @@ export class AdminUsers implements OnInit {
         this.successMessage = 'Tạo tài khoản nhân viên thành công.';
         this.staffForm.reset();
         this.isSubmitting = false;
+        this.isUserModalOpen = false;
         this.loadUsers();
       },
       error: (err) => {
@@ -152,28 +175,40 @@ export class AdminUsers implements OnInit {
   }
 
   deleteUser(user: any): void {
-    const confirmed = confirm(
-      `Xóa vĩnh viễn nhân viên "${user.fullName}" khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.`,
-    );
+    this.pendingDeleteUser = user;
+  }
 
-    if (!confirmed) {
+  cancelDelete(): void {
+    if (this.isDeleting) {
+      return;
+    }
+
+    this.pendingDeleteUser = null;
+  }
+
+  confirmDelete(): void {
+    const user = this.pendingDeleteUser;
+
+    if (!user || this.isDeleting) {
       return;
     }
 
     this.successMessage = '';
     this.errorMessage = '';
+    this.isDeleting = true;
 
     this.userManagementService.deleteUser(user.userId).subscribe({
       next: () => {
         this.successMessage = 'Đã xóa vĩnh viễn tài khoản nhân viên.';
         this.users = this.users.filter((item) => item.userId !== user.userId);
+        this.pendingDeleteUser = null;
+        this.isDeleting = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        this.errorMessage = this.apiError.getMessage(
-          err,
-          'Xóa tài khoản nhân viên thất bại.',
-        );
+        this.errorMessage = this.apiError.getMessage(err, 'Xóa tài khoản nhân viên thất bại.');
+        this.pendingDeleteUser = null;
+        this.isDeleting = false;
         this.cdr.detectChanges();
       },
     });
@@ -197,7 +232,37 @@ export class AdminUsers implements OnInit {
       confirmPassword: '',
     });
 
+    this.isUserModalOpen = true;
     this.cdr.detectChanges();
+  }
+
+  openCreateModal(): void {
+    this.cancelEdit();
+    this.isUserModalOpen = true;
+    this.cdr.detectChanges();
+  }
+
+  closeUserModal(): void {
+    if (this.isSubmitting) {
+      return;
+    }
+
+    this.cancelEdit();
+    this.isUserModalOpen = false;
+    this.cdr.detectChanges();
+  }
+
+  openImportModal(): void {
+    this.isImportModalOpen = true;
+  }
+
+  closeImportModal(): void {
+    this.isImportModalOpen = false;
+  }
+
+  handleImported(): void {
+    this.isImportModalOpen = false;
+    this.loadUsers();
   }
 
   cancelEdit(): void {
@@ -239,6 +304,7 @@ export class AdminUsers implements OnInit {
       next: () => {
         this.successMessage = 'Cập nhật nhân viên thành công.';
         this.isSubmitting = false;
+        this.isUserModalOpen = false;
         this.isEditMode = false;
         this.editingUserId = null;
         const passwordControl = this.staffForm.get('password');
@@ -306,5 +372,17 @@ export class AdminUsers implements OnInit {
       return;
     }
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  @HostListener('document:keydown.escape')
+  closeOpenModal(): void {
+    if (this.isUserModalOpen) {
+      this.closeUserModal();
+      return;
+    }
+
+    if (this.isImportModalOpen) {
+      this.closeImportModal();
+    }
   }
 }

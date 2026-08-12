@@ -1,146 +1,108 @@
 <app-dashboard-layout title="Phiếu của tôi">
-  <div class="customer-page">
-    <header class="customer-page__intro">
-      <span class="customer-kicker">Bước 3/3</span>
-      <h1>Theo dõi lượt giao dịch</h1>
-      <p>Bảng gọi số bên dưới chỉ hiển thị các quầy thuộc đúng máy bốc số của dịch vụ đã chọn.</p>
-    </header>
+  <main class="ticket-page">
+    <app-page-header title="Theo dõi lượt giao dịch" description="Xem trạng thái phiếu và quầy phục vụ được cập nhật trực tiếp." />
 
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <nav class="sbqs-journey" aria-label="Tiến trình lấy số">
+      <span class="complete"><b>1</b> Đã chọn chi nhánh</span>
+      <span class="complete"><b>2</b> Đã chọn dịch vụ</span>
+      <span class="active"><b>3</b> Theo dõi lượt</span>
+    </nav>
+
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
 
     <ng-container *ngIf="ticket; else noTicket">
-      <section class="push-card" *ngIf="effectiveStatus === 'WAITING'">
-        <div class="push-card__icon">🔔</div>
-        <div class="push-card__content">
-          <strong>Nhận thông báo khi đóng trang</strong>
-          <p *ngIf="webPush.subscribed()">Thiết bị này sẽ được nhắc khi còn 3 người và khi phiếu được gọi.</p>
-          <p *ngIf="!webPush.subscribed() && webPush.supported() && webPush.serverEnabled()">Bật một lần để có thể khóa màn hình hoặc rời website mà vẫn nhận thông báo.</p>
-          <p *ngIf="!webPush.supported()">Thiết bị chưa hỗ trợ Web Push. Trên iPhone, hãy thêm SBQS vào Màn hình chính rồi mở lại ứng dụng.</p>
-          <p *ngIf="webPush.supported() && !webPush.serverEnabled()">Máy chủ chưa cấu hình khóa Web Push.</p>
-          <small *ngIf="webPush.message()">{{ webPush.message() }}</small>
-        </div>
-        <button *ngIf="webPush.supported() && webPush.serverEnabled() && !webPush.subscribed()" type="button" class="btn btn-primary" (click)="webPush.enable()" [disabled]="webPush.busy()">
-          {{ webPush.busy() ? 'Đang bật...' : 'Bật thông báo' }}
-        </button>
-        <button *ngIf="webPush.subscribed()" type="button" class="btn btn-secondary" (click)="webPush.disable()" [disabled]="webPush.busy()">
-          {{ webPush.busy() ? 'Đang tắt...' : 'Tắt trên thiết bị này' }}
-        </button>
-      </section>
-
-      <section class="ticket-panel">
-        <div class="ticket-number-panel">
+      <section class="ticket-main">
+        <div class="ticket-identity">
           <span>Số thứ tự của bạn</span>
           <strong>{{ ticket.ticketNumber }}</strong>
-          <p>{{ ticketStatusLabel }}</p>
-          <button *ngIf="effectiveStatus === 'WAITING'" type="button" class="btn btn-danger" (click)="cancelTicket()" [disabled]="isCancelling">
-            <app-icon *ngIf="!isCancelling" name="x" [size]="16" />
-            {{ isCancelling ? 'Đang hủy...' : 'Hủy phiếu' }}
-          </button>
+          <app-status-badge [status]="effectiveStatus || 'PENDING'" [label]="ticketStatusLabel" />
+          <app-button
+            *ngIf="effectiveStatus === 'WAITING'"
+            variant="danger"
+            [outline]="true"
+            icon="x"
+            label="Hủy phiếu"
+            [loading]="isCancelling"
+            (clicked)="cancelTicket()"
+          />
         </div>
 
-        <dl class="ticket-details">
-          <div><dt>Dịch vụ</dt><dd>{{ serviceName }}</dd></div>
-          <div><dt>Chi nhánh</dt><dd>{{ branchName }}</dd></div>
-          <div *ngIf="queueMachineLocationNote"><dt>Ghi chú vị trí</dt><dd>{{ queueMachineLocationNote }}</dd></div>
-          <div *ngIf="tracking?.counterName"><dt>Quầy phục vụ</dt><dd>{{ tracking?.counterName }}</dd></div>
-        </dl>
-      </section>
-
-      <section class="customer-summary-grid" *ngIf="monitor">
-        <div class="customer-summary-item">
-          <span>Khách đang chờ</span>
-          <strong>{{ monitor.waitingCount }}</strong>
-          <p>Trong hàng đợi của máy này</p>
-        </div>
-        <div class="customer-summary-item">
-          <span>Phiếu chờ trước bạn</span>
-          <strong>{{ tracking?.peopleAhead ?? '-' }}</strong>
-          <p>{{ effectiveStatus === 'WAITING' ? 'Cập nhật trực tiếp mỗi giây' : ticketStatusLabel }}</p>
-        </div>
-        <div class="customer-summary-item">
-          <span>Cập nhật gần nhất</span>
-          <strong class="live-time">{{ liveTracking.lastUpdatedAt() | date:'HH:mm:ss' }}</strong>
-          <p>Kết nối theo dõi đang hoạt động</p>
-        </div>
-        <div class="customer-summary-item">
-          <span>Quầy đang phục vụ</span>
-          <strong>{{ servingCounterCount }}</strong>
-          <p>Thuộc khu vực của bạn</p>
-        </div>
-      </section>
-
-      <section class="customer-section" *ngIf="monitor?.servingCounters?.length">
-        <div class="customer-section__header">
-          <div>
-            <h2>Bảng gọi số hiện tại</h2>
-            <p>Theo dõi tất cả quầy thuộc máy bốc số của bạn.</p>
+        <div class="ticket-progress">
+          <div class="ticket-ahead">
+            <span>Số khách đang chờ trước bạn</span>
+            <strong>{{ tracking?.peopleAhead === null || tracking?.peopleAhead === undefined ? '-' : tracking?.peopleAhead + ' khách' }}</strong>
+            <p>{{ effectiveStatus === 'WAITING' ? 'Dữ liệu được cập nhật trực tiếp' : ticketStatusLabel }}</p>
           </div>
-          <span class="live-indicator">Đang cập nhật</span>
+          <dl class="sbqs-details-grid">
+            <div><dt>Dịch vụ</dt><dd>{{ serviceName }}</dd></div>
+            <div><dt>Chi nhánh</dt><dd>{{ branchName }}</dd></div>
+            <div *ngIf="queueMachineLocationNote"><dt>Vị trí chờ</dt><dd>{{ queueMachineLocationNote }}</dd></div>
+            <div *ngIf="tracking?.counterName"><dt>Quầy phục vụ</dt><dd>{{ tracking?.counterName }}</dd></div>
+            <div><dt>Cập nhật gần nhất</dt><dd>{{ liveTracking.lastUpdatedAt() | date:'HH:mm:ss' }}</dd></div>
+          </dl>
         </div>
-        <div class="customer-queue-grid">
-          <div class="customer-counter" *ngFor="let counter of monitor?.servingCounters" [ngClass]="getCounterStatusClass(counter.status)">
+      </section>
+
+      <section class="ticket-notification" *ngIf="effectiveStatus === 'WAITING'">
+        <app-icon name="megaphone" [size]="20" />
+        <div>
+          <strong>Nhận thông báo gọi số</strong>
+          <p *ngIf="webPush.subscribed()">Thiết bị sẽ được nhắc khi còn 3 người và khi phiếu được gọi.</p>
+          <p *ngIf="!webPush.subscribed() && webPush.supported() && webPush.serverEnabled()">Bật thông báo để vẫn nhận nhắc khi rời trang.</p>
+          <p *ngIf="!webPush.supported()">Thiết bị chưa hỗ trợ Web Push.</p>
+          <p *ngIf="webPush.supported() && !webPush.serverEnabled()">Máy chủ chưa cấu hình Web Push.</p>
+          <small *ngIf="webPush.message()">{{ webPush.message() }}</small>
+        </div>
+        <app-button *ngIf="webPush.supported() && webPush.serverEnabled() && !webPush.subscribed()" variant="outline" label="Bật thông báo" [loading]="webPush.busy()" (clicked)="webPush.enable()" />
+        <app-button *ngIf="webPush.subscribed()" variant="outline" label="Tắt trên thiết bị này" [loading]="webPush.busy()" (clicked)="webPush.disable()" />
+      </section>
+
+      <section class="ticket-board" *ngIf="monitor?.servingCounters?.length">
+        <header><div><h2>Bảng gọi số hiện tại</h2><p>{{ servingCounterCount }} quầy đang phục vụ trong khu vực của bạn</p></div><app-status-badge status="ACTIVE" label="Đang cập nhật" /></header>
+        <div class="ticket-counter-grid">
+          <article *ngFor="let counter of monitor?.servingCounters">
             <span>{{ counter.counterName }}</span>
             <strong>{{ counter.ticketNumber || '-' }}</strong>
-            <p>{{ getCounterStatusLabel(counter.status) }}</p>
+            <app-status-badge [status]="counter.status" [label]="getCounterStatusLabel(counter.status)" />
             <small>{{ counter.queueMachineName || 'Máy bốc số' }}</small>
-          </div>
+          </article>
         </div>
       </section>
 
-      <div class="ticket-guidance">
-        Khi số của bạn xuất hiện tại quầy, vui lòng đến đúng quầy để thực hiện giao dịch.
-      </div>
+      <div class="alert alert-info ticket-guidance">Khi số của bạn xuất hiện tại quầy, vui lòng đến đúng quầy để thực hiện giao dịch.</div>
     </ng-container>
 
     <ng-template #noTicket>
-      <section class="customer-section customer-empty-ticket">
-        <span class="customer-kicker">Chưa có phiếu đang hoạt động</span>
-        <h2>Bạn chưa lấy số giao dịch</h2>
-        <p>Chọn chi nhánh và dịch vụ để bắt đầu.</p>
-        <a routerLink="/branches" class="btn btn-primary">
-          <app-icon name="ticket" [size]="16" />
-          Lấy số ngay
-        </a>
+      <section class="ticket-empty">
+        <app-empty-state title="Bạn chưa có phiếu đang hoạt động" message="Chọn chi nhánh và dịch vụ để bắt đầu lấy số." icon="ticket" />
+        <a routerLink="/branches" class="btn btn-primary"><app-icon name="ticket" [size]="16" /> Lấy số ngay</a>
       </section>
     </ng-template>
 
-    <section class="customer-section">
-      <div class="customer-section__header">
-        <div>
-          <h2>Lịch sử giao dịch</h2>
-          <p>Các phiếu đã hoàn thành hoặc đã hủy của bạn.</p>
-        </div>
-        <app-report-export-buttons reportType="history"></app-report-export-buttons>
-      </div>
+    <app-data-table-shell
+      title="Lịch sử giao dịch"
+      description="Các phiếu đã hoàn thành hoặc đã hủy của bạn."
+      [empty]="histories.length === 0"
+      emptyTitle="Chưa có lịch sử giao dịch"
+      emptyMessage="Các phiếu đã xử lý sẽ xuất hiện tại đây."
+    >
+      <app-report-export-buttons table-actions reportType="history" />
+      <table class="table sbqs-data-table ticket-history-table">
+        <thead><tr><th>Số phiếu</th><th>Chi nhánh</th><th>Dịch vụ</th><th>Nhân viên</th><th>Trạng thái</th><th>Bắt đầu</th><th>Hoàn tất</th></tr></thead>
+        <tbody><tr *ngFor="let item of histories | slice:0:8"><td><strong>#{{ item.ticketNumber }}</strong></td><td>{{ item.branchName || '-' }}</td><td>{{ item.serviceName || '-' }}</td><td>{{ item.staffName || 'Chưa có nhân viên' }}</td><td><app-status-badge [status]="item.status || 'UNKNOWN'" [label]="statusLabel(item.status)" /></td><td>{{ formatDate(item.startedAt) }}</td><td>{{ formatDate(item.completedAt) }}</td></tr></tbody>
+      </table>
+    </app-data-table-shell>
+  </main>
 
-      <div *ngIf="histories.length === 0" class="customer-state">Chưa có lịch sử giao dịch.</div>
-
-      <div class="table-wrapper" *ngIf="histories.length > 0">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Số phiếu</th>
-              <th>Chi nhánh</th>
-              <th>Dịch vụ</th>
-              <th>Nhân viên</th>
-              <th>Trạng thái</th>
-              <th>Bắt đầu phục vụ</th>
-              <th>Hoàn tất</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let item of histories | slice:0:8">
-              <td><strong>#{{ item.ticketNumber }}</strong></td>
-              <td>{{ item.branchName || '-' }}</td>
-              <td>{{ item.serviceName || '-' }}</td>
-              <td>{{ item.staffName || 'Chưa có nhân viên' }}</td>
-              <td>{{ statusLabel(item.status) }}</td>
-              <td>{{ formatDate(item.startedAt) }}</td>
-              <td>{{ formatDate(item.completedAt) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+  <app-confirm-dialog
+    [open]="isCancelConfirmationOpen"
+    title="Hủy phiếu đang chờ"
+    [message]="'Bạn có chắc muốn hủy phiếu #' + (ticket?.ticketNumber || '') + '? Phiếu đã hủy không thể tiếp tục sử dụng.'"
+    confirmLabel="Hủy phiếu"
+    cancelLabel="Giữ phiếu"
+    [danger]="true"
+    [loading]="isCancelling"
+    (confirmed)="confirmCancelTicket()"
+    (cancelled)="closeCancelConfirmation()"
+  />
 </app-dashboard-layout>

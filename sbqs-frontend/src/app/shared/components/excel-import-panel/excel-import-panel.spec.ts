@@ -32,6 +32,18 @@ describe('ExcelImportPanel', () => {
     expect(fixture.nativeElement.querySelectorAll('app-button')).toHaveLength(2);
   });
 
+  it('supports an opt-in compact toolbar without changing the default mode', () => {
+    expect(fixture.nativeElement.querySelector('.excel-import--compact')).toBeFalsy();
+
+    fixture.componentRef.setInput('compact', true);
+    fixture.componentRef.setInput('showTitle', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.excel-import--compact')).toBeTruthy();
+    expect(fixture.nativeElement.classList).toContain('excel-import-host--compact');
+    expect(fixture.nativeElement.querySelector('#excel-import-title')).toBeFalsy();
+  });
+
   it('keeps xlsx validation before calling the import service', () => {
     const file = new File(['invalid'], 'staff.csv', { type: 'text/csv' });
     fixture.componentInstance.selectFile({

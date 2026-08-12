@@ -12,11 +12,15 @@ import { QueueMonitorService } from '../../../core/services/queue-monitor.servic
 import { ServicesService } from '../../../core/services/services.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
+import { AppButton } from '../../../shared/components/app-button/app-button';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
+import { AppLoadingState } from '../../../shared/components/app-loading-state/app-loading-state';
+import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
 
 @Component({
   selector: 'app-service-selection',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, DashboardLayout],
+  imports: [CommonModule, ReactiveFormsModule, DashboardLayout, AppButton, AppEmptyState, AppLoadingState, AppPageHeader],
   templateUrl: './service-selection.html',
   styleUrls: ['./service-selection.scss', './service-selection-profile.scss'],
 })
@@ -99,7 +103,6 @@ export class ServiceSelection implements OnInit {
     }
     this.transactionForm = this.fb.group(controls);
     this.transactionForm.valueChanges.subscribe(() => { this.errorMessage = ''; });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   closeForm(): void { this.selectedService = null; this.transactionForm = this.fb.group({}); }
@@ -199,14 +202,11 @@ export class ServiceSelection implements OnInit {
       cardholdername: ['FULL_NAME'],
       phone: ['MOBILE_PHONE'],
       email: ['EMAIL_ADDRESS'],
-      accountnumber: ['ACCOUNT_NUMBER'],
-      debitaccount: ['ACCOUNT_NUMBER'],
       oldidentitynumber: ['IDENTITY_NUMBER'],
       identitynumber: ['IDENTITY_NUMBER'],
       address: ['CONTACT_ADDRESS', 'PERMANENT_ADDRESS'],
       employer: ['EMPLOYER_NAME'],
       monthlyincome: ['MONTHLY_INCOME'],
-      deliveryaddress: ['CARD_DELIVERY_ADDRESS', 'CONTACT_ADDRESS'],
     };
     return (profileKeys[normalizedFieldKey] || [])
       .map((key) => this.profileValues[key])

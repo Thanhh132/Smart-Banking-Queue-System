@@ -40,6 +40,10 @@ public class TransactionDraft {
     @Column(name = "values_payload", nullable = false, columnDefinition = "text")
     private Map<String, Object> values = new LinkedHashMap<>();
 
+    @Convert(converter = FormValuesConverter.class)
+    @Column(name = "profile_snapshot", nullable = false, columnDefinition = "text")
+    private Map<String, Object> profileSnapshot = new LinkedHashMap<>();
+
     @Column(name = "created_by", nullable = false)
     private String createdBy;
 

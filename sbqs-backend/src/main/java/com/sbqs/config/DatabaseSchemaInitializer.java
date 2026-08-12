@@ -3,10 +3,14 @@ package com.sbqs.config;
 import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class DatabaseSchemaInitializer {
     private static final String SCHEMA_VERSION = "database-schema-v10-delegation-snapshots";
+    private static final String PROFILE_REFACTOR_VERSION = "database-schema-v11-customer-profile-ticket-owner";
+    private static final Logger log = LoggerFactory.getLogger(DatabaseSchemaInitializer.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -26,6 +30,8 @@ public class DatabaseSchemaInitializer {
                     setting_value varchar(500) not null
                 )
                 """);
+        createCoreTablesIfMissing();
+        applyCustomerProfileMigration();
         Integer applied = jdbcTemplate.queryForObject(
                 "select count(*) from system_settings where setting_key = ?",
                 Integer.class,
@@ -33,9 +39,6 @@ public class DatabaseSchemaInitializer {
         if (applied != null && applied > 0) {
             return;
         }
-
-        createCoreTablesIfMissing();
-
         jdbcTemplate.execute("""
                 create table if not exists service_catalog (
                     catalog_id bigserial primary key,
@@ -630,6 +633,131 @@ public class DatabaseSchemaInitializer {
                     primary key (queue_machine_id, service_id)
                 )
                 """);
+    }
+
+    /** Non-destructive expand/backfill migration for the customer-profile split. */
+    private void applyCustomerProfileMigration() {
+        Integer applied = jdbcTemplate.queryForObject(
+                "select count(*) from system_settings where setting_key = ?",
+                Integer.class,
+                PROFILE_REFACTOR_VERSION);
+        if (applied != null && applied > 0) return;
+
+        for (String definition : new String[] {
+                "date_of_birth varchar(30)", "gender varchar(30)", "nationality varchar(100)",
+                "passport_number varchar(50)", "visa_number varchar(50)", "identity_number varchar(30)",
+                "identity_issue_date varchar(30)", "identity_issue_place varchar(255)",
+                "permanent_address varchar(500)", "contact_address varchar(500)", "occupation varchar(255)",
+                "employment_status varchar(100)", "employer_name varchar(255)", "work_phone varchar(30)",
+                "job_title varchar(100)", "monthly_income varchar(50)", "salary_payment_method varchar(255)",
+                "account_number varchar(50)", "card_delivery_address varchar(500)",
+                "identity_provider varchar(30)" }) {
+            jdbcTemplate.execute("alter table users add column if not exists " + definition);
+        }
+
+        jdbcTemplate.execute("""
+                create table if not exists customer_profiles (
+                    customer_profile_id bigserial primary key,
+                    user_id bigint not null unique references users(user_id) on delete cascade,
+                    date_of_birth varchar(30),
+                    gender varchar(30),
+                    nationality varchar(100),
+                    passport_number varchar(50),
+                    visa_number varchar(50),
+                    identity_number varchar(30),
+                    identity_issue_date varchar(30),
+                    identity_issue_place varchar(255),
+                    permanent_address varchar(500),
+                    contact_address varchar(500),
+                    occupation varchar(255),
+                    employment_status varchar(100),
+                    employer_name varchar(255),
+                    work_phone varchar(30),
+                    job_title varchar(100),
+                    monthly_income varchar(50),
+                    salary_payment_method varchar(255),
+                    created_at timestamp not null default current_timestamp,
+                    updated_at timestamp not null default current_timestamp
+                )
+                """);
+
+        jdbcTemplate.update("""
+                insert into customer_profiles (
+                    user_id, date_of_birth, gender, nationality, passport_number, visa_number,
+                    identity_number, identity_issue_date, identity_issue_place,
+                    permanent_address, contact_address, occupation, employment_status,
+                    employer_name, work_phone, job_title, monthly_income, salary_payment_method)
+                select user_id, date_of_birth, gender, nationality, passport_number, visa_number,
+                    identity_number, identity_issue_date, identity_issue_place,
+                    permanent_address, contact_address, occupation, employment_status,
+                    employer_name, work_phone, job_title, monthly_income, salary_payment_method
+                from users where upper(role) = 'CUSTOMER'
+                on conflict (user_id) do update set
+                    date_of_birth = coalesce(customer_profiles.date_of_birth, excluded.date_of_birth),
+                    gender = coalesce(customer_profiles.gender, excluded.gender),
+                    nationality = coalesce(customer_profiles.nationality, excluded.nationality),
+                    passport_number = coalesce(customer_profiles.passport_number, excluded.passport_number),
+                    visa_number = coalesce(customer_profiles.visa_number, excluded.visa_number),
+                    identity_number = coalesce(customer_profiles.identity_number, excluded.identity_number),
+                    identity_issue_date = coalesce(customer_profiles.identity_issue_date, excluded.identity_issue_date),
+                    identity_issue_place = coalesce(customer_profiles.identity_issue_place, excluded.identity_issue_place),
+                    permanent_address = coalesce(customer_profiles.permanent_address, excluded.permanent_address),
+                    contact_address = coalesce(customer_profiles.contact_address, excluded.contact_address),
+                    occupation = coalesce(customer_profiles.occupation, excluded.occupation),
+                    employment_status = coalesce(customer_profiles.employment_status, excluded.employment_status),
+                    employer_name = coalesce(customer_profiles.employer_name, excluded.employer_name),
+                    work_phone = coalesce(customer_profiles.work_phone, excluded.work_phone),
+                    job_title = coalesce(customer_profiles.job_title, excluded.job_title),
+                    monthly_income = coalesce(customer_profiles.monthly_income, excluded.monthly_income),
+                    salary_payment_method = coalesce(customer_profiles.salary_payment_method, excluded.salary_payment_method)
+                """);
+
+        jdbcTemplate.execute("alter table tickets add column if not exists customer_id bigint");
+        executeIfPossible("""
+                do $$ begin
+                    if not exists (select 1 from pg_constraint where conname = 'fk_tickets_customer') then
+                        alter table tickets add constraint fk_tickets_customer
+                            foreign key (customer_id) references users(user_id);
+                    end if;
+                end $$
+                """);
+        jdbcTemplate.update("""
+                update tickets t set customer_id = matched.user_id
+                from (
+                    select lower(email) normalized_email, min(user_id) user_id
+                    from users where email is not null
+                    group by lower(email) having count(*) = 1
+                ) matched
+                where t.customer_id is null
+                  and t.customer_email is not null
+                  and lower(t.customer_email) = matched.normalized_email
+                """);
+        jdbcTemplate.execute("create index if not exists idx_tickets_customer_status_created on tickets(customer_id, status, created_at desc)");
+
+        jdbcTemplate.execute("""
+                create table if not exists transaction_drafts (
+                    draft_id bigserial primary key,
+                    ticket_id bigint not null unique references tickets(ticket_id) on delete cascade,
+                    service_id bigint,
+                    service_name varchar(255) not null,
+                    schema_snapshot text not null,
+                    values_payload text not null,
+                    profile_snapshot text not null default '{}',
+                    created_by varchar(255) not null,
+                    created_at timestamp not null default current_timestamp
+                )
+                """);
+        jdbcTemplate.execute("alter table transaction_drafts add column if not exists profile_snapshot text not null default '{}'");
+
+        Long totalTickets = jdbcTemplate.queryForObject("select count(*) from tickets", Long.class);
+        Long matchedTickets = jdbcTemplate.queryForObject("select count(*) from tickets where customer_id is not null", Long.class);
+        long total = totalTickets == null ? 0 : totalTickets;
+        long matched = matchedTickets == null ? 0 : matchedTickets;
+        log.info("Customer ticket backfill completed: total={}, matched={}, unmatched={}", total, matched, total - matched);
+
+        jdbcTemplate.update(
+                "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
+                PROFILE_REFACTOR_VERSION);
     }
 
     private void executeIfPossible(String sql) {

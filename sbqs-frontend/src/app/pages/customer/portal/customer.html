@@ -1,65 +1,51 @@
 <app-dashboard-layout title="Dịch vụ khách hàng">
-  <div class="customer-page customer-home">
-    <header class="customer-page__intro">
-      <span class="customer-kicker">Xin chào, {{ fullName }}</span>
-      <h1>Giao dịch thuận tiện, chủ động thời gian</h1>
-      <p>Chọn chi nhánh và dịch vụ cần thực hiện để nhận số thứ tự trực tuyến.</p>
-    </header>
+  <main class="customer-home">
+    <app-page-header
+      [title]="'Xin chào, ' + fullName"
+      description="Chọn việc bạn muốn thực hiện để bắt đầu."
+    />
 
-    <section class="customer-primary-action">
+    <section *ngIf="activeTicket as ticket" class="customer-current-journey">
       <div>
-        <span class="customer-kicker">Lấy số trực tuyến</span>
-        <h2>Bắt đầu giao dịch mới</h2>
-        <p>Hệ thống chỉ hiển thị hàng đợi và các quầy thuộc đúng máy bốc số của dịch vụ bạn chọn.</p>
+        <span>Phiếu đang hoạt động</span>
+        <strong>#{{ ticket.ticketNumber }}</strong>
+        <p>{{ ticket.service?.serviceName || ticket.serviceName || 'Dịch vụ tại quầy' }}</p>
       </div>
-      <a routerLink="/branches" class="btn btn-primary">
-        <app-icon name="building" [size]="16" />
-        Chọn chi nhánh
+      <app-status-badge [status]="ticket.status" />
+      <a routerLink="/ticket" class="btn btn-primary">
+        <app-icon name="ticket" [size]="16" /> Theo dõi phiếu
       </a>
     </section>
 
-    <section class="customer-primary-action">
-      <div><span class="customer-kicker">Ủy quyền giao dịch số</span><h2>Nhờ người thân hoặc kế toán làm thủ tục tại quầy</h2><p>Tạo mã ủy quyền có thời hạn và phạm vi rõ ràng; người được ủy quyền mang CCCD bản gốc để nhân viên xác minh.</p></div>
-      <a routerLink="/delegations" class="btn btn-secondary"><app-icon name="file-text" [size]="16" /> Tạo ủy quyền</a>
-    </section>
-
-    <section class="customer-section">
-      <div class="customer-section__header">
-        <div>
-          <h2>Tiến trình lấy số</h2>
-          <p>Ba bước để nhận và theo dõi số thứ tự.</p>
-        </div>
-        <a routerLink="/ticket" class="customer-text-link">
-          <app-icon name="ticket" [size]="16" />
-          Xem phiếu hiện tại
-        </a>
-      </div>
-
-      <div class="customer-steps">
-        <div class="customer-step">
-          <span>01</span>
+    <section class="customer-start" aria-labelledby="customer-start-title">
+      <header>
+        <h2 id="customer-start-title">Bạn cần làm gì?</h2>
+        <p>Bắt đầu hành trình chính hoặc sử dụng chức năng ủy quyền khi cần.</p>
+      </header>
+      <div class="customer-start__actions">
+        <article>
+          <app-icon name="building" [size]="22" />
           <div>
-            <strong>Chọn chi nhánh</strong>
-            <p>Chọn đúng ngân hàng và khu vực thuận tiện.</p>
+            <h3>Lấy số giao dịch</h3>
+            <p>Chọn chi nhánh, dịch vụ và chuẩn bị thông tin trước khi đến quầy.</p>
           </div>
-        </div>
-
-        <div class="customer-step">
-          <span>02</span>
+          <a routerLink="/branches" class="btn btn-primary">Chọn chi nhánh</a>
+        </article>
+        <article>
+          <app-icon name="file-text" [size]="22" />
           <div>
-            <strong>Chọn dịch vụ</strong>
-            <p>Chỉ các dịch vụ đã được cấu hình cho máy bốc số mới xuất hiện.</p>
+            <h3>Ủy quyền giao dịch</h3>
+            <p>Tạo mã có phạm vi và thời hạn cho người thực hiện thay bạn.</p>
           </div>
-        </div>
-
-        <div class="customer-step">
-          <span>03</span>
-          <div>
-            <strong>Theo dõi lượt</strong>
-            <p>Xem số đang phục vụ tại đúng khu vực của bạn.</p>
-          </div>
-        </div>
+          <a routerLink="/delegations" class="btn btn-outline-secondary">Tạo ủy quyền</a>
+        </article>
       </div>
     </section>
-  </div>
+
+    <nav class="sbqs-journey" aria-label="Các bước lấy số">
+      <span><b>1</b> Chọn chi nhánh</span>
+      <span><b>2</b> Chọn dịch vụ</span>
+      <span><b>3</b> Theo dõi lượt</span>
+    </nav>
+  </main>
 </app-dashboard-layout>

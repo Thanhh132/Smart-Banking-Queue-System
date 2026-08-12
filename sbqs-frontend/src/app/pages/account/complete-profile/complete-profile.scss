@@ -68,7 +68,7 @@
 .submit-button { width: 100%; padding: 13px 18px; border: 0; border-radius: 10px; background: var(--primary-color); color: #fff; font-weight: 800; }
 .submit-button:disabled { opacity: .65; }
 
-@media (max-width: 700px) {
+@media (max-width: 767.98px) {
   .profile-onboarding { padding: 18px 12px; }
   .profile-onboarding__card { padding: 20px; }
   .profile-onboarding__card header, .identity-note { display: grid; }

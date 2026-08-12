@@ -36,7 +36,7 @@ describe('AppSidebar', () => {
         '/account',
       ],
     ],
-    ['STAFF', ['/staff', '/monitor', '/account']],
+    ['STAFF', ['/staff', '/staff/history', '/monitor', '/account']],
     ['CUSTOMER', ['/customer', '/branches', '/ticket', '/delegations', '/account']],
   ])('keeps the expected navigation for %s', (role, expectedRoutes) => {
     sessionStorage.setItem('userRole', role);

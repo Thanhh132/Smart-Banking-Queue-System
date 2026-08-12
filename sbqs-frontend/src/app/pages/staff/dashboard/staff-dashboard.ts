@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { ApiErrorService } from '../../../core/services/api-error.service';
-import { HistoryItem, HistoryService } from '../../../core/services/history.service';
-import { StaffService } from '../../../core/services/staff.service';
+import { StaffService, StaffTicketView } from '../../../core/services/staff.service';
+import { AppButton } from '../../../shared/components/app-button/app-button';
 import { AppCard } from '../../../shared/components/app-card/app-card';
+import { AppConfirmDialog } from '../../../shared/components/app-confirm-dialog/app-confirm-dialog';
+import { AppEmptyState } from '../../../shared/components/app-empty-state/app-empty-state';
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
-import { ReportExportButtons } from '../../../shared/components/report-export-buttons/report-export-buttons';
-import { AppIcon } from '../../../shared/components/app-icon/app-icon';
+import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 
 @Component({
@@ -21,8 +22,10 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
     DashboardLayout,
     AppPageHeader,
     AppCard,
-    ReportExportButtons,
-    AppIcon,
+    AppButton,
+    AppConfirmDialog,
+    AppEmptyState,
+    AppStatusBadge,
   ],
   templateUrl: './staff-dashboard.html',
   styleUrl: './staff-dashboard.scss',
@@ -30,16 +33,14 @@ import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashbo
 export class StaffDashboard implements OnInit, OnDestroy {
   private static readonly LIVE_REFRESH_INTERVAL_MS = 2000;
   private staffService = inject(StaffService);
-  private historyService = inject(HistoryService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
 
-  currentTicket: any = null;
+  currentTicket: StaffTicketView | null = null;
   counters: any[] = [];
   selectedCounter: any = null;
   selectedCounterId: number | null = null;
   pendingApprovalTasks: any[] = [];
-  histories: HistoryItem[] = [];
   errorMessage = '';
   successMessage = '';
   isCallingNext = false;
@@ -52,6 +53,7 @@ export class StaffDashboard implements OnInit, OnDestroy {
   delegationIdentity = '';
   verifiedDelegation: any = null;
   isVerifyingDelegation = false;
+  isNoShowConfirmationOpen = false;
 
   /** Khởi tạo dashboard và chỉ polling khi tab đang hiển thị để giảm tải API. */
   ngOnInit(): void {
@@ -73,18 +75,10 @@ export class StaffDashboard implements OnInit, OnDestroy {
     return this.counters.filter((counter) => counter.status !== 'ACTIVE');
   }
 
-  get todayCompletedCount(): number {
-    const today = new Date().toDateString();
-    return this.histories.filter(
-      (item) => item.status === 'COMPLETED' && item.completedAt && new Date(item.completedAt).toDateString() === today
-    ).length;
-  }
-
   loadDashboard(): void {
     this.loadCounters();
     this.loadAssignedCounter();
     this.loadPendingApprovalTasks();
-    this.loadHistory();
   }
 
   loadCounters(): void {
@@ -250,9 +244,19 @@ export class StaffDashboard implements OnInit, OnDestroy {
 
   markNoShow(): void {
     if (!this.currentTicket || this.isSkipping) return;
-    if (!confirm(`Xác nhận phiếu #${this.currentTicket.ticketNumber} không đến quầy?`)) return;
+
+    this.isNoShowConfirmationOpen = true;
+  }
+
+  cancelMarkNoShow(): void {
+    this.isNoShowConfirmationOpen = false;
+  }
+
+  confirmMarkNoShow(): void {
+    if (!this.currentTicket || this.isSkipping) return;
 
     this.errorMessage = '';
+    this.isNoShowConfirmationOpen = false;
     this.isSkipping = true;
     this.staffService.markNoShow(this.currentTicket.ticketId)
       .pipe(finalize(() => {
@@ -331,28 +335,6 @@ export class StaffDashboard implements OnInit, OnDestroy {
         // Khong chan man hinh goi so neu chi tiet ho so tam thoi chua tai duoc.
       },
     });
-  }
-
-  loadHistory(): void {
-    this.historyService.getHistory().subscribe({
-      next: (histories) => {
-        this.histories = histories || [];
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.errorMessage = this.apiError.getMessage(err, 'Không tải được lịch sử phục vụ.');
-        this.cdr.detectChanges();
-      },
-    });
-  }
-
-  statusLabel(status?: string): string {
-    const labels: Record<string, string> = {
-      COMPLETED: 'Hoàn thành',
-      CANCELLED: 'Đã hủy',
-      MISSED: 'Khách không đến',
-    };
-    return labels[status || ''] || status || '-';
   }
 
   formatDate(value?: string): string {

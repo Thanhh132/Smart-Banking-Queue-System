@@ -3,6 +3,10 @@
   margin-top: 1rem;
 }
 
+:host(.excel-import-host--compact) {
+  margin-top: 0;
+}
+
 .excel-import {
   padding: 1rem;
   border: 1px solid var(--cui-border-color, #dce6e7);
@@ -37,8 +41,47 @@
 }
 
 .excel-import__controls {
+  flex-wrap: wrap;
   justify-content: flex-start;
   margin-top: 1rem;
+}
+
+.excel-import--compact {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0.75rem;
+}
+
+.excel-import--compact .excel-import__heading {
+  justify-content: flex-start;
+  gap: 0.625rem;
+}
+
+.excel-import--compact .excel-import__heading h3 {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.excel-import--compact .excel-import__kicker {
+  display: none;
+}
+
+.excel-import--compact .excel-import__controls {
+  min-width: 0;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0;
+}
+
+.excel-import--compact .file-picker {
+  font-weight: 500;
+}
+
+.excel-import--compact .file-name {
+  flex: 0 1 12rem;
 }
 
 .file-picker {
@@ -59,7 +102,9 @@
   cursor: pointer;
 }
 
-.file-picker:hover { border-color: var(--cui-primary, #087d74); }
+.file-picker:hover {
+  border-color: var(--cui-primary, #087d74);
+}
 
 .file-picker input {
   position: absolute;
@@ -85,7 +130,9 @@
 
 .import-message,
 .import-result,
-.import-errors { margin-top: 0.875rem; }
+.import-errors {
+  margin-top: 0.875rem;
+}
 
 .import-message--error {
   color: var(--cui-danger-text-emphasis, #991b1b);
@@ -108,7 +155,9 @@
   color: var(--cui-warning-text-emphasis, #92400e);
 }
 
-.import-errors { border-top: 1px solid var(--cui-border-color, #dce6e7); }
+.import-errors {
+  border-top: 1px solid var(--cui-border-color, #dce6e7);
+}
 
 .import-errors > div {
   justify-content: flex-start;
@@ -117,7 +166,9 @@
   font-size: 0.8125rem;
 }
 
-.import-errors strong { min-width: 4.5rem; }
+.import-errors strong {
+  min-width: 4.5rem;
+}
 
 .import-errors p {
   margin: 0.75rem 0 0;
@@ -126,11 +177,21 @@
 }
 
 @media (max-width: 767.98px) {
+  .excel-import--compact {
+    display: block;
+  }
+
   .excel-import__heading,
   .excel-import__controls {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .file-name { min-height: 1.5rem; }
+  .file-name {
+    min-height: 1.5rem;
+  }
+
+  .excel-import--compact .excel-import__controls {
+    margin-top: 0.625rem;
+  }
 }

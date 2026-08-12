@@ -1,0 +1,15 @@
+.staff-history-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.staff-history-table td:first-child,
+.staff-history-table td:last-child {
+  white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+  .staff-history-table {
+    min-width: 56rem;
+  }
+}

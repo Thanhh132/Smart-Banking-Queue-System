@@ -24,13 +24,14 @@ class AccountServiceTest {
         KeycloakAdminService keycloakAdminService = mock(KeycloakAdminService.class);
         PasswordEncoder passwordEncoder = mock(PasswordEncoder.class);
         ServiceRepository serviceRepository = mock(ServiceRepository.class);
+        CustomerProfileService customerProfileService = mock(CustomerProfileService.class);
         User user = user();
         when(currentUserService.requireUser()).thenReturn(user);
         when(passwordEncoder.encode("NewPassword2@")).thenReturn("new-hash");
 
         AccountService service = new AccountService(
                 currentUserService, userRepository, keycloakService, keycloakAdminService, passwordEncoder,
-                serviceRepository);
+                serviceRepository, customerProfileService);
         service.changePassword(new ChangePasswordRequest("CurrentPassword1!", "NewPassword2@"));
 
         verify(keycloakService).login(user.getEmail(), "CurrentPassword1!");

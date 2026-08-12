@@ -1,101 +1,107 @@
-<app-dashboard-layout title="Chuẩn bị giao dịch">
-  <main class="preparation-page">
-    <header class="preparation-hero">
-      <div>
-        <span class="eyebrow">Đăng ký giao dịch tại quầy</span>
-        <h1>Bạn cần thực hiện giao dịch gì?</h1>
-        <p>Chọn dịch vụ và điền trước thông tin cần thiết.</p>
-      </div>
-      <div class="branch-status" *ngIf="monitor">
-        <small>Chi nhánh đang chọn</small>
-        <strong>{{ monitor.branchName }}</strong>
-        <span>{{ monitor.waitingCount }} khách đang chờ</span>
-      </div>
-    </header>
+<app-dashboard-layout title="Chọn dịch vụ">
+  <main class="service-selection-page">
+    <app-page-header
+      [title]="selectedService ? selectedService.serviceName : 'Chọn dịch vụ giao dịch'"
+      [description]="selectedService ? 'Kiểm tra hồ sơ và bổ sung thông tin trước khi lấy số.' : 'Chọn nghiệp vụ bạn muốn thực hiện tại chi nhánh đã chọn.'"
+    >
+      <app-button *ngIf="selectedService" variant="outline" label="Chọn dịch vụ khác" (clicked)="closeForm()" />
+    </app-page-header>
 
-    <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+    <nav class="sbqs-journey" aria-label="Tiến trình lấy số">
+      <span class="complete"><b>1</b> Đã chọn chi nhánh</span>
+      <span class="active"><b>2</b> Chọn dịch vụ</span>
+      <span><b>3</b> Theo dõi lượt</span>
+    </nav>
 
-    <section class="dynamic-form-shell" *ngIf="selectedService">
-      <div class="form-heading">
-        <div><span>Thông tin cần khai</span><h2>{{ selectedService.serviceName }}</h2><p>Vui lòng điền các mục bên dưới trước khi lấy số.</p></div>
-        <button type="button" class="icon-close" (click)="closeForm()" aria-label="Đóng">×</button>
-      </div>
-      <form [formGroup]="transactionForm" (ngSubmit)="submit()">
-        <section class="form-section profile-section" [formGroup]="profileForm">
-          <div class="profile-section__heading">
-            <div><h3>Hồ sơ mặc định</h3><p>Thông tin được dùng chung và tự động điền cho các giao dịch sau.</p></div>
-            <span>4 mục bắt buộc</span>
-          </div>
-          <div class="dynamic-grid">
-            <label class="dynamic-field readonly-field">
-              <span>Họ và tên *</span>
-              <input formControlName="fullName" />
-              <small>Muốn thay đổi, vui lòng sửa tại Tài khoản của tôi.</small>
-            </label>
-            <label class="dynamic-field readonly-field">
-              <span>Số điện thoại *</span>
-              <input formControlName="phone" />
-              <small>Muốn thay đổi, vui lòng sửa tại Tài khoản của tôi.</small>
-            </label>
-            <label class="dynamic-field dynamic-field--wide">
-              <span>Địa chỉ thường trú *</span>
-              <textarea rows="2" formControlName="permanentAddress" placeholder="Địa chỉ ghi trên CCCD"></textarea>
-              <small *ngIf="profileForm.get('permanentAddress')?.touched && profileForm.get('permanentAddress')?.invalid">Vui lòng nhập địa chỉ thường trú.</small>
-            </label>
-            <label class="dynamic-field dynamic-field--wide">
-              <span>Địa chỉ tạm trú / nơi ở hiện tại *</span>
-              <textarea rows="2" formControlName="contactAddress" placeholder="Nơi đang ở thực tế"></textarea>
-              <small *ngIf="profileForm.get('contactAddress')?.touched && profileForm.get('contactAddress')?.invalid">Vui lòng nhập nơi ở hiện tại.</small>
-            </label>
-          </div>
-        </section>
-        <section class="form-section" *ngFor="let section of sections">
-          <h3>{{ section }}</h3>
-          <div class="dynamic-grid">
-            <ng-container *ngFor="let field of fieldsInSection(section)">
-              <label class="dynamic-field" [class.dynamic-field--wide]="field.type === 'TEXTAREA'" *ngIf="field.type !== 'RADIO' && field.type !== 'CHECKBOX'">
-                <span>{{ field.label }} <em *ngIf="field.required">*</em></span>
-                <textarea *ngIf="field.type === 'TEXTAREA'; else standardControl" rows="3" [formControlName]="field.key" [placeholder]="field.placeholder"></textarea>
-                <ng-template #standardControl>
-                  <select *ngIf="field.type === 'SELECT'; else standardInput" [formControlName]="field.key">
-                    <option value="">Chọn một giá trị</option><option *ngFor="let option of field.options" [value]="option">{{ option }}</option>
-                  </select>
-                  <ng-template #standardInput>
-                    <input *ngIf="field.type !== 'NUMBER'" [type]="field.type === 'DATE' ? 'date' : 'text'" [formControlName]="field.key" [placeholder]="field.placeholder" />
-                    <input *ngIf="field.type === 'NUMBER'" type="text" inputmode="numeric" autocomplete="off"
-                      [value]="formatAmount(transactionForm.get(field.key)?.value)" [placeholder]="field.placeholder"
-                      (input)="onAmountInput(field.key, $event)" (blur)="transactionForm.get(field.key)?.markAsTouched()" />
-                  </ng-template>
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
+
+    <ng-container *ngIf="!selectedService">
+      <section class="service-context" *ngIf="monitor">
+        <div><span>Chi nhánh đã chọn</span><strong>{{ monitor.branchName }}</strong></div>
+        <p>{{ monitor.waitingCount }} khách đang chờ</p>
+      </section>
+
+      <app-loading-state *ngIf="isLoading" label="Đang tải dịch vụ..." />
+      <app-empty-state
+        *ngIf="!isLoading && services.length === 0"
+        title="Chưa có dịch vụ khả dụng"
+        message="Chi nhánh hiện chưa cấu hình dịch vụ để lấy số trực tuyến."
+        icon="list-checks"
+      />
+
+      <section *ngIf="!isLoading && services.length > 0" class="service-options" aria-labelledby="service-options-title">
+        <header><h2 id="service-options-title">Dịch vụ tại chi nhánh</h2><p>{{ services.length }} dịch vụ khả dụng</p></header>
+        <div class="service-grid">
+          <button type="button" class="service-item" *ngFor="let service of services" (click)="selectService(service)">
+            <div><small>{{ serviceTypeLabel(service.serviceType) }}</small><h3>{{ service.serviceName }}</h3><p>{{ service.description }}</p></div>
+            <span>Chọn dịch vụ <b>→</b></span>
+          </button>
+        </div>
+      </section>
+    </ng-container>
+
+    <form *ngIf="selectedService" class="service-form sbqs-form" [formGroup]="transactionForm" (ngSubmit)="submit()">
+      <section class="service-form__section">
+        <header class="sbqs-section-heading">
+          <h3>Thông tin hồ sơ có sẵn</h3>
+          <p>Thông tin nhận dạng được lấy từ tài khoản và chỉ hiển thị để đối chiếu.</p>
+        </header>
+        <dl class="sbqs-details-grid service-profile-details">
+          <div><dt>Họ và tên</dt><dd>{{ profileForm.get('fullName')?.value || '-' }}</dd></div>
+          <div><dt>Số điện thoại</dt><dd>{{ profileForm.get('phone')?.value || '-' }}</dd></div>
+        </dl>
+
+        <div class="sbqs-form-grid service-address-grid" [formGroup]="profileForm">
+          <label class="sbqs-field">
+            Địa chỉ thường trú
+            <textarea class="sbqs-form-control" rows="2" formControlName="permanentAddress" placeholder="Địa chỉ ghi trên CCCD"></textarea>
+            <small class="sbqs-validation-message" *ngIf="profileForm.get('permanentAddress')?.touched && profileForm.get('permanentAddress')?.invalid">Vui lòng nhập địa chỉ thường trú.</small>
+          </label>
+          <label class="sbqs-field">
+            Nơi ở hiện tại
+            <textarea class="sbqs-form-control" rows="2" formControlName="contactAddress" placeholder="Nơi đang ở thực tế"></textarea>
+            <small class="sbqs-validation-message" *ngIf="profileForm.get('contactAddress')?.touched && profileForm.get('contactAddress')?.invalid">Vui lòng nhập nơi ở hiện tại.</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="service-form__section sbqs-section-divider" *ngFor="let section of sections">
+        <header class="sbqs-section-heading"><h3>{{ section }}</h3><p>Điền các thông tin cần thiết cho giao dịch này.</p></header>
+        <div class="sbqs-form-grid service-dynamic-grid">
+          <ng-container *ngFor="let field of fieldsInSection(section)">
+            <label class="sbqs-field" [class.service-field--wide]="field.type === 'TEXTAREA'" *ngIf="field.type !== 'RADIO' && field.type !== 'CHECKBOX'">
+              {{ field.label }}{{ field.required ? ' *' : '' }}
+              <textarea *ngIf="field.type === 'TEXTAREA'; else standardControl" class="sbqs-form-control" rows="3" [formControlName]="field.key" [placeholder]="field.placeholder"></textarea>
+              <ng-template #standardControl>
+                <select *ngIf="field.type === 'SELECT'; else standardInput" class="sbqs-form-control" [formControlName]="field.key">
+                  <option value="">Chọn một giá trị</option><option *ngFor="let option of field.options" [value]="option">{{ option }}</option>
+                </select>
+                <ng-template #standardInput>
+                  <input *ngIf="field.type !== 'NUMBER'" class="sbqs-form-control" [type]="field.type === 'DATE' ? 'date' : 'text'" [formControlName]="field.key" [placeholder]="field.placeholder" />
+                  <input *ngIf="field.type === 'NUMBER'" class="sbqs-form-control" type="text" inputmode="numeric" autocomplete="off" [value]="formatAmount(transactionForm.get(field.key)?.value)" [placeholder]="field.placeholder" (input)="onAmountInput(field.key, $event)" (blur)="transactionForm.get(field.key)?.markAsTouched()" />
                 </ng-template>
-                <small *ngIf="isInvalid(field.key)">Vui lòng nhập thông tin này.</small>
-              </label>
+              </ng-template>
+              <small class="sbqs-validation-message" *ngIf="isInvalid(field.key)">Vui lòng nhập thông tin này.</small>
+            </label>
 
-              <fieldset class="choice-field dynamic-field--wide" *ngIf="field.type === 'RADIO'">
-                <legend>{{ field.label }} <em *ngIf="field.required">*</em></legend>
-                <div class="choice-list"><label *ngFor="let option of field.options"><input type="radio" [formControlName]="field.key" [value]="option" /><span>{{ option }}</span></label></div>
-                <small *ngIf="isInvalid(field.key)">Vui lòng chọn một giá trị.</small>
-              </fieldset>
+            <fieldset class="service-choice service-field--wide" *ngIf="field.type === 'RADIO'">
+              <legend>{{ field.label }}{{ field.required ? ' *' : '' }}</legend>
+              <div><label *ngFor="let option of field.options"><input type="radio" [formControlName]="field.key" [value]="option" /><span>{{ option }}</span></label></div>
+              <small class="sbqs-validation-message" *ngIf="isInvalid(field.key)">Vui lòng chọn một giá trị.</small>
+            </fieldset>
 
-              <label class="checkbox-field dynamic-field--wide" *ngIf="field.type === 'CHECKBOX'">
-                <input type="checkbox" [formControlName]="field.key" /><span><strong>{{ field.label }}</strong><small>Tích chọn nếu khách hàng có nhu cầu</small></span>
-              </label>
-            </ng-container>
-          </div>
-        </section>
-        <footer class="form-actions"><button type="button" class="btn btn-secondary" (click)="closeForm()">Quay lại</button><button type="submit" class="btn btn-primary" [disabled]="isSubmitting">{{ isSubmitting ? 'Đang tạo giao dịch...' : 'Xác nhận và lấy số' }}</button></footer>
-      </form>
-    </section>
+            <label class="service-checkbox service-field--wide" *ngIf="field.type === 'CHECKBOX'">
+              <input type="checkbox" [formControlName]="field.key" />
+              <span><strong>{{ field.label }}</strong><small>Chọn nếu bạn có nhu cầu này.</small></span>
+            </label>
+          </ng-container>
+        </div>
+      </section>
 
-    <section *ngIf="!selectedService">
-      <div class="section-title"><div><span>Danh sách dịch vụ</span><h2>Chọn một dịch vụ để tiếp tục</h2></div></div>
-      <div *ngIf="isLoading" class="customer-state">Đang tải dịch vụ...</div>
-      <div class="service-grid" *ngIf="!isLoading">
-        <button type="button" class="service-card" *ngFor="let service of services; let index = index" (click)="selectService(service)">
-          <span class="service-index">{{ (index + 1).toString().padStart(2, '0') }}</span>
-          <div><small>{{ serviceTypeLabel(service.serviceType) }}</small><h3>{{ service.serviceName }}</h3><p>{{ service.description }}</p></div>
-          <strong>Chọn dịch vụ <span>→</span></strong>
-        </button>
-      </div>
-    </section>
+      <footer class="sbqs-form-actions service-form__actions">
+        <app-button variant="secondary" label="Quay lại" (clicked)="closeForm()" />
+        <app-button type="submit" icon="ticket" label="Xác nhận và lấy số" [loading]="isSubmitting" />
+      </footer>
+    </form>
   </main>
 </app-dashboard-layout>

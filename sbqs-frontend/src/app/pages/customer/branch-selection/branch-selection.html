@@ -1,129 +1,111 @@
-<app-dashboard-layout title="Chọn chi nhánh">
-  <div class="customer-page">
-    <div class="location-popup" *ngIf="popup" [ngClass]="'location-popup--' + popup.type">
-      <div>
-        <strong>{{ popup.title }}</strong>
-        <p>{{ popup.message }}</p>
-      </div>
-      <button type="button" (click)="closePopup()" aria-label="Đóng thông báo">
-        <app-icon name="x" [size]="16" />
-      </button>
+<app-dashboard-layout title="Chọn điểm giao dịch">
+  <main class="branch-selection-page">
+    <app-page-header
+      title="Chọn điểm giao dịch"
+      description="So sánh vị trí, thời gian chờ và trạng thái hoạt động để chọn chi nhánh phù hợp."
+    />
+
+    <nav class="sbqs-journey" aria-label="Tiến trình lấy số">
+      <span class="active"><b>1</b> Chọn chi nhánh</span>
+      <span><b>2</b> Chọn dịch vụ</span>
+      <span><b>3</b> Theo dõi lượt</span>
+    </nav>
+
+    <div *ngIf="popup" class="alert" [ngClass]="popup.type === 'error' ? 'alert-danger' : popup.type === 'success' ? 'alert-success' : 'alert-info'" role="status">
+      <div><strong>{{ popup.title }}</strong><p>{{ popup.message }}</p></div>
+      <app-button variant="outline" size="sm" icon="x" ariaLabel="Đóng thông báo" (clicked)="closePopup()" />
     </div>
 
-    <header class="customer-page__intro">
-      <span class="customer-kicker">Bước 1/3</span>
-      <h1>Tìm điểm giao dịch phù hợp</h1>
-      <p>Cho phép trình duyệt lấy vị trí hiện tại để hệ thống sắp xếp các chi nhánh gần bạn nhất.</p>
-    </header>
-
-    <section class="location-panel">
-      <div class="location-panel__address">
-        <label>Vị trí của bạn</label>
-        <div class="current-location-card">
-          <div>
-            <strong>{{ customerLocationLabel || 'Chưa xác định vị trí' }}</strong>
-            <p>Hệ thống chỉ dùng vị trí hiện tại để tính khoảng cách đến chi nhánh.</p>
-          </div>
-          <button type="button" class="btn btn-primary" (click)="useCurrentLocation()" [disabled]="isLocating">
-            <app-icon *ngIf="!isLocating" name="locate" [size]="16" />
-            {{ isLocating ? 'Đang lấy vị trí...' : 'Vị trí hiện tại' }}
-          </button>
+    <section class="branch-tools" aria-label="Vị trí và bộ lọc chi nhánh">
+      <div class="branch-location">
+        <div>
+          <span>Vị trí của bạn</span>
+          <strong>{{ customerLocationLabel || 'Chưa xác định vị trí' }}</strong>
+          <p>Vị trí chỉ được dùng để tính khoảng cách và đề xuất chi nhánh.</p>
         </div>
+        <app-button
+          variant="outline"
+          icon="locate"
+          [label]="isLocating ? 'Đang lấy vị trí...' : 'Dùng vị trí hiện tại'"
+          [loading]="isLocating"
+          (clicked)="useCurrentLocation()"
+        />
       </div>
-
-      <div class="location-panel__filters">
-        <label>
+      <div class="branch-filters">
+        <label class="sbqs-field">
           Ngân hàng
-          <select [(ngModel)]="selectedBank" (ngModelChange)="onBankChange()">
+          <select class="sbqs-form-control" [(ngModel)]="selectedBank" (ngModelChange)="onBankChange()">
             <option value="ALL">Tất cả ngân hàng</option>
             <option *ngFor="let bank of bankOptions" [value]="bank">{{ bank }}</option>
           </select>
         </label>
-        <label>
-          Tìm trong kết quả
-          <input type="search" [(ngModel)]="searchTerm" placeholder="Tên hoặc khu vực..." />
+        <label class="sbqs-field">
+          Tìm chi nhánh
+          <input class="sbqs-form-control" type="search" [(ngModel)]="searchTerm" placeholder="Tên hoặc khu vực..." />
         </label>
       </div>
     </section>
 
-    <section class="customer-section">
-      <div class="customer-section__header">
+    <section class="branch-results" aria-labelledby="branch-results-title">
+      <header>
         <div>
-          <h2>Chi nhánh đang hoạt động</h2>
+          <h2 id="branch-results-title">Chi nhánh phù hợp</h2>
           <p>{{ filteredBranches.length }} điểm giao dịch phù hợp</p>
         </div>
-        <span class="routing-refresh" *ngIf="customerLocationLabel">
-          {{ routingStatusLabel }}
-        </span>
-      </div>
+        <small *ngIf="customerLocationLabel">{{ routingStatusLabel }}</small>
+      </header>
 
-      <p class="routing-error" *ngIf="routingError">{{ routingError }}</p>
+      <div *ngIf="routingError" class="alert alert-warning" role="alert">{{ routingError }}</div>
+      <app-loading-state *ngIf="branches.length === 0" label="Đang tải danh sách chi nhánh..." />
+      <app-empty-state
+        *ngIf="branches.length > 0 && filteredBranches.length === 0"
+        title="Không tìm thấy chi nhánh"
+        message="Hãy thử thay đổi ngân hàng hoặc từ khóa tìm kiếm."
+        icon="building"
+      />
 
-      <div *ngIf="branches.length === 0" class="customer-state">
-        Đang tải danh sách chi nhánh...
-      </div>
-      <div *ngIf="branches.length > 0 && filteredBranches.length === 0" class="customer-state">
-        Không tìm thấy chi nhánh phù hợp.
-      </div>
-
-      <div class="branch-result-grid" *ngIf="filteredBranches.length > 0">
-        <article class="branch-result"
-          *ngFor="let branch of filteredBranches"
-          [class.branch-result--recommended]="recommendationFor(branch.branchId)?.recommended">
-          <div class="recommendation-banner" *ngIf="recommendationFor(branch.branchId)?.recommended">
-            <app-icon name="check-circle" [size]="16" />
-            Đề xuất tối ưu
-          </div>
-          <div class="branch-hours-badge"
-            [class.branch-hours-badge--open]="isBranchOpen(branch.branchId)"
-            [class.branch-hours-badge--closed]="isOpenStatusLoaded(branch.branchId) && !isBranchOpen(branch.branchId)">
-            <span></span>
-            {{ !isOpenStatusLoaded(branch.branchId)
-              ? 'Đang kiểm tra giờ'
-              : isBranchOpen(branch.branchId) ? 'Đang mở cửa' : 'Ngoài giờ phục vụ' }}
-          </div>
-          <div class="branch-result__heading">
-            <span>{{ branch.bankName }}</span>
-            <strong *ngIf="distanceLabel(branch)">
-              <ng-container *ngIf="recommendationFor(branch.branchId) as routing">#{{ routing.rank }} · </ng-container>{{ distanceLabel(branch) }}
-            </strong>
-          </div>
-          <h3>{{ branch.branchName }}</h3>
+      <div class="branch-grid" *ngIf="filteredBranches.length > 0">
+        <article class="branch-item" *ngFor="let branch of filteredBranches" [class.branch-item--recommended]="recommendationFor(branch.branchId)?.recommended">
+          <header>
+            <div>
+              <small>{{ branch.bankName }}</small>
+              <h3>{{ branch.branchName }}</h3>
+            </div>
+            <app-status-badge
+              [status]="!isOpenStatusLoaded(branch.branchId) ? 'PENDING' : isBranchOpen(branch.branchId) ? 'OPEN' : 'CLOSED'"
+              [label]="!isOpenStatusLoaded(branch.branchId) ? 'Đang kiểm tra' : isBranchOpen(branch.branchId) ? 'Đang mở cửa' : 'Ngoài giờ phục vụ'"
+            />
+          </header>
           <p>{{ branch.address || 'Chưa có địa chỉ chi tiết' }}</p>
           <small>{{ branch.ward || '' }}{{ branch.ward ? ', ' : '' }}{{ branch.district || '-' }}, {{ branch.province || '-' }}</small>
-          <div class="routing-metrics" *ngIf="recommendationFor(branch.branchId) as routing">
-            <div>
-              <span>Đang chờ</span>
-              <strong>{{ routing.waitingTickets }} khách</strong>
-            </div>
-            <div>
-              <span>Quầy hoạt động</span>
-              <strong>{{ routing.activeCounters }}</strong>
-            </div>
-            <div>
-              <span>Chờ dự kiến</span>
-              <strong>~{{ routing.estimatedWaitMinutes }} phút</strong>
-            </div>
+
+          <div class="branch-decision-data">
+            <span *ngIf="distanceLabel(branch)"><b>{{ distanceLabel(branch) }}</b> khoảng cách</span>
+            <ng-container *ngIf="recommendationFor(branch.branchId) as routing">
+              <span><b>{{ routing.waitingTickets }} khách</b> đang chờ</span>
+              <span><b>{{ routing.activeCounters }} quầy</b> đang hoạt động</span>
+              <span><b>Khoảng {{ routing.estimatedWaitMinutes }} phút</b> chờ dự kiến</span>
+            </ng-container>
           </div>
-          <p class="routing-explanation" *ngIf="recommendationFor(branch.branchId) as routing">
-            {{ routing.explanation }}
-          </p>
-          <div class="branch-result__actions">
-            <button type="button" class="btn btn-primary"
-              (click)="selectBranch(branch)"
-              [disabled]="!isBranchOpen(branch.branchId) || selectingBranchId === branch.branchId">
-              <app-icon name="arrow-right" [size]="16" />
-              {{ selectingBranchId === branch.branchId
-                ? 'Đang kiểm tra...'
-                : isBranchOpen(branch.branchId) ? 'Chọn chi nhánh' : 'Chưa thể lấy số' }}
-            </button>
-            <a class="btn btn-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">
-              <app-icon name="external-link" [size]="16" />
-              Google Maps
+          <p class="branch-explanation" *ngIf="recommendationFor(branch.branchId) as routing">{{ routing.explanation }}</p>
+          <strong class="branch-recommendation" *ngIf="recommendationFor(branch.branchId)?.recommended">
+            <app-icon name="check-circle" [size]="15" /> Đề xuất theo dữ liệu hiện tại
+          </strong>
+
+          <footer>
+            <app-button
+              icon="arrow-right"
+              [label]="selectingBranchId === branch.branchId ? 'Đang kiểm tra...' : isBranchOpen(branch.branchId) ? 'Chọn chi nhánh' : 'Chưa thể lấy số'"
+              [loading]="selectingBranchId === branch.branchId"
+              [disabled]="!isBranchOpen(branch.branchId)"
+              (clicked)="selectBranch(branch)"
+            />
+            <a class="btn btn-outline-secondary" [href]="branchMapUrl(branch)" target="_blank" rel="noopener">
+              <app-icon name="external-link" [size]="16" /> Bản đồ
             </a>
-          </div>
+          </footer>
         </article>
       </div>
     </section>
-  </div>
+  </main>
 </app-dashboard-layout>

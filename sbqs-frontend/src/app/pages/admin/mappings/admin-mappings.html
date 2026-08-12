@@ -1,103 +1,163 @@
 <app-dashboard-layout title="Gán dịch vụ">
-  <app-page-header title="Gán dịch vụ cho máy bốc số" subtitle="Chọn một máy và tick nhiều dịch vụ để gán hàng loạt">
-  </app-page-header>
+  <div class="admin-mappings-page">
+    <app-page-header
+      title="Gán dịch vụ cho máy bốc số"
+      description="Thiết lập các dịch vụ được cung cấp tại từng máy bốc số của chi nhánh."
+    />
 
-  <div class="mapping-summary-grid">
-    <app-card>
-      <h3>Máy bốc số</h3>
-      <p>{{ queueMachines.length }}</p>
-      <small>Máy đã khai báo</small>
-    </app-card>
+    <div *ngIf="successMessage" class="alert alert-success" role="status">
+      {{ successMessage }}
+    </div>
 
-    <app-card>
-      <h3>Dịch vụ</h3>
-      <p>{{ services.length }}</p>
-      <small>Dịch vụ khả dụng</small>
-    </app-card>
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
 
-    <app-card>
-      <h3>Liên kết</h3>
-      <p>{{ mappings.length }}</p>
-      <small>Liên kết hiện có</small>
-    </app-card>
-  </div>
-
-  <div *ngIf="successMessage" class="alert alert-success">
-    {{ successMessage }}
-  </div>
-
-  <div *ngIf="errorMessage" class="alert alert-danger">
-    {{ errorMessage }}
-  </div>
-
-  <div class="mapping-page-grid">
-    <app-card>
-      <div class="card-header">
-        <div>
-          <h2>Thêm liên kết hàng loạt</h2>
-          <p>Chọn máy bốc số, sau đó tick các dịch vụ cần gán.</p>
-        </div>
-      </div>
-
-      <div class="mapping-form">
-        <label>Máy bốc số</label>
-        <select [(ngModel)]="selectedQueueMachineId">
+    <section class="mapping-context" aria-label="Ngữ cảnh gán dịch vụ">
+      <label class="sbqs-field" for="mapping-machine">
+        <span>Máy bốc số</span>
+        <select
+          id="mapping-machine"
+          class="sbqs-form-control"
+          [(ngModel)]="selectedQueueMachineId"
+          [disabled]="isMachinesLoading || queueMachines.length === 0"
+        >
           <option [ngValue]="null">Chọn máy bốc số</option>
           <option *ngFor="let machine of queueMachines" [ngValue]="machine.queueMachineId">
-            {{ machine.machineName }} - {{ machine.machineCode }}
+            {{ machine.machineName }} — {{ machine.machineCode }}
           </option>
         </select>
+      </label>
 
-        <label>Dịch vụ</label>
-        <div class="checkbox-list">
-          <label class="checkbox-row" *ngFor="let service of services">
-            <input
-              type="checkbox"
-              [checked]="selectedServiceIds.includes(service.serviceId)"
-              (change)="toggleService(service.serviceId, $any($event.target).checked)"
-            />
-            <span>{{ service.serviceName }} - {{ service.serviceCode }}</span>
-          </label>
+      <dl class="mapping-context__summary" aria-label="Tóm tắt cấu hình">
+        <div>
+          <dt class="visually-hidden">Số máy bốc số</dt>
+          <dd>{{ queueMachines.length }} máy bốc số</dd>
         </div>
+        <div>
+          <dt class="visually-hidden">Số dịch vụ</dt>
+          <dd>{{ services.length }} dịch vụ</dd>
+        </div>
+        <div>
+          <dt class="visually-hidden">Số liên kết</dt>
+          <dd>{{ mappings.length }} liên kết</dd>
+        </div>
+      </dl>
+    </section>
 
-        <button class="btn btn-primary" type="button" (click)="createMappings()">
-          <app-icon name="link" [size]="16" />
-          Tạo liên kết
-        </button>
+    <app-card
+      title="Chọn dịch vụ cần gán"
+      subtitle="Có thể chọn nhiều dịch vụ và tạo liên kết trong một lần."
+    >
+      <div card-actions class="mapping-editor__actions">
+        <span>{{ selectedServiceIds.length }} dịch vụ đã chọn</span>
+        <app-button
+          size="sm"
+          icon="link"
+          label="Tạo liên kết"
+          [loading]="isSaving"
+          [disabled]="
+            !selectedQueueMachineId || selectedServiceIds.length === 0 || isServicesLoading
+          "
+          (clicked)="createMappings()"
+        />
+      </div>
+
+      <app-loading-state
+        *ngIf="isMachinesLoading || isServicesLoading"
+        label="Đang tải máy bốc số và dịch vụ..."
+      />
+
+      <app-empty-state
+        *ngIf="!isMachinesLoading && queueMachines.length === 0"
+        title="Chưa có máy bốc số"
+        message="Hãy khai báo máy bốc số trong khu vực Vận hành trước khi gán dịch vụ."
+        icon="monitor"
+      />
+
+      <app-empty-state
+        *ngIf="!isServicesLoading && queueMachines.length > 0 && services.length === 0"
+        title="Chưa có dịch vụ khả dụng"
+        message="Chi nhánh hiện chưa có dịch vụ để gán cho máy bốc số."
+      />
+
+      <div
+        *ngIf="
+          !isMachinesLoading &&
+          !isServicesLoading &&
+          queueMachines.length > 0 &&
+          services.length > 0
+        "
+        class="mapping-service-grid"
+      >
+        <label class="mapping-service-option" *ngFor="let service of services">
+          <input
+            type="checkbox"
+            [checked]="selectedServiceIds.includes(service.serviceId)"
+            (change)="toggleService(service.serviceId, $any($event.target).checked)"
+          />
+          <span>
+            <strong>{{ service.serviceName }}</strong>
+            <small>{{ service.serviceCode }}</small>
+          </span>
+        </label>
       </div>
     </app-card>
 
-    <app-card>
-      <div class="card-header">
-        <div>
-          <h2>Danh sách liên kết</h2>
-          <p>Các liên kết máy bốc số và dịch vụ trong chi nhánh.</p>
-        </div>
-      </div>
+    <app-data-table-shell
+      title="Danh sách liên kết"
+      description="Các liên kết máy bốc số và dịch vụ trong chi nhánh."
+      [loading]="isMappingsLoading"
+      loadingLabel="Đang tải danh sách liên kết..."
+      [empty]="!isMappingsLoading && mappings.length === 0"
+      emptyTitle="Chưa có liên kết"
+      emptyMessage="Chọn máy và dịch vụ phía trên để tạo liên kết đầu tiên."
+    >
+      <div table-actions class="mapping-table-count">{{ mappings.length }} liên kết</div>
 
-      <table class="mapping-table">
+      <table class="table mapping-table">
         <thead>
           <tr>
             <th>Máy bốc số</th>
             <th>Dịch vụ</th>
-            <th>Thao tác</th>
+            <th class="mapping-table__actions-heading">Thao tác</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let mapping of mappings">
-            <td>{{ mapping.queueMachine?.machineName || mapping.queueMachine?.machineCode || '-' }}</td>
-            <td>{{ mapping.service?.serviceName || '-' }}</td>
             <td>
-              <button class="btn btn-danger btn-sm" type="button" (click)="deleteMapping(mapping)">
-                <app-icon name="unlink" [size]="14" />
-                Gỡ
-              </button>
+              <strong>
+                {{ mapping.queueMachine?.machineName || mapping.queueMachine?.machineCode || '-' }}
+              </strong>
+              <small *ngIf="mapping.queueMachine?.machineName && mapping.queueMachine?.machineCode">
+                {{ mapping.queueMachine.machineCode }}
+              </small>
+            </td>
+            <td>{{ mapping.service?.serviceName || '-' }}</td>
+            <td class="mapping-table__actions-cell">
+              <app-button
+                variant="danger"
+                size="sm"
+                icon="unlink"
+                label="Gỡ"
+                (clicked)="deleteMapping(mapping)"
+              />
             </td>
           </tr>
         </tbody>
       </table>
+    </app-data-table-shell>
 
-      <p *ngIf="mappings.length === 0">Chưa có liên kết nào.</p>
-    </app-card>
+    <app-confirm-dialog
+      [open]="pendingDeleteMapping !== null"
+      title="Gỡ liên kết dịch vụ"
+      [message]="pendingDeleteMessage"
+      confirmLabel="Gỡ liên kết"
+      cancelLabel="Hủy"
+      [danger]="true"
+      [loading]="isDeleting"
+      (confirmed)="confirmDeleteMapping()"
+      (cancelled)="cancelDeleteMapping()"
+    />
   </div>
 </app-dashboard-layout>
