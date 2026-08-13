@@ -41,7 +41,7 @@
 
     <select id="findTicketsForReport" resultType="com.sbqs.dto.report.query.TicketReportQueryRow">
         SELECT t.ticket_number,
-               t.customer_email,
+               u.email AS customer_email,
                s.service_name,
                qm.machine_name AS queue_machine_name,
                b.branch_name,
@@ -51,6 +51,7 @@
         LEFT JOIN services s ON s.service_id = t.service_id
         LEFT JOIN queue_machines qm ON qm.queue_machine_id = t.queue_machine_id
         LEFT JOIN branches b ON b.branch_id = t.branch_id
+        LEFT JOIN users u ON u.user_id = t.customer_id
         <where>
             <if test="branchId != null">
                 t.branch_id = #{branchId}

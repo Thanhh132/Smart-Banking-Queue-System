@@ -47,9 +47,6 @@ public class Ticket {
     @JsonIgnore
     private User customer;
 
-    @Column(name = "customer_email")
-    private String customerEmail;
-
     @Column(name = "status", nullable = false)
     private String status = "WAITING";
 

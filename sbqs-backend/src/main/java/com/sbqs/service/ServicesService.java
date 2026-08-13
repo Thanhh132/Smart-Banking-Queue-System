@@ -35,6 +35,7 @@ public class ServicesService {
     private final BranchRepository branchRepository;
     private final ServiceDtoMapper serviceDtoMapper;
     private final CurrentUserService currentUserService;
+    private final ServiceCatalogService serviceCatalogService;
     private final DomainEventPublisher eventPublisher;
 
     public ServicesService(
@@ -46,6 +47,7 @@ public class ServicesService {
             BranchRepository branchRepository,
             ServiceDtoMapper serviceDtoMapper,
             CurrentUserService currentUserService,
+            ServiceCatalogService serviceCatalogService,
             DomainEventPublisher eventPublisher) {
 
         this.serviceRepository = serviceRepository;
@@ -56,12 +58,17 @@ public class ServicesService {
         this.branchRepository = branchRepository;
         this.serviceDtoMapper = serviceDtoMapper;
         this.currentUserService = currentUserService;
+        this.serviceCatalogService = serviceCatalogService;
         this.eventPublisher = eventPublisher;
     }
 
     public List<Services> getAllServices() {
-        return serviceRepository.findByBranchAndStatusNotIgnoreCase(
-                currentUserService.requireUser().getBranch(), "DELETED");
+        Branch branch = currentUserService.requireUser().getBranch();
+        if (branch == null) {
+            return List.of();
+        }
+        serviceCatalogService.inheritCatalogForBranch(branch);
+        return serviceRepository.findByBranchAndStatusNotIgnoreCase(branch, "DELETED");
     }
 
     public List<Services> getServices(Long branchId, String serviceType, boolean mappedOnly) {
@@ -88,6 +95,7 @@ public class ServicesService {
     @Cacheable(cacheNames = "services", key = "'branch:' + #branch.branchId")
     public List<Services> getServicesByBranch(Branch branch) {
         requireOperationalBranchAccess(branch.getBranchId());
+        serviceCatalogService.inheritCatalogForBranch(branch);
         return serviceRepository.findByBranchAndStatusNotIgnoreCase(branch, "DELETED");
     }
 
@@ -240,7 +248,8 @@ public class ServicesService {
 
     /** Bảo đảm BRANCH_ADMIN chỉ cấu hình dịch vụ thuộc chi nhánh mình phụ trách. */
     private void requireOperationalBranchAccess(Long branchId) {
-        if (!"CUSTOMER".equals(currentUserService.requireUser().getRole())) {
+        String role = currentUserService.requireUser().getRole();
+        if (!List.of("CUSTOMER", "SUPER_ADMIN").contains(role)) {
             currentUserService.requireBranch(branchId);
         }
     }

@@ -349,7 +349,39 @@
             </div>
           </form>
         </app-card>
+
+        <app-card
+          *ngIf="canEditProfile"
+          class="account-danger-card"
+          title="Xóa tài khoản"
+          [subtitle]="canDeleteAccount
+            ? 'Xóa quyền truy cập và dữ liệu hồ sơ cá nhân khỏi SBQS. Lịch sử giao dịch đã phát sinh vẫn được lưu để đối soát.'
+            : 'Bạn đang dùng Dev Login hoặc đăng nhập dự phòng. Phiên test local không được phép xóa dữ liệu; hãy đăng xuất rồi đăng nhập tài khoản thật bằng Keycloak hoặc Google để thực hiện.'"
+        >
+          <div *ngIf="deleteAccountError" class="alert alert-danger account-feedback" role="alert">
+            {{ deleteAccountError }}
+          </div>
+          <app-button
+            variant="danger"
+            icon="trash"
+            label="Xóa tài khoản của tôi"
+            [disabled]="isDeletingAccount || !canDeleteAccount"
+            (clicked)="openDeleteDialog()"
+          />
+        </app-card>
       </div>
     </ng-container>
+
+    <app-confirm-dialog
+      [open]="deleteDialogOpen"
+      title="Xóa vĩnh viễn tài khoản?"
+      message="Bạn sẽ bị đăng xuất và không thể đăng nhập lại bằng tài khoản này. Hồ sơ cá nhân sẽ bị xóa; thao tác không thể hoàn tác."
+      confirmLabel="Xóa tài khoản"
+      cancelLabel="Giữ tài khoản"
+      [danger]="true"
+      [loading]="isDeletingAccount"
+      (confirmed)="confirmDeleteAccount()"
+      (cancelled)="closeDeleteDialog()"
+    />
   </div>
 </app-dashboard-layout>

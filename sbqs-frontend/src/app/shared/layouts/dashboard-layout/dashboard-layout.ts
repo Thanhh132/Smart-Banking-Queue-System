@@ -20,8 +20,8 @@ export class DashboardLayout implements OnInit, OnDestroy {
   readonly sidebarOpen = signal(false);
   @Input() title = 'Tổng quan';
 
-  get isFallbackSession(): boolean {
-    return this.authService.isFallbackSession();
+  get isLocalTestSession(): boolean {
+    return this.authService.isLocalTestSession();
   }
 
   ngOnInit(): void {

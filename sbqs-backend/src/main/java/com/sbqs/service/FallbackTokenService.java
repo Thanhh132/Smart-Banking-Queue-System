@@ -36,6 +36,15 @@ public class FallbackTokenService {
      * Claim token_source=fallback được SecurityConfig dùng để khóa thao tác nhạy cảm.
      */
     public String issue(User user) {
+        return issue(user, "fallback");
+    }
+
+    /** Local-development impersonation token; guarded by DevLoginController loopback checks. */
+    public String issueDevelopment(User user) {
+        return issue(user, "dev_quick_login");
+    }
+
+    private String issue(User user, String tokenSource) {
         Instant issuedAt = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(properties.getIssuer())
@@ -46,7 +55,7 @@ public class FallbackTokenService {
                 .claim("preferred_username", user.getEmail())
                 .claim("name", user.getFullName())
                 .claim("realm_access", Map.of("roles", List.of(user.getRole())))
-                .claim("token_source", "fallback")
+                .claim("token_source", tokenSource)
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).type("JWT").build();
         return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

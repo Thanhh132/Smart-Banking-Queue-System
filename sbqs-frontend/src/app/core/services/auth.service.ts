@@ -12,8 +12,15 @@ export interface LoginResponse {
   fullName: string;
   email: string;
   branchId: number | null;
-  authenticationSource: 'KEYCLOAK' | 'FALLBACK';
+  authenticationSource: 'KEYCLOAK' | 'FALLBACK' | 'DEV_QUICK_LOGIN';
   profileComplete: boolean;
+}
+
+export interface DevLoginAccount {
+  userId: number;
+  displayName: string;
+  role: string;
+  branchName: string | null;
 }
 
 interface GoogleLoginConfig {
@@ -42,6 +49,16 @@ export class AuthService {
       tap((response) => {
         this.saveSession(response, true);
       })
+    );
+  }
+
+  getDevLoginAccounts(): Observable<DevLoginAccount[]> {
+    return this.http.get<DevLoginAccount[]>(`${this.apiUrl}/dev/accounts`);
+  }
+
+  devLogin(userId: number): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/dev/login/${userId}`, {}).pipe(
+      tap((response) => this.saveSession(response, true)),
     );
   }
 
@@ -356,6 +373,11 @@ export class AuthService {
 
   isFallbackSession(): boolean {
     return sessionStorage.getItem('authenticationSource') === 'FALLBACK';
+  }
+
+  isLocalTestSession(): boolean {
+    const source = sessionStorage.getItem('authenticationSource');
+    return source === 'FALLBACK' || source === 'DEV_QUICK_LOGIN';
   }
 
   /** Ánh xạ role thành landing page dùng chung cho login, guard và redirect. */

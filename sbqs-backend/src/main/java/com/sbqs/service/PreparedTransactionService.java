@@ -8,7 +8,6 @@ import com.sbqs.entity.Ticket;
 import com.sbqs.entity.TransactionDraft;
 import com.sbqs.entity.User;
 import com.sbqs.repository.TransactionDraftRepository;
-import com.sbqs.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,15 +26,12 @@ import java.util.stream.Collectors;
 public class PreparedTransactionService {
 
     private final TransactionDraftRepository transactionDraftRepository;
-    private final UserRepository userRepository;
     private final CustomerProfileService customerProfileService;
 
     public PreparedTransactionService(
             TransactionDraftRepository transactionDraftRepository,
-            UserRepository userRepository,
             CustomerProfileService customerProfileService) {
         this.transactionDraftRepository = transactionDraftRepository;
-        this.userRepository = userRepository;
         this.customerProfileService = customerProfileService;
     }
 
@@ -84,7 +80,7 @@ public class PreparedTransactionService {
         draft.setProfileSnapshot(customerProfileService.snapshot(
                 customer, CustomerProfilePolicy.includeDefaults(service.getRequiredCustomerFields())));
         draft.setValues(values);
-        draft.setCreatedBy(ticket.getCustomerEmail());
+        draft.setCreatedBy(customer.getEmail());
         transactionDraftRepository.save(draft);
     }
 
@@ -110,10 +106,6 @@ public class PreparedTransactionService {
     public TicketStaffViewResponse toStaffView(Ticket ticket) {
         Services service = ticket.getService();
         User customer = ticket.getCustomer();
-        if (customer == null && ticket.getCustomerEmail() != null) {
-            // Compatibility fallback for tickets created before customer_id existed.
-            customer = userRepository.findByEmailIgnoreCase(ticket.getCustomerEmail()).orElse(null);
-        }
         User resolvedCustomer = customer;
         TransactionDraft draft = transactionDraftRepository.findByTicketTicketId(ticket.getTicketId()).orElse(null);
         if (draft != null) {
@@ -166,7 +158,7 @@ public class PreparedTransactionService {
             Ticket ticket, Services service, User customer, List<TicketPaperlessFieldResponse> fields) {
         return new TicketStaffViewResponse(
                 ticket.getTicketId(), ticket.getTicketNumber(), ticket.getStatus(),
-                ticket.getCustomerEmail(), ticket.getServingStartedAt(),
+                customer == null ? null : customer.getEmail(), ticket.getServingStartedAt(),
                 customer == null ? null : new TicketStaffViewResponse.CustomerSummary(
                         customer.getUserId(), customer.getFullName(), customer.getEmail(), customer.getPhone()),
                 service == null ? null : new TicketStaffViewResponse.ServiceSummary(

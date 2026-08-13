@@ -2,7 +2,7 @@
   <div class="branches-page">
     <app-page-header
       title="Hệ thống chi nhánh"
-      description="Tạo và chuẩn hóa dữ liệu chi nhánh trước khi cấp tài khoản quản trị."
+      description="Theo dõi tuần tự từng chi nhánh, nhân sự phụ trách và dịch vụ đang cung cấp."
     >
       <app-button
         variant="outline"
@@ -96,6 +96,13 @@
                 <app-button
                   variant="outline"
                   size="sm"
+                  icon="users"
+                  [label]="expandedBranchId === branch.branchId ? 'Thu gọn' : 'Chi tiết'"
+                  (clicked)="toggleBranchDetails(branch)"
+                />
+                <app-button
+                  variant="outline"
+                  size="sm"
                   icon="pencil"
                   label="Sửa"
                   (clicked)="startEdit(branch)"
@@ -113,7 +120,116 @@
           </tr>
         </tbody>
       </table>
+
+      <section
+        *ngFor="let branch of filteredBranches"
+        class="branch-detail card shadow-sm"
+        [class.branch-detail--open]="expandedBranchId === branch.branchId"
+        [attr.aria-hidden]="expandedBranchId !== branch.branchId"
+      >
+        <ng-container *ngIf="expandedBranchId === branch.branchId">
+          <header class="card-header branch-detail__header">
+            <div class="branch-detail__identity">
+              <span class="branch-detail__icon"><app-icon name="building" [size]="19" /></span>
+              <div>
+                <strong>{{ branch.branchName }}</strong>
+                <small>{{ branch.branchCode }} · {{ branch.district || branch.province || 'Chưa xác định khu vực' }}</small>
+              </div>
+            </div>
+            <div class="branch-detail__summary">
+              <span>{{ branchAdmins(branch.branchId).length }} quản trị viên</span>
+              <span>{{ branchStaff(branch.branchId).length }} nhân viên</span>
+              <span>{{ activeServices(branch.branchId).length }} dịch vụ hoạt động</span>
+              <app-status-badge [status]="branch.status || 'INACTIVE'" />
+            </div>
+          </header>
+
+          <div *ngIf="detailLoadingBranchId === branch.branchId" class="card-body branch-detail__loading">
+            <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+            Đang tải hồ sơ chi nhánh...
+          </div>
+
+          <ng-container *ngIf="detailLoadingBranchId !== branch.branchId">
+            <nav class="branch-detail__tabs" aria-label="Nội dung chi tiết chi nhánh">
+              <button type="button" class="nav-link" [class.active]="detailTab === 'admins'" (click)="selectDetailTab('admins')">
+                <app-icon name="users" [size]="16" /> Quản trị viên
+                <span class="badge rounded-pill text-bg-light">{{ branchAdmins(branch.branchId).length }}</span>
+              </button>
+              <button type="button" class="nav-link" [class.active]="detailTab === 'staff'" (click)="selectDetailTab('staff')">
+                <app-icon name="briefcase" [size]="16" /> Nhân viên
+                <span class="badge rounded-pill text-bg-light">{{ branchStaff(branch.branchId).length }}</span>
+              </button>
+              <button type="button" class="nav-link" [class.active]="detailTab === 'services'" (click)="selectDetailTab('services')">
+                <app-icon name="list-checks" [size]="16" /> Dịch vụ
+                <span class="badge rounded-pill text-bg-light">{{ branchServices[branch.branchId].length }}</span>
+              </button>
+            </nav>
+
+            <div class="card-body branch-detail__content" *ngIf="detailTab === 'admins'">
+              <div class="branch-detail__toolbar">
+                <div><strong>Quản trị viên phụ trách</strong><small>Quản lý tài khoản có quyền vận hành chi nhánh này.</small></div>
+                <app-button size="sm" icon="user-plus" label="Thêm quản trị viên" (clicked)="openAdminEditor(branch)" />
+              </div>
+              <div class="table-responsive" *ngIf="branchAdmins(branch.branchId).length; else noAdmin">
+                <table class="table table-hover align-middle mb-0 branch-detail__table">
+                  <thead><tr><th>Quản trị viên</th><th>Liên hệ</th><th>Trạng thái</th><th class="text-end">Thao tác</th></tr></thead>
+                  <tbody><tr *ngFor="let user of branchAdmins(branch.branchId)">
+                    <td><strong>{{ user.fullName }}</strong><small>{{ user.email }}</small></td>
+                    <td>{{ user.phone || 'Chưa cập nhật' }}</td>
+                    <td><app-status-badge [status]="user.status" /></td>
+                    <td><div class="branch-detail__actions"><app-button variant="outline" size="sm" icon="pencil" label="Sửa" (clicked)="openAdminEditor(branch, user)" /><app-button variant="danger" size="sm" icon="trash" label="Xóa" (clicked)="deleteAdmin(user)" /></div></td>
+                  </tr></tbody>
+                </table>
+              </div>
+              <ng-template #noAdmin><div class="border rounded text-center text-body-secondary py-4 px-3"><app-icon name="users" [size]="24" /><strong class="d-block mt-2 text-body">Chưa có quản trị viên</strong><small class="d-block">Thêm quản trị viên đầu tiên để phụ trách chi nhánh.</small></div></ng-template>
+            </div>
+
+            <div class="card-body branch-detail__content" *ngIf="detailTab === 'staff'">
+              <div class="branch-detail__toolbar"><div><strong>Nhân viên chi nhánh</strong><small>Danh sách nhân sự do quản trị viên chi nhánh quản lý.</small></div></div>
+              <div class="table-responsive" *ngIf="branchStaff(branch.branchId).length; else noStaff">
+                <table class="table table-hover align-middle mb-0 branch-detail__table">
+                  <thead><tr><th>Nhân viên</th><th>Email</th><th>Điện thoại</th><th>Trạng thái</th></tr></thead>
+                  <tbody><tr *ngFor="let user of branchStaff(branch.branchId)"><td><strong>{{ user.fullName }}</strong></td><td>{{ user.email }}</td><td>{{ user.phone || 'Chưa cập nhật' }}</td><td><app-status-badge [status]="user.status" /></td></tr></tbody>
+                </table>
+              </div>
+              <ng-template #noStaff><div class="border rounded text-center text-body-secondary py-4 px-3"><app-icon name="briefcase" [size]="24" /><strong class="d-block mt-2 text-body">Chưa có nhân viên</strong><small class="d-block">Nhân viên sẽ xuất hiện sau khi quản trị chi nhánh tạo tài khoản.</small></div></ng-template>
+            </div>
+
+            <div class="card-body branch-detail__content" *ngIf="detailTab === 'services'">
+              <div class="branch-detail__toolbar"><div><strong>Dịch vụ tại chi nhánh</strong><small>Theo dõi dịch vụ đang cung cấp và tạm ngừng.</small></div><div class="branch-detail__legend"><span class="badge text-bg-success">{{ activeServices(branch.branchId).length }} đang dùng</span><span class="badge text-bg-secondary">{{ inactiveServices(branch.branchId).length }} không dùng</span></div></div>
+              <div class="table-responsive" *ngIf="branchServices[branch.branchId].length; else noServices">
+                <table class="table table-hover align-middle mb-0 branch-detail__table">
+                  <thead><tr><th>Dịch vụ</th><th>Nhóm</th><th>Thời gian dự kiến</th><th>Trạng thái sử dụng</th></tr></thead>
+                  <tbody><tr *ngFor="let service of branchServices[branch.branchId]"><td><strong>{{ service.serviceName }}</strong><small>{{ service.serviceCode }}</small></td><td>{{ service.serviceType }}</td><td>{{ service.estimatedTime }} phút</td><td><app-status-badge [status]="service.status" [label]="service.status === 'ACTIVE' ? 'Đang sử dụng' : 'Không sử dụng'" /></td></tr></tbody>
+                </table>
+              </div>
+              <ng-template #noServices><div class="border rounded text-center text-body-secondary py-4 px-3"><app-icon name="list-checks" [size]="24" /><strong class="d-block mt-2 text-body">Chưa có dịch vụ</strong><small class="d-block">Chi nhánh chưa được đồng bộ dịch vụ nào.</small></div></ng-template>
+            </div>
+          </ng-container>
+        </ng-container>
+      </section>
     </app-data-table-shell>
+
+    <app-modal-shell
+      [open]="adminEditorOpen"
+      [title]="editingAdminId ? 'Cập nhật quản trị viên' : 'Thêm quản trị viên chi nhánh'"
+      [description]="adminEditorBranch ? 'Phạm vi phụ trách: ' + adminEditorBranch.branchName : ''"
+      [closeDisabled]="isAdminSaving"
+      (closed)="closeAdminEditor()"
+    >
+      <form class="sbqs-modal-form sbqs-form" [formGroup]="adminForm" (ngSubmit)="saveAdmin()">
+        <div class="sbqs-modal-body"><div class="sbqs-form-grid">
+          <label class="sbqs-field"><span>Họ và tên</span><input appPreventAutofill class="sbqs-form-control" formControlName="fullName" /></label>
+          <label class="sbqs-field"><span>Email</span><input appPreventAutofill class="sbqs-form-control" type="email" formControlName="email" /></label>
+          <label class="sbqs-field"><span>Số điện thoại</span><input appPreventAutofill class="sbqs-form-control" formControlName="phone" /></label>
+          <ng-container *ngIf="!editingAdminId">
+            <label class="sbqs-field"><span>Mật khẩu</span><input appPreventAutofill class="sbqs-form-control" type="password" formControlName="password" /></label>
+            <label class="sbqs-field"><span>Xác nhận mật khẩu</span><input appPreventAutofill class="sbqs-form-control" type="password" formControlName="confirmPassword" /></label>
+          </ng-container>
+        </div></div>
+        <footer class="sbqs-modal-footer"><app-button variant="outline" label="Hủy" (clicked)="closeAdminEditor()" /><app-button type="submit" icon="save" label="Lưu quản trị viên" [loading]="isAdminSaving" /></footer>
+      </form>
+    </app-modal-shell>
 
     <app-modal-shell
       [open]="isEditorOpen"
@@ -290,6 +406,16 @@
       [loading]="isDeleting"
       (confirmed)="confirmDeleteBranch()"
       (cancelled)="cancelDeleteBranch()"
+    />
+    <app-confirm-dialog
+      [open]="pendingDeleteAdmin !== null"
+      title="Xóa quản trị viên"
+      [message]="'Xóa tài khoản “' + (pendingDeleteAdmin?.fullName || '') + '” khỏi chi nhánh?'"
+      confirmLabel="Xóa tài khoản"
+      cancelLabel="Hủy"
+      [danger]="true"
+      (confirmed)="confirmDeleteAdmin()"
+      (cancelled)="pendingDeleteAdmin = null"
     />
   </div>
 </app-dashboard-layout>

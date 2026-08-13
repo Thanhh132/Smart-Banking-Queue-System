@@ -76,13 +76,13 @@
       {{ isGoogleSubmitting ? 'Đang chuyển đến Google...' : 'Tiếp tục với Google' }}
     </button>
 
-    <section class="dev-login-accounts" *ngIf="devAccounts.length" aria-labelledby="dev-login-title">
+    <section class="dev-login-accounts" *ngIf="devLoginAvailable && devAccounts.length" aria-labelledby="dev-login-title">
       <div class="dev-login-accounts__heading">
         <div>
           <span>LOCAL TEST</span>
           <strong id="dev-login-title">Tài khoản kiểm thử</strong>
         </div>
-        <small>Bấm một tài khoản để tự điền thông tin đăng nhập.</small>
+        <small>Danh sách tự đồng bộ. Bấm một tài khoản để đăng nhập ngay.</small>
       </div>
 
       <div class="dev-login-accounts__list">
@@ -90,13 +90,17 @@
           *ngFor="let account of devAccounts"
           type="button"
           class="dev-login-account"
-          (click)="fillDevAccount(account)"
+          (click)="loginDevAccount(account)"
+          [disabled]="quickLoginUserId !== null"
         >
           <span>
-            <strong>{{ account.label }}</strong>
-            <small>{{ account.email }}</small>
+            <strong>{{ account.displayName || 'Chưa đặt tên' }}</strong>
+            <small *ngIf="account.branchName">{{ account.branchName }}</small>
           </span>
-          <em>{{ account.role }}</em>
+          <span class="dev-login-account__meta">
+            <em>{{ account.role }}</em>
+            <small *ngIf="quickLoginUserId === account.userId">Đang vào...</small>
+          </span>
         </button>
       </div>
     </section>

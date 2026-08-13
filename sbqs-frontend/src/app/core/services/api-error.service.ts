@@ -9,6 +9,18 @@ export class ApiErrorService {
       return 'Máy chủ phản hồi quá lâu. Vui lòng kiểm tra backend và Keycloak.';
     }
 
+    if (error?.status === 0) {
+      return 'Không kết nối được backend tại cổng 8081. Vui lòng kiểm tra backend đang chạy rồi thử lại.';
+    }
+
+    if (error?.status === 401) {
+      return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi thực hiện thao tác.';
+    }
+
+    if (error?.status === 403 && !error?.error?.message) {
+      return 'Phiên đăng nhập hiện tại không có quyền thực hiện thao tác này. Vui lòng đăng xuất và đăng nhập Google lại.';
+    }
+
     const raw = error?.error?.message || error?.error || error?.message;
 
     if (!raw) {

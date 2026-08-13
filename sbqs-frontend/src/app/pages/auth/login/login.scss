@@ -108,6 +108,11 @@
     background: #edf9f7;
   }
 
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.58;
+  }
+
   span {
     display: grid;
     min-width: 0;
@@ -133,6 +138,15 @@
     font-size: 0.68rem;
     font-style: normal;
     font-weight: 800;
+  }
+}
+
+.dev-login-account__meta {
+  align-items: end;
+  justify-items: end;
+
+  small {
+    font-size: 0.68rem;
   }
 }
 

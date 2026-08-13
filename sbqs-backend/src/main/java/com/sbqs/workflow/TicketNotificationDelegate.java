@@ -18,7 +18,6 @@ public class TicketNotificationDelegate implements JavaDelegate {
     public void execute(DelegateExecution execution) {
         eventPublisher.publishEvent(new TicketCalledNotification(
                 number(execution, "ticketId"),
-                text(execution, "customerEmail"),
                 text(execution, "ticketNumber"),
                 text(execution, "branchName"),
                 text(execution, "serviceName"),

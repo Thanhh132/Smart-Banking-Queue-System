@@ -116,13 +116,15 @@ public class SecurityConfig {
                                 "/api/auth/forgot-password",
                                 "/api/auth/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/google/config").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/dev/accounts").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/dev/login/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/google/exchange").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/account/confirm-change").permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Cockpit has its own Camunda identity login. Spring Security must allow
                         // the webapp resources and internal API requests to reach that filter.
                         .requestMatchers("/camunda", "/camunda/**").permitAll()
-                        // Fallback sessions can read dashboards and perform normal queue work,
+                        // Fallback and local Dev Login sessions can perform normal queue work,
                         // but cannot mutate identities, roles or top-level branch configuration.
                         .requestMatchers(HttpMethod.POST, "/api/branches", "/api/users/admin-branch")
                         .access(nonFallbackWithRoles("SUPER_ADMIN"))
@@ -136,6 +138,11 @@ public class SecurityConfig {
                         .access(nonFallbackWithRoles("SUPER_ADMIN"))
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**")
                         .access(nonFallbackWithRoles("SUPER_ADMIN", "BRANCH_ADMIN"))
+                        .requestMatchers(HttpMethod.DELETE, "/api/account")
+                        // Google users can receive their first token before the CUSTOMER realm role
+                        // assignment is reflected in Keycloak. The service validates the current
+                        // database role; Security only needs to reject local test/fallback tokens here.
+                        .access(nonFallbackSession())
                         .requestMatchers(HttpMethod.POST, "/api/service-catalog")
                         .access(nonFallbackWithRoles("SUPER_ADMIN"))
                         .requestMatchers(HttpMethod.POST, "/api/service-catalog/*/restore")
@@ -169,7 +176,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/api/users/**")
                         .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/services")
-                        .hasAnyRole("BRANCH_ADMIN", "CUSTOMER")
+                        .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN", "CUSTOMER")
                         .requestMatchers(HttpMethod.GET, "/api/service-catalog")
                         .hasAnyRole("SUPER_ADMIN", "BRANCH_ADMIN", "CUSTOMER")
                         .requestMatchers(HttpMethod.POST, "/api/service-catalog").hasRole("SUPER_ADMIN")
@@ -226,7 +233,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Chặn JWT fallback khỏi thao tác quản trị danh tính/chi nhánh dù role trong token phù hợp. */
+    /** Chặn JWT fallback/dev khỏi thao tác quản trị danh tính/chi nhánh dù role trong token phù hợp. */
     private AuthorizationManager<RequestAuthorizationContext> nonFallbackWithRoles(String... roles) {
         Set<String> requiredAuthorities = Arrays.stream(roles)
                 .map(role -> "ROLE_" + role)
@@ -237,12 +244,28 @@ public class SecurityConfig {
                 return new AuthorizationDecision(false);
             }
             Object principal = authentication.get().getPrincipal();
-            boolean fallback = principal instanceof Jwt jwt
-                    && "fallback".equals(jwt.getClaimAsString("token_source"));
+            boolean fallback = principal instanceof Jwt jwt && isLocalTestToken(jwt);
             boolean hasRequiredRole = authentication.get().getAuthorities().stream()
                     .anyMatch(authority -> requiredAuthorities.contains(authority.getAuthority()));
             return new AuthorizationDecision(!fallback && hasRequiredRole);
         };
+    }
+
+    private AuthorizationManager<RequestAuthorizationContext> nonFallbackSession() {
+        return (authentication, context) -> {
+            if (authentication == null || authentication.get() == null
+                    || !authentication.get().isAuthenticated()) {
+                return new AuthorizationDecision(false);
+            }
+            Object principal = authentication.get().getPrincipal();
+            boolean localTestSession = principal instanceof Jwt jwt && isLocalTestToken(jwt);
+            return new AuthorizationDecision(!localTestSession);
+        };
+    }
+
+    private boolean isLocalTestToken(Jwt jwt) {
+        String tokenSource = jwt.getClaimAsString("token_source");
+        return "fallback".equals(tokenSource) || "dev_quick_login".equals(tokenSource);
     }
 
     private Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter() {

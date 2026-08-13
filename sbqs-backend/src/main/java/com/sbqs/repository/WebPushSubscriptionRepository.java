@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface WebPushSubscriptionRepository extends JpaRepository<WebPushSubscription, Long> {
     Optional<WebPushSubscription> findByEndpointHash(String endpointHash);
-    List<WebPushSubscription> findByUserEmailIgnoreCaseAndActiveTrue(String email);
+    List<WebPushSubscription> findByUserUserIdAndActiveTrue(Long userId);
+    void deleteByUserUserId(Long userId);
 }

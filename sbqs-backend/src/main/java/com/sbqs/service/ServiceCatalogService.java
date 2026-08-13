@@ -201,6 +201,10 @@ public class ServiceCatalogService {
                     service.setServiceName(item.getServiceName());
                     service.setServiceType(item.getServiceType());
                     service.setDescription(item.getDescription());
+                    service.setEstimatedTime(item.getEstimatedTime());
+                    if ("DELETED".equalsIgnoreCase(service.getStatus())) {
+                        service.setStatus("ACTIVE");
+                    }
                     return serviceRepository.save(service);
                 })
                 .orElseGet(() -> serviceRepository.save(newBranchService(branch, item)));

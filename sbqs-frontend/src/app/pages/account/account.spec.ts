@@ -3,6 +3,8 @@ import { from, Observable, Subject, of } from 'rxjs';
 
 import { AccountProfile, AccountService } from '../../core/services/account.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
+import { AuthService } from '../../core/services/auth.service';
+import { provideRouter, Router } from '@angular/router';
 import { Account } from './account';
 
 describe('Account', () => {
@@ -25,7 +27,16 @@ describe('Account', () => {
     updatePaperlessProfile: vi.fn(() => of({})),
     requestProfileChange: vi.fn(() => of(void 0)),
     changePassword: vi.fn(() => of(void 0)),
+    deleteMyAccount: vi.fn(() => of(void 0)),
   };
+  const authService = {
+    clearLocalSession: vi.fn(),
+    getRole: vi.fn(() => sessionStorage.getItem('userRole') || ''),
+    isFallbackSession: vi.fn(() => false),
+    isLocalTestSession: vi.fn(() => false),
+    logout: vi.fn(() => of(void 0)),
+  };
+  let router: Router;
 
   const roleNames: Record<string, string> = {
     SUPER_ADMIN: 'Quản trị hệ thống',
@@ -52,17 +63,23 @@ describe('Account', () => {
     accountService.updatePaperlessProfile.mockReturnValue(of({}));
     accountService.requestProfileChange.mockReturnValue(of(void 0));
     accountService.changePassword.mockReturnValue(of(void 0));
+    accountService.deleteMyAccount.mockReturnValue(of(void 0));
+    authService.isLocalTestSession.mockReturnValue(false);
 
     await TestBed.configureTestingModule({
       imports: [Account],
       providers: [
         { provide: AccountService, useValue: accountService },
+        { provide: AuthService, useValue: authService },
+        provideRouter([]),
         {
           provide: ApiErrorService,
           useValue: { getMessage: vi.fn((_error: unknown, fallback: string) => fallback) },
         },
       ],
     }).compileComponents();
+    router = TestBed.inject(Router);
+    vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -115,7 +132,9 @@ describe('Account', () => {
       expect(fixture!.nativeElement.querySelector('.account-sections')).toBeTruthy();
       expect(fixture!.nativeElement.querySelector('.account-information-card')).toBeTruthy();
       expect(fixture!.nativeElement.querySelector('.account-security-card')).toBeTruthy();
-      expect(fixture!.nativeElement.querySelectorAll('app-card')).toHaveLength(3);
+      expect(fixture!.nativeElement.querySelectorAll('app-card')).toHaveLength(
+        role === 'CUSTOMER' ? 4 : 3,
+      );
       expect(fixture!.nativeElement.querySelector('.account-readonly-grid')).toBeTruthy();
 
       if (role === 'BRANCH_ADMIN' || role === 'STAFF') {
@@ -248,6 +267,32 @@ describe('Account', () => {
   it('hides the password section when the backend marks it unavailable', async () => {
     await createComponent(profileFor('SUPER_ADMIN', { passwordChangeAvailable: false }));
     expect(fixture!.nativeElement.textContent).not.toContain('Bảo mật và mật khẩu');
+  });
+
+  it('lets only customers confirm account deletion and clears their session', async () => {
+    await createComponent(profileFor('CUSTOMER'));
+    component.openDeleteDialog();
+    expect(component.deleteDialogOpen).toBe(true);
+
+    component.confirmDeleteAccount();
+
+    expect(accountService.deleteMyAccount).toHaveBeenCalledOnce();
+    expect(authService.clearLocalSession).toHaveBeenCalledOnce();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+  });
+
+  it('blocks account deletion from a local test session', async () => {
+    authService.isLocalTestSession.mockReturnValue(true);
+    await createComponent(profileFor('CUSTOMER'));
+    fixture!.detectChanges();
+
+    component.openDeleteDialog();
+    component.confirmDeleteAccount();
+
+    expect(component.canDeleteAccount).toBe(false);
+    expect(component.deleteDialogOpen).toBe(false);
+    expect(accountService.deleteMyAccount).not.toHaveBeenCalled();
+    expect(fixture!.nativeElement.textContent).toContain('Phiên test local không được phép xóa dữ liệu');
   });
 
   it('uses the shared loading state and preserves the existing load error', async () => {

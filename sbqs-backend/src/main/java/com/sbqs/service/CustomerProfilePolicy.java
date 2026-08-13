@@ -41,18 +41,9 @@ public final class CustomerProfilePolicy {
         return user != null
                 && !isBlank(user.getFullName())
                 && !isBlank(user.getPhone())
-                && !isBlank(profileValue(user, true))
-                && !isBlank(profileValue(user, false));
-    }
-
-    /** CustomerProfile is authoritative; legacy User columns are a temporary rollback fallback. */
-    private static String profileValue(User user, boolean permanent) {
-        if (user.getCustomerProfile() != null) {
-            return permanent
-                    ? user.getCustomerProfile().getPermanentAddress()
-                    : user.getCustomerProfile().getContactAddress();
-        }
-        return permanent ? user.getPermanentAddress() : user.getContactAddress();
+                && user.getCustomerProfile() != null
+                && !isBlank(user.getCustomerProfile().getPermanentAddress())
+                && !isBlank(user.getCustomerProfile().getContactAddress());
     }
 
     private static boolean isBlank(String value) {

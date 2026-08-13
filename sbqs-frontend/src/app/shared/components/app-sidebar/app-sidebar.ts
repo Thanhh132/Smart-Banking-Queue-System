@@ -30,8 +30,8 @@ export class AppSidebar {
   private menusByRole: Record<string, SidebarItem[]> = {
     SUPER_ADMIN: [
       { label: 'Tổng quan', icon: 'dashboard', route: '/super-admin' },
-      { label: 'Chi nhánh', icon: 'building', route: '/super-admin/branches' },
-      { label: 'Danh mục dịch vụ', icon: 'list-checks', route: '/super-admin/services' },
+      { label: 'Quản lý chi nhánh', icon: 'building', route: '/super-admin/branches' },
+      { label: 'Danh mục toàn hệ thống', icon: 'list-checks', route: '/super-admin/services' },
     ],
     BRANCH_ADMIN: [
       { label: 'Tổng quan', icon: 'dashboard', route: '/admin' },

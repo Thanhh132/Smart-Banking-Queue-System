@@ -90,8 +90,8 @@ public class HistoryService {
             case "BRANCH_ADMIN" -> historyRepository.findTop200ByBranchIdOrderByCompletedAtDesc(
                     currentUserService.requireBranchId());
             case "STAFF" -> historyRepository.findTop200ByStaffIdOrderByCompletedAtDesc(currentUser.getUserId());
-            case "CUSTOMER" -> historyRepository.findTop200ByCustomerEmailIgnoreCaseOrderByCompletedAtDesc(
-                    currentUser.getEmail());
+            case "CUSTOMER" -> historyRepository.findTop200ByCustomerUserIdOrderByCompletedAtDesc(
+                    currentUser.getUserId());
             default -> List.of();
         };
     }
@@ -114,7 +114,7 @@ public class HistoryService {
             case "SUPER_ADMIN" -> historyRepository.findAll();
             case "BRANCH_ADMIN" -> historyRepository.findByBranchId(currentUserService.requireBranchId());
             case "STAFF" -> historyRepository.findByStaffId(currentUser.getUserId());
-            case "CUSTOMER" -> historyRepository.findByCustomerEmailIgnoreCase(currentUser.getEmail());
+            case "CUSTOMER" -> historyRepository.findByCustomerUserId(currentUser.getUserId());
             default -> List.of();
         };
     }
@@ -134,8 +134,8 @@ public class HistoryService {
                     currentUser.getUserId(),
                     fromDateTime,
                     toDateTime);
-            case "CUSTOMER" -> historyRepository.findByCustomerEmailIgnoreCaseAndCompletedAtBetween(
-                    currentUser.getEmail(),
+            case "CUSTOMER" -> historyRepository.findByCustomerUserIdAndCompletedAtBetween(
+                    currentUser.getUserId(),
                     fromDateTime,
                     toDateTime);
             default -> List.of();
@@ -177,7 +177,8 @@ public class HistoryService {
                 ? null : ticket.getQueueMachine().getMachineName());
         history.setServiceId(ticket.getService().getServiceId());
         history.setServiceName(ticket.getService().getServiceName());
-        history.setCustomerEmail(ticket.getCustomerEmail());
+        history.setCustomer(ticket.getCustomer());
+        history.setCustomerEmail(ticket.getCustomer() == null ? null : ticket.getCustomer().getEmail());
         history.setTicketNumber(ticket.getTicketNumber());
         history.setCompletedAt(LocalDateTime.now());
         return history;

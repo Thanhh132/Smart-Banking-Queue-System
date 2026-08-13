@@ -16,7 +16,6 @@ class UserManagementResponseTest {
         user.setRole("STAFF");
         user.setStatus("ACTIVE");
         user.setPasswordHash("secret");
-        user.setIdentityNumber("sensitive");
 
         UserManagementResponse response = UserManagementResponse.from(user);
 

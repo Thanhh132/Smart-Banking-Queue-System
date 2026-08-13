@@ -20,9 +20,6 @@ import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
@@ -115,19 +112,12 @@ public class TicketService {
      * đang hoạt động và tăng số thứ tự của đúng máy bốc số trong transaction.
      */
     public Ticket createTicket(Ticket ticket) {
-        String customerEmail = getCurrentEmail();
-        if (customerEmail == null || customerEmail.isBlank()) {
-            throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
-        }
-
         User customer = currentUserService.requireUser();
+        if (!"CUSTOMER".equals(customer.getRole())) {
+            throw new RuntimeException("Chi khach hang moi co the lay so");
+        }
         List<Ticket> activeTickets = ticketRepository.findByCustomerUserIdAndStatusIn(
                 customer.getUserId(), List.of("WAITING", "SERVING"));
-        if (activeTickets.isEmpty()) {
-            // Compatibility fallback for active tickets created before customer_id existed.
-            activeTickets = ticketRepository.findByCustomerEmailAndStatusIn(
-                    customerEmail, List.of("WAITING", "SERVING"));
-        }
 
         if (!activeTickets.isEmpty()) {
             throw new RuntimeException("Ban dang co ticket chua hoan thanh. Hay cho hoan thanh hoac huy ticket truoc.");
@@ -175,7 +165,6 @@ public class TicketService {
         ticket.setTicketNumber(nextTicketNumber);
         ticket.setStatus("WAITING");
         ticket.setCustomer(customer);
-        ticket.setCustomerEmail(customerEmail);
 
         Ticket savedTicket = ticketRepository.save(ticket);
         ticketWorkflowService.startTicketApproval(savedTicket);
@@ -187,7 +176,7 @@ public class TicketService {
                 savedTicket.getBranch().getBranchId(),
                 Map.of(
                         "ticketNumber", savedTicket.getTicketNumber(),
-                        "customerEmail", savedTicket.getCustomerEmail(),
+                        "customerId", savedTicket.getCustomer().getUserId(),
                         "serviceName", savedTicket.getService().getServiceName(),
                         "queueMachineName", savedTicket.getQueueMachine().getMachineName()));
 
@@ -200,16 +189,9 @@ public class TicketService {
 
     /** Lấy phiếu đang hoạt động của chính email trong JWT, không cho xem phiếu người khác. */
     public Ticket getCurrentCustomerTicket() {
-        String customerEmail = getCurrentEmail();
-        if (customerEmail == null || customerEmail.isBlank()) {
-            throw new RuntimeException("Khong xac dinh duoc khach hang dang dang nhap");
-        }
-
         User customer = currentUserService.requireUser();
         return ticketRepository.findFirstByCustomerUserIdAndStatusInOrderByCreatedAtDesc(
                         customer.getUserId(), List.of("WAITING", "SERVING"))
-                .or(() -> ticketRepository.findFirstByCustomerEmailAndStatusInOrderByCreatedAtDesc(
-                        customerEmail, List.of("WAITING", "SERVING")))
                 .orElse(null);
     }
 
@@ -307,7 +289,7 @@ public class TicketService {
 
         Ticket target = firstWaiting.get(3);
         applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
-                target.getTicketId(), target.getCustomerEmail(), target.getTicketNumber(), 3));
+                target.getTicketId(), target.getTicketNumber(), 3));
         eventPublisher.publish(
                 "TICKET_QUEUE_NEAR",
                 "TICKET",
@@ -322,7 +304,7 @@ public class TicketService {
         if (peopleAhead > 3) return;
 
         applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
-                ticket.getTicketId(), ticket.getCustomerEmail(), ticket.getTicketNumber(), peopleAhead));
+                ticket.getTicketId(), ticket.getTicketNumber(), peopleAhead));
     }
 
     @Transactional(readOnly = true)
@@ -446,35 +428,16 @@ public class TicketService {
                 savedTicket.getBranch().getBranchId(),
                 Map.of(
                         "ticketNumber", savedTicket.getTicketNumber(),
-                        "customerEmail", savedTicket.getCustomerEmail(),
+                        "customerId", savedTicket.getCustomer().getUserId(),
                         "serviceName", savedTicket.getService().getServiceName()));
 
         return savedTicket;
     }
 
-    private String getCurrentEmail() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
-            return null;
-        }
-
-        String email = jwt.getClaimAsString("email");
-        if (email == null || email.isBlank()) {
-            email = jwt.getClaimAsString("preferred_username");
-        }
-
-        return email;
-    }
-
-    /** customer_id is authoritative; email is used only by pre-migration tickets. */
+    /** Missing customer_id fails closed; email is never an authorization key. */
     private boolean ownsTicket(Ticket ticket, User customer) {
-        if (ticket.getCustomer() != null) {
-            return ticket.getCustomer().getUserId().equals(customer.getUserId());
-        }
-        return ticket.getCustomerEmail() != null
-                && customer.getEmail() != null
-                && ticket.getCustomerEmail().equalsIgnoreCase(customer.getEmail());
+        return ticket.getCustomer() != null
+                && ticket.getCustomer().getUserId().equals(customer.getUserId());
     }
 
     /** Bao dam nhan vien chi thao tac tren quay dang duoc chinh minh nhan trong ca hien tai. */

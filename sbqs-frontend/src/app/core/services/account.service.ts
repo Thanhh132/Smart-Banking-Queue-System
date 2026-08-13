@@ -63,6 +63,10 @@ export class AccountService {
     return this.http.put<void>(`${this.apiUrl}/password`, payload);
   }
 
+  deleteMyAccount() {
+    return this.http.delete<void>(this.apiUrl);
+  }
+
   getPaperlessProfile(serviceId?: number) {
     if (!serviceId) {
       return this.http.get<CustomerPaperlessProfile>(`${this.apiUrl}/paperless-profile`);

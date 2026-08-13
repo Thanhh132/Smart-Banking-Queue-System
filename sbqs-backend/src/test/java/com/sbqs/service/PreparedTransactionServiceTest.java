@@ -3,7 +3,6 @@ package com.sbqs.service;
 import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.entity.*;
 import com.sbqs.repository.TransactionDraftRepository;
-import com.sbqs.repository.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -19,7 +18,7 @@ class PreparedTransactionServiceTest {
     void storesSchemaProfileAndTransactionValuesAsIndependentSnapshots() {
         TransactionDraftRepository drafts = mock(TransactionDraftRepository.class);
         CustomerProfileService profiles = mock(CustomerProfileService.class);
-        PreparedTransactionService service = new PreparedTransactionService(drafts, mock(UserRepository.class), profiles);
+        PreparedTransactionService service = new PreparedTransactionService(drafts, profiles);
         User customer = customer();
         Services bankingService = bankingService();
         Ticket ticket = ticket(customer, bankingService);
@@ -41,7 +40,7 @@ class PreparedTransactionServiceTest {
     void staffViewUsesSnapshotInsteadOfLiveProfile() {
         TransactionDraftRepository drafts = mock(TransactionDraftRepository.class);
         CustomerProfileService profiles = mock(CustomerProfileService.class);
-        PreparedTransactionService service = new PreparedTransactionService(drafts, mock(UserRepository.class), profiles);
+        PreparedTransactionService service = new PreparedTransactionService(drafts, profiles);
         User customer = customer();
         Services bankingService = bankingService();
         Ticket ticket = ticket(customer, bankingService);
@@ -55,6 +54,9 @@ class PreparedTransactionServiceTest {
 
         assertTrue(view.paperlessFields().stream().anyMatch(field -> "Address at 10:00".equals(field.value())));
         assertTrue(view.paperlessFields().stream().anyMatch(field -> "Delivery A".equals(field.value())));
+        assertEquals(customer.getUserId(), view.customer().userId());
+        assertEquals(customer.getEmail(), view.customer().email());
+        assertEquals(customer.getEmail(), view.customerEmail());
         verify(profiles, never()).value(any(), anyString());
     }
 
@@ -87,7 +89,6 @@ class PreparedTransactionServiceTest {
         ticket.setTicketNumber(15);
         ticket.setStatus("SERVING");
         ticket.setCustomer(customer);
-        ticket.setCustomerEmail(customer.getEmail());
         ticket.setService(service);
         return ticket;
     }

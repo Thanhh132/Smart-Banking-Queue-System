@@ -36,63 +36,6 @@ public class User {
 
     private String phone;
 
-    @Column(name = "gender")
-    private String gender;
-
-    @Column(name = "nationality")
-    private String nationality;
-
-    @Column(name = "passport_number")
-    private String passportNumber;
-
-    @Column(name = "visa_number")
-    private String visaNumber;
-
-    @Column(name = "date_of_birth")
-    private String dateOfBirth;
-
-    @Column(name = "identity_number")
-    private String identityNumber;
-
-    @Column(name = "identity_issue_date")
-    private String identityIssueDate;
-
-    @Column(name = "identity_issue_place")
-    private String identityIssuePlace;
-
-    @Column(name = "permanent_address")
-    private String permanentAddress;
-
-    @Column(name = "contact_address")
-    private String contactAddress;
-
-    @Column(name = "occupation")
-    private String occupation;
-
-    @Column(name = "employment_status")
-    private String employmentStatus;
-
-    @Column(name = "employer_name")
-    private String employerName;
-
-    @Column(name = "work_phone")
-    private String workPhone;
-
-    @Column(name = "job_title")
-    private String jobTitle;
-
-    @Column(name = "monthly_income")
-    private String monthlyIncome;
-
-    @Column(name = "salary_payment_method")
-    private String salaryPaymentMethod;
-
-    @Column(name = "account_number")
-    private String accountNumber;
-
-    @Column(name = "card_delivery_address")
-    private String cardDeliveryAddress;
-
     private String role;
 
     private String status;

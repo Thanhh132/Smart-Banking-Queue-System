@@ -102,6 +102,29 @@ class ServiceCatalogServiceTest {
         verify(catalogRepository, never()).delete(catalog);
     }
 
+    @Test
+    void synchronizeRestoresArchivedBranchServiceWhenItsCatalogIsActiveAgain() {
+        ServiceCatalog catalog = catalog(1L);
+        catalog.setEstimatedTime(20);
+        Branch branch = new Branch();
+        branch.setBranchId(4L);
+        Services archived = branchService(48L, catalog);
+        archived.setCatalog(null);
+        archived.setStatus("DELETED");
+        archived.setEstimatedTime(10);
+
+        when(catalogRepository.findAllByOrderByServiceNameAsc()).thenReturn(List.of(catalog));
+        when(serviceRepository.findByBranch(branch)).thenReturn(List.of(archived));
+        when(serviceRepository.save(archived)).thenReturn(archived);
+
+        service.inheritCatalogForBranch(branch);
+
+        assertEquals("ACTIVE", archived.getStatus());
+        assertEquals(20, archived.getEstimatedTime());
+        assertEquals(catalog, archived.getCatalog());
+        verify(serviceRepository).save(archived);
+    }
+
     private ServiceCatalog catalog(Long id) {
         ServiceCatalog catalog = new ServiceCatalog();
         catalog.setCatalogId(id);

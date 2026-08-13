@@ -1,12 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { AccountProfile, AccountService } from '../../core/services/account.service';
 import { ApiErrorService } from '../../core/services/api-error.service';
+import { AuthService } from '../../core/services/auth.service';
 import { AppButton } from '../../shared/components/app-button/app-button';
 import { AppCard } from '../../shared/components/app-card/app-card';
+import { AppConfirmDialog } from '../../shared/components/app-confirm-dialog/app-confirm-dialog';
 import { AppIcon } from '../../shared/components/app-icon/app-icon';
 import { AppLoadingState } from '../../shared/components/app-loading-state/app-loading-state';
 import { AppPageHeader } from '../../shared/components/app-page-header/app-page-header';
@@ -27,6 +30,7 @@ import {
     DashboardLayout,
     AppButton,
     AppCard,
+    AppConfirmDialog,
     AppIcon,
     AppLoadingState,
     AppPageHeader,
@@ -40,6 +44,8 @@ export class Account {
   private fb = inject(FormBuilder);
   private accountService = inject(AccountService);
   private apiError = inject(ApiErrorService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
   private cdr = inject(ChangeDetectorRef);
 
   readonly passwordPolicyMessage = PASSWORD_POLICY_MESSAGE;
@@ -48,6 +54,9 @@ export class Account {
   isSavingProfile = false;
   isSavingAddresses = false;
   isChangingPassword = false;
+  deleteDialogOpen = false;
+  isDeletingAccount = false;
+  deleteAccountError = '';
   loadError = '';
   profileMessage = '';
   profileError = '';
@@ -93,6 +102,10 @@ export class Account {
 
   get canEditProfile(): boolean {
     return this.profile?.role === 'CUSTOMER';
+  }
+
+  get canDeleteAccount(): boolean {
+    return this.canEditProfile && !this.authService.isLocalTestSession();
   }
 
   loadProfile(): void {
@@ -293,5 +306,37 @@ export class Account {
       return;
     }
     this.showConfirmPassword = !this.showConfirmPassword;
+  }
+
+  openDeleteDialog(): void {
+    if (this.canDeleteAccount && !this.isDeletingAccount) {
+      this.deleteAccountError = '';
+      this.deleteDialogOpen = true;
+    }
+  }
+
+  closeDeleteDialog(): void {
+    if (!this.isDeletingAccount) this.deleteDialogOpen = false;
+  }
+
+  confirmDeleteAccount(): void {
+    if (!this.canDeleteAccount || this.isDeletingAccount) return;
+    this.isDeletingAccount = true;
+    this.deleteAccountError = '';
+    this.accountService.deleteMyAccount().subscribe({
+      next: () => {
+        this.authService.clearLocalSession();
+        this.router.navigateByUrl('/login');
+      },
+      error: (error) => {
+        this.deleteAccountError = this.apiError.getMessage(
+          error,
+          'Không xóa được tài khoản. Vui lòng thử lại.',
+        );
+        this.isDeletingAccount = false;
+        this.deleteDialogOpen = false;
+        this.cdr.detectChanges();
+      },
+    });
   }
 }

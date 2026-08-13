@@ -6,7 +6,7 @@
 }
 
 .topbar {
-  min-height: calc(4rem + 1px);
+  min-height: var(--sbqs-topbar-height, calc(4rem + 1px));
   padding: 0;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: 0 1px 3px rgba(19, 53, 61, 0.04);
@@ -15,7 +15,7 @@
 .topbar__main {
   display: flex;
   width: 100%;
-  min-height: calc(4rem + 1px);
+  min-height: var(--sbqs-topbar-height, calc(4rem + 1px));
   align-items: center;
   gap: 1rem;
   padding: 0.5rem 1.5rem;

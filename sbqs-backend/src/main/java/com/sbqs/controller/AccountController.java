@@ -9,6 +9,7 @@ import com.sbqs.dto.UpdateAccountProfileRequest;
 import com.sbqs.dto.UpdateCustomerPaperlessProfileRequest;
 import com.sbqs.service.AccountChangeService;
 import com.sbqs.service.AccountService;
+import com.sbqs.service.CustomerAccountDeletionService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +20,13 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
     private final AccountService accountService;
     private final AccountChangeService accountChangeService;
+    private final CustomerAccountDeletionService accountDeletionService;
 
-    public AccountController(AccountService accountService, AccountChangeService accountChangeService) {
+    public AccountController(AccountService accountService, AccountChangeService accountChangeService,
+            CustomerAccountDeletionService accountDeletionService) {
         this.accountService = accountService;
         this.accountChangeService = accountChangeService;
+        this.accountDeletionService = accountDeletionService;
     }
 
     @GetMapping
@@ -70,6 +74,12 @@ public class AccountController {
     /** Đổi mật khẩu khi người dùng đã đăng nhập và nhập đúng mật khẩu hiện tại. */
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         accountService.changePassword(request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteCurrentCustomerAccount() {
+        accountDeletionService.deleteCurrentCustomerAccount();
         return ResponseEntity.noContent().build();
     }
 }

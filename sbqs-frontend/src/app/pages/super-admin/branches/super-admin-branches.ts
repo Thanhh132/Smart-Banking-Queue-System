@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { forkJoin } from 'rxjs';
 
 import {
   DistrictOption,
@@ -11,6 +12,9 @@ import {
 import { Branch } from '../../../core/models/branch.model';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 import { BranchService } from '../../../core/services/branch.service';
+import { Service } from '../../../core/models/service.model';
+import { AdminServicesService } from '../../../core/services/admin-services.service';
+import { ManagedUser, UserManagementService } from '../../../core/services/user-management.service';
 import { GeocodeResult, LocationService } from '../../../core/services/location.service';
 import { DashboardLayout } from '../../../shared/layouts/dashboard-layout/dashboard-layout';
 import { AppButton } from '../../../shared/components/app-button/app-button';
@@ -21,6 +25,7 @@ import { AppModalShell } from '../../../shared/components/app-modal-shell/app-mo
 import { AppPageHeader } from '../../../shared/components/app-page-header/app-page-header';
 import { AppStatusBadge } from '../../../shared/components/app-status-badge/app-status-badge';
 import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
+import { PASSWORD_POLICY_PATTERN } from '../../../shared/utils/password-policy.util';
 
 @Component({
   selector: 'app-super-admin-branches',
@@ -49,6 +54,8 @@ export class SuperAdminBranches implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private locationService = inject(LocationService);
   private sanitizer = inject(DomSanitizer);
+  private userService = inject(UserManagementService);
+  private servicesApi = inject(AdminServicesService);
   private isHydratingForm = false;
 
   branches: Branch[] = [];
@@ -65,6 +72,24 @@ export class SuperAdminBranches implements OnInit {
   isEditorOpen = false;
   pendingDeleteBranch: Branch | null = null;
   isDeleting = false;
+  expandedBranchId: number | null = null;
+  detailTab: 'admins' | 'staff' | 'services' = 'admins';
+  detailLoadingBranchId: number | null = null;
+  branchUsers: Record<number, ManagedUser[]> = {};
+  branchServices: Record<number, Service[]> = {};
+  adminEditorOpen = false;
+  adminEditorBranch: Branch | null = null;
+  editingAdminId: number | null = null;
+  isAdminSaving = false;
+  pendingDeleteAdmin: ManagedUser | null = null;
+
+  adminForm = this.fb.group({
+    fullName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phone: ['', Validators.required],
+    password: ['', [Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]],
+    confirmPassword: ['', Validators.required],
+  });
 
   readonly bankOptions = [
     { label: 'BIDV', value: 'BIDV', code: 'BIDV' },
@@ -112,6 +137,149 @@ export class SuperAdminBranches implements OnInit {
 
   get activeBranchCount(): number {
     return this.branches.filter((branch) => branch.status === 'ACTIVE').length;
+  }
+
+  branchAdmins(branchId: number): ManagedUser[] {
+    return (this.branchUsers[branchId] || []).filter((user) => user.role === 'BRANCH_ADMIN');
+  }
+
+  branchStaff(branchId: number): ManagedUser[] {
+    return (this.branchUsers[branchId] || []).filter((user) => user.role === 'STAFF');
+  }
+
+  activeServices(branchId: number): Service[] {
+    return (this.branchServices[branchId] || []).filter((service) => service.status === 'ACTIVE');
+  }
+
+  inactiveServices(branchId: number): Service[] {
+    return (this.branchServices[branchId] || []).filter((service) => service.status !== 'ACTIVE');
+  }
+
+  toggleBranchDetails(branch: Branch): void {
+    if (this.expandedBranchId === branch.branchId) {
+      this.expandedBranchId = null;
+      return;
+    }
+    this.expandedBranchId = branch.branchId;
+    this.detailTab = 'admins';
+    if (this.branchUsers[branch.branchId] && this.branchServices[branch.branchId]) return;
+    this.detailLoadingBranchId = branch.branchId;
+    forkJoin({
+      users: this.userService.getUsersByBranch(branch.branchId),
+      services: this.servicesApi.getServicesByBranch(branch.branchId),
+    }).subscribe({
+      next: ({ users, services }) => {
+        this.branchUsers[branch.branchId] = users || [];
+        this.branchServices[branch.branchId] = services || [];
+        this.detailLoadingBranchId = null;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = this.apiError.getMessage(error, 'Không tải được chi tiết chi nhánh.');
+        this.detailLoadingBranchId = null;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  selectDetailTab(tab: 'admins' | 'staff' | 'services'): void {
+    this.detailTab = tab;
+  }
+
+  openAdminEditor(branch: Branch, admin?: ManagedUser): void {
+    this.adminEditorBranch = branch;
+    this.editingAdminId = admin?.userId ?? null;
+    const password = this.adminForm.controls.password;
+    const confirmation = this.adminForm.controls.confirmPassword;
+    if (admin) {
+      password.clearValidators();
+      confirmation.clearValidators();
+    } else {
+      password.setValidators([Validators.required, Validators.pattern(PASSWORD_POLICY_PATTERN)]);
+      confirmation.setValidators(Validators.required);
+    }
+    password.updateValueAndValidity();
+    confirmation.updateValueAndValidity();
+    this.adminForm.reset({
+      fullName: admin?.fullName || '',
+      email: admin?.email || '',
+      phone: admin?.phone || '',
+      password: '',
+      confirmPassword: '',
+    });
+    this.adminEditorOpen = true;
+  }
+
+  closeAdminEditor(): void {
+    if (this.isAdminSaving) return;
+    this.adminEditorOpen = false;
+    this.adminEditorBranch = null;
+    this.editingAdminId = null;
+  }
+
+  saveAdmin(): void {
+    const branch = this.adminEditorBranch;
+    if (!branch || this.adminForm.invalid || this.isAdminSaving) {
+      this.adminForm.markAllAsTouched();
+      return;
+    }
+    if (!this.editingAdminId && this.adminForm.value.password !== this.adminForm.value.confirmPassword) {
+      this.errorMessage = 'Mật khẩu xác nhận không khớp.';
+      return;
+    }
+    const common = {
+      fullName: this.adminForm.value.fullName,
+      email: this.adminForm.value.email,
+      phone: this.adminForm.value.phone,
+      branchId: branch.branchId,
+    };
+    const request = this.editingAdminId
+      ? this.userService.updateUser(this.editingAdminId, common)
+      : this.userService.createAdminBranch({
+          ...common,
+          password: this.adminForm.value.password,
+          confirmPassword: this.adminForm.value.confirmPassword,
+        });
+    this.isAdminSaving = true;
+    request.subscribe({
+      next: () => {
+        this.successMessage = this.editingAdminId ? 'Đã cập nhật quản trị viên.' : 'Đã thêm quản trị viên cho chi nhánh.';
+        this.isAdminSaving = false;
+        delete this.branchUsers[branch.branchId];
+        delete this.branchServices[branch.branchId];
+        this.closeAdminEditor();
+        this.expandedBranchId = null;
+        this.toggleBranchDetails(branch);
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = this.apiError.getMessage(error, 'Không lưu được quản trị viên.');
+        this.isAdminSaving = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  deleteAdmin(admin: ManagedUser): void {
+    this.pendingDeleteAdmin = admin;
+  }
+
+  confirmDeleteAdmin(): void {
+    const admin = this.pendingDeleteAdmin;
+    if (!admin) return;
+    this.userService.deleteUser(admin.userId).subscribe({
+      next: () => {
+        const branchId = admin.branch?.branchId;
+        if (branchId) this.branchUsers[branchId] = (this.branchUsers[branchId] || []).filter((user) => user.userId !== admin.userId);
+        this.pendingDeleteAdmin = null;
+        this.successMessage = 'Đã xóa quản trị viên khỏi chi nhánh.';
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        this.errorMessage = this.apiError.getMessage(error, 'Không xóa được quản trị viên.');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   get googleMapsUrl(): string {

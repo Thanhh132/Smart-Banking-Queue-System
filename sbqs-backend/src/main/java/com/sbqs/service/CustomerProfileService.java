@@ -33,7 +33,6 @@ public class CustomerProfileService {
             CustomerProfile profile = new CustomerProfile();
             profile.setUser(user);
             user.setCustomerProfile(profile);
-            copyLegacyValues(user, profile);
             return repository.save(profile);
         });
     }
@@ -48,7 +47,7 @@ public class CustomerProfileService {
         values.put("FULL_NAME", user.getFullName());
         values.put("MOBILE_PHONE", user.getPhone());
         values.put("EMAIL_ADDRESS", user.getEmail());
-        for (String key : profileKeys()) values.put(key, value(profile, user, key));
+        for (String key : profileKeys()) values.put(key, value(profile, key));
         return values;
     }
 
@@ -90,8 +89,8 @@ public class CustomerProfileService {
         }
     }
 
-    private String value(CustomerProfile profile, User legacyUser, String key) {
-        String current = profile == null ? null : switch (key) {
+    private String value(CustomerProfile profile, String key) {
+        return profile == null ? null : switch (key) {
             case "DATE_OF_BIRTH" -> profile.getDateOfBirth();
             case "GENDER" -> profile.getGender();
             case "NATIONALITY" -> profile.getNationality();
@@ -111,33 +110,6 @@ public class CustomerProfileService {
             case "SALARY_PAYMENT_METHOD" -> profile.getSalaryPaymentMethod();
             default -> "";
         };
-        if (profile != null) return current;
-
-        // Compatibility fallback for a legacy database that has not completed backfill yet.
-        return switch (key) {
-            case "DATE_OF_BIRTH" -> legacyUser.getDateOfBirth();
-            case "GENDER" -> legacyUser.getGender();
-            case "NATIONALITY" -> legacyUser.getNationality();
-            case "IDENTITY_NUMBER" -> legacyUser.getIdentityNumber();
-            case "IDENTITY_ISSUE_DATE" -> legacyUser.getIdentityIssueDate();
-            case "IDENTITY_ISSUE_PLACE" -> legacyUser.getIdentityIssuePlace();
-            case "PASSPORT_NUMBER" -> legacyUser.getPassportNumber();
-            case "VISA_NUMBER" -> legacyUser.getVisaNumber();
-            case "PERMANENT_ADDRESS" -> legacyUser.getPermanentAddress();
-            case "CONTACT_ADDRESS" -> legacyUser.getContactAddress();
-            case "OCCUPATION" -> legacyUser.getOccupation();
-            case "EMPLOYMENT_STATUS" -> legacyUser.getEmploymentStatus();
-            case "EMPLOYER_NAME" -> legacyUser.getEmployerName();
-            case "WORK_PHONE" -> legacyUser.getWorkPhone();
-            case "JOB_TITLE" -> legacyUser.getJobTitle();
-            case "MONTHLY_INCOME" -> legacyUser.getMonthlyIncome();
-            case "SALARY_PAYMENT_METHOD" -> legacyUser.getSalaryPaymentMethod();
-            default -> "";
-        };
-    }
-
-    private void copyLegacyValues(User user, CustomerProfile profile) {
-        for (String key : profileKeys()) apply(profile, key, normalize(value(null, user, key)));
     }
 
     private List<String> profileKeys() {
@@ -147,6 +119,5 @@ public class CustomerProfileService {
                 "EMPLOYER_NAME", "WORK_PHONE", "JOB_TITLE", "MONTHLY_INCOME", "SALARY_PAYMENT_METHOD");
     }
 
-    private String normalize(String value) { return value == null ? null : value.trim(); }
     private boolean isBlank(String value) { return value == null || value.isBlank(); }
 }

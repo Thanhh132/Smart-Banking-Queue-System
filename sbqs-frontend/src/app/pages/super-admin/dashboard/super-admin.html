@@ -2,337 +2,59 @@
   <div class="super-dashboard">
     <app-page-header
       title="Tổng quan hệ thống"
-      description="Theo dõi phạm vi vận hành và quản lý tài khoản quản trị chi nhánh."
+      description="Theo dõi quy mô, mức độ phủ quản trị và nguồn lực vận hành toàn hệ thống."
     >
-      <app-button
-        variant="outline"
-        icon="building"
-        label="Quản lý chi nhánh"
-        (clicked)="navigateToBranches()"
-      />
-      <app-button icon="user-plus" label="Thêm quản trị viên" (clicked)="openCreateAdminBranch()" />
+      <app-button variant="outline" icon="refresh" label="Làm mới" [loading]="isLoading" (clicked)="loadOverview()" />
+      <app-button icon="building" label="Xem từng chi nhánh" (clicked)="navigateToBranches()" />
     </app-page-header>
+
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">{{ errorMessage }}</div>
 
     <section class="sbqs-metric-grid" aria-label="Tổng quan hệ thống">
       <article class="sbqs-metric">
-        <span>Tổng chi nhánh</span>
-        <strong>{{ branches.length }} chi nhánh</strong>
-        <small>Điểm giao dịch đã khai báo</small>
+        <span>Chi nhánh hoạt động</span>
+        <strong>{{ activeBranches }}/{{ branches.length }}</strong>
+        <small>{{ branches.length - activeBranches }} chi nhánh đang tạm ngừng</small>
       </article>
       <article class="sbqs-metric">
-        <span>Quản trị chi nhánh</span>
-        <strong>{{ adminBranches.length }} tài khoản</strong>
-        <small>Tài khoản đã được cấp</small>
+        <span>Độ phủ quản trị</span>
+        <strong>{{ branchAdmins.length }} quản trị viên</strong>
+        <small>{{ branchesWithoutAdmin }} chi nhánh chưa có quản trị viên</small>
       </article>
       <article class="sbqs-metric">
-        <span>Quản lý danh tính</span>
-        <strong>Keycloak</strong>
-        <small>Tài khoản được đồng bộ bảo mật</small>
+        <span>Nguồn lực phục vụ</span>
+        <strong>{{ staff.length }} nhân viên</strong>
+        <small>Phân bổ tại {{ branches.length }} chi nhánh</small>
+      </article>
+      <article class="sbqs-metric">
+        <span>Danh mục dịch vụ</span>
+        <strong>{{ activeCatalog }}/{{ catalog.length }} hoạt động</strong>
+        <small>{{ catalog.length - activeCatalog }} dịch vụ đã lưu trữ</small>
       </article>
     </section>
 
-    <app-card
-      title="Xuất dữ liệu toàn hệ thống"
-      subtitle="Báo cáo PDF và Excel từ dữ liệu vận hành hiện có."
-    >
+    <section aria-labelledby="overview-flow-title">
+      <h2 id="overview-flow-title" class="overview-section-title">Trình tự quản trị</h2>
+      <div class="overview-flow">
+      <button type="button" (click)="navigateToBranches()">
+        <span>1</span><strong>Chi nhánh</strong><small>Xem nhân sự và dịch vụ của từng điểm giao dịch</small>
+      </button>
+      <button type="button" (click)="navigateToCatalog()">
+        <span>2</span><strong>Danh mục dịch vụ</strong><small>Chuẩn hóa dịch vụ dùng chung toàn hệ thống</small>
+      </button>
+      <div>
+        <span>3</span><strong>Báo cáo</strong><small>Xuất dữ liệu sau khi đã kiểm tra vận hành</small>
+      </div>
+      </div>
+    </section>
+
+    <app-card title="Báo cáo toàn hệ thống" subtitle="Số liệu tổng hợp phục vụ kiểm tra và đối soát.">
       <div class="system-report-grid">
-        <section class="system-report-item">
-          <div><strong>Người dùng</strong><small>Tài khoản và phạm vi chi nhánh</small></div>
-          <app-report-export-buttons reportType="users" />
-        </section>
-        <section class="system-report-item">
-          <div><strong>Dịch vụ</strong><small>Danh mục dịch vụ toàn hệ thống</small></div>
-          <app-report-export-buttons reportType="services" />
-        </section>
-        <section class="system-report-item">
-          <div><strong>Phiếu</strong><small>Phiếu giao dịch và trạng thái xử lý</small></div>
-          <app-report-export-buttons reportType="tickets" />
-        </section>
-        <section class="system-report-item">
-          <div><strong>Lịch sử giao dịch</strong><small>Phiếu hoàn thành hoặc đã hủy</small></div>
-          <app-report-export-buttons reportType="history" />
-        </section>
+        <section class="system-report-item"><div><strong>Người dùng</strong><small>Nhân sự theo chi nhánh</small></div><app-report-export-buttons reportType="users" /></section>
+        <section class="system-report-item"><div><strong>Dịch vụ</strong><small>Danh mục và trạng thái</small></div><app-report-export-buttons reportType="services" /></section>
+        <section class="system-report-item"><div><strong>Phiếu</strong><small>Khối lượng giao dịch</small></div><app-report-export-buttons reportType="tickets" /></section>
+        <section class="system-report-item"><div><strong>Lịch sử</strong><small>Kết quả phục vụ</small></div><app-report-export-buttons reportType="history" /></section>
       </div>
     </app-card>
-
-    <div *ngIf="successMessage" class="alert alert-success" role="status">{{ successMessage }}</div>
-    <div *ngIf="errorMessage && !isAdminModalOpen" class="alert alert-danger" role="alert">
-      {{ errorMessage }}
-    </div>
-
-    <app-data-table-shell
-      title="Quản trị chi nhánh"
-      description="Tài khoản quản trị và phạm vi chi nhánh được phân công."
-      [loading]="isListLoading"
-      loadingLabel="Đang tải danh sách quản trị chi nhánh..."
-      [empty]="!isListLoading && filteredAdmins.length === 0"
-      emptyTitle="Chưa có tài khoản phù hợp"
-      emptyMessage="Thêm tài khoản quản trị hoặc thay đổi từ khóa tìm kiếm."
-    >
-      <div table-actions class="dashboard-table-actions">
-        <span class="sbqs-table-count">{{ filteredAdmins.length }} tài khoản</span>
-        <app-button
-          variant="outline"
-          size="sm"
-          icon="refresh"
-          label="Tải lại"
-          [loading]="isListLoading"
-          (clicked)="loadAdminBranches()"
-        />
-      </div>
-
-      <div table-toolbar class="sbqs-table-toolbar sbqs-table-toolbar--single">
-        <label class="sbqs-table-search">
-          <span class="visually-hidden">Tìm kiếm quản trị chi nhánh</span>
-          <app-icon name="search" [size]="17" />
-          <input
-            class="sbqs-form-control"
-            type="search"
-            [(ngModel)]="searchTerm"
-            placeholder="Tên, email hoặc chi nhánh..."
-          />
-        </label>
-      </div>
-
-      <table class="table sbqs-data-table dashboard-admin-table">
-        <thead>
-          <tr>
-            <th>Người dùng</th>
-            <th>Chi nhánh</th>
-            <th>Liên hệ</th>
-            <th class="sbqs-table-actions-column">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let admin of filteredAdmins">
-            <td class="sbqs-entity-cell">
-              <strong>{{ admin.fullName }}</strong>
-              <small>{{ admin.email }}</small>
-            </td>
-            <td class="sbqs-entity-cell">
-              <span>{{ admin.branch?.branchName || 'Chưa gán' }}</span>
-              <small>{{ admin.branch?.branchCode || '-' }}</small>
-            </td>
-            <td>{{ admin.phone || '-' }}</td>
-            <td class="sbqs-table-actions-column">
-              <div class="sbqs-row-actions">
-                <app-button
-                  variant="outline"
-                  size="sm"
-                  icon="pencil"
-                  label="Sửa"
-                  (clicked)="startEditAdminBranch(admin)"
-                />
-                <app-button
-                  variant="danger"
-                  size="sm"
-                  icon="trash"
-                  label="Xóa"
-                  [disabled]="isDeleting"
-                  (clicked)="deleteAdminBranch(admin)"
-                />
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </app-data-table-shell>
-
-    <app-modal-shell
-      [open]="isAdminModalOpen"
-      [title]="isEditMode ? 'Cập nhật quản trị chi nhánh' : 'Thêm quản trị chi nhánh'"
-      [description]="
-        isEditMode
-          ? 'Cập nhật thông tin và phạm vi phụ trách của tài khoản.'
-          : 'Tài khoản mới được đồng bộ bảo mật với Keycloak.'
-      "
-      size="lg"
-      [closeDisabled]="isSubmitting"
-      (closed)="cancelEditAdminBranch()"
-    >
-      <form
-        class="sbqs-modal-form sbqs-form"
-        [formGroup]="adminBranchForm"
-        (ngSubmit)="submitAdminBranch()"
-        autocomplete="off"
-        data-form-type="other"
-      >
-        <div class="sbqs-modal-body">
-          <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-            {{ errorMessage }}
-          </div>
-
-          <div class="sbqs-form-grid dashboard-admin-form">
-            <label class="sbqs-field dashboard-admin-form__wide">
-              <span>Họ và tên</span>
-              <input
-                appPreventAutofill
-                class="sbqs-form-control"
-                type="text"
-                formControlName="fullName"
-                placeholder="Nguyễn Văn A"
-                autocomplete="off"
-              />
-              <small
-                *ngIf="
-                  adminBranchForm.controls.fullName.touched &&
-                  adminBranchForm.controls.fullName.invalid
-                "
-                class="sbqs-validation-message"
-                >Họ và tên là bắt buộc.</small
-              >
-            </label>
-
-            <label class="sbqs-field">
-              <span>Email</span>
-              <input
-                appPreventAutofill
-                class="sbqs-form-control"
-                type="email"
-                formControlName="email"
-                name="sbqs-branch-admin-identity"
-                placeholder="admin.branch@sbqs.com"
-                autocomplete="off"
-              />
-              <small
-                *ngIf="
-                  adminBranchForm.controls.email.touched && adminBranchForm.controls.email.invalid
-                "
-                class="sbqs-validation-message"
-                >Vui lòng nhập email hợp lệ.</small
-              >
-            </label>
-
-            <label class="sbqs-field">
-              <span>Số điện thoại</span>
-              <input
-                appPreventAutofill
-                class="sbqs-form-control"
-                type="tel"
-                formControlName="phone"
-                placeholder="0900000000"
-                autocomplete="off"
-              />
-              <small
-                *ngIf="
-                  adminBranchForm.controls.phone.touched && adminBranchForm.controls.phone.invalid
-                "
-                class="sbqs-validation-message"
-                >Số điện thoại là bắt buộc.</small
-              >
-            </label>
-
-            <label class="sbqs-field" *ngIf="!isEditMode">
-              <span>Mật khẩu khởi tạo</span>
-              <span class="sbqs-password-control">
-                <input
-                  appPreventAutofill
-                  class="sbqs-form-control"
-                  [type]="showPassword ? 'text' : 'password'"
-                  formControlName="password"
-                  name="sbqs-branch-admin-secret"
-                  autocomplete="new-password"
-                />
-                <button
-                  type="button"
-                  class="sbqs-password-toggle"
-                  (click)="togglePasswordVisibility('password')"
-                  [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
-                >
-                  <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="17" />
-                </button>
-              </span>
-              <small
-                *ngIf="
-                  adminBranchForm.controls.password.touched &&
-                  adminBranchForm.controls.password.invalid
-                "
-                class="sbqs-validation-message"
-                >Mật khẩu chưa đáp ứng chính sách bảo mật.</small
-              >
-            </label>
-
-            <label class="sbqs-field" *ngIf="!isEditMode">
-              <span>Xác nhận mật khẩu</span>
-              <span class="sbqs-password-control">
-                <input
-                  appPreventAutofill
-                  class="sbqs-form-control"
-                  [type]="showConfirmPassword ? 'text' : 'password'"
-                  formControlName="confirmPassword"
-                  name="sbqs-branch-admin-secret-confirmation"
-                  autocomplete="new-password"
-                />
-                <button
-                  type="button"
-                  class="sbqs-password-toggle"
-                  (click)="togglePasswordVisibility('confirmPassword')"
-                  [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'"
-                >
-                  <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="17" />
-                </button>
-              </span>
-              <small
-                *ngIf="
-                  adminBranchForm.controls.confirmPassword.touched &&
-                  adminBranchForm.controls.confirmPassword.invalid
-                "
-                class="sbqs-validation-message"
-                >Vui lòng xác nhận mật khẩu.</small
-              >
-            </label>
-
-            <label class="sbqs-field dashboard-admin-form__wide">
-              <span>Chi nhánh phụ trách</span>
-              <select class="sbqs-form-control" formControlName="branchId">
-                <option [ngValue]="null">Chọn chi nhánh</option>
-                <option *ngFor="let branch of branches" [ngValue]="branch.branchId">
-                  {{ branch.branchName }} · {{ branch.branchCode }}
-                </option>
-              </select>
-              <small
-                *ngIf="
-                  adminBranchForm.controls.branchId.touched &&
-                  adminBranchForm.controls.branchId.invalid
-                "
-                class="sbqs-validation-message"
-                >Vui lòng chọn chi nhánh phụ trách.</small
-              >
-            </label>
-          </div>
-        </div>
-
-        <footer class="sbqs-modal-footer">
-          <app-button
-            variant="outline"
-            label="Hủy"
-            [disabled]="isSubmitting"
-            (clicked)="cancelEditAdminBranch()"
-          />
-          <app-button
-            type="submit"
-            [icon]="isEditMode ? 'save' : 'user-plus'"
-            [label]="isEditMode ? 'Cập nhật tài khoản' : 'Tạo tài khoản'"
-            [loading]="isSubmitting"
-          />
-        </footer>
-      </form>
-    </app-modal-shell>
-
-    <app-confirm-dialog
-      [open]="pendingDeleteAdmin !== null"
-      title="Xóa quản trị chi nhánh"
-      [message]="
-        'Xóa vĩnh viễn quản trị chi nhánh “' +
-        (pendingDeleteAdmin?.fullName || '') +
-        '” khỏi SBQS và Keycloak? Thao tác này không thể hoàn tác.'
-      "
-      confirmLabel="Xóa vĩnh viễn"
-      cancelLabel="Hủy"
-      [danger]="true"
-      [loading]="isDeleting"
-      (confirmed)="confirmDeleteAdminBranch()"
-      (cancelled)="cancelDeleteAdminBranch()"
-    />
   </div>
 </app-dashboard-layout>

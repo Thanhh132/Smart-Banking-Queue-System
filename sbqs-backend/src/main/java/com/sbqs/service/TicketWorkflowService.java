@@ -55,7 +55,7 @@ public class TicketWorkflowService {
                 Map.ofEntries(
                         Map.entry("ticketId", ticket.getTicketId()),
                         Map.entry("ticketNumber", ticket.getTicketNumber()),
-                        Map.entry("customerEmail", Objects.toString(ticket.getCustomerEmail(), "")),
+                        Map.entry("customerId", ticket.getCustomer().getUserId()),
                         Map.entry("branchId", ticket.getBranch().getBranchId()),
                         Map.entry("branchName", ticket.getBranch().getBranchName()),
                         Map.entry("serviceId", ticket.getService().getServiceId()),
@@ -169,7 +169,7 @@ public class TicketWorkflowService {
                         ticket.getBranch().getBranchName(),
                         ticket.getService().getServiceName(),
                         ticket.getQueueMachine().getMachineName(),
-                        ticket.getCustomerEmail(),
+                        ticket.getCustomer() == null ? null : ticket.getCustomer().getEmail(),
                         ticket.getStatus(),
                         ticket.getCreatedAt()))
                 .orElse(null);

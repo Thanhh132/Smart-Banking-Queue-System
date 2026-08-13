@@ -4,6 +4,8 @@ import com.sbqs.event.TicketCalledNotification;
 import com.sbqs.event.TicketQueueThresholdNotification;
 import com.sbqs.service.TicketNotificationMailService;
 import com.sbqs.service.WebPushService;
+import com.sbqs.entity.Ticket;
+import com.sbqs.repository.TicketRepository;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -13,17 +15,26 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class TicketNotificationListener {
     private final TicketNotificationMailService mailService;
     private final WebPushService webPushService;
+    private final TicketRepository ticketRepository;
 
-    public TicketNotificationListener(TicketNotificationMailService mailService, WebPushService webPushService) {
+    public TicketNotificationListener(
+            TicketNotificationMailService mailService,
+            WebPushService webPushService,
+            TicketRepository ticketRepository) {
         this.mailService = mailService;
         this.webPushService = webPushService;
+        this.ticketRepository = ticketRepository;
     }
 
     @Async("notificationExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void sendCalledEmail(TicketCalledNotification notification) {
+        Ticket ticket = ticketRepository.findById(notification.ticketId()).orElse(null);
+        if (ticket == null || ticket.getCustomer() == null
+                || ticket.getCustomer().getEmail() == null
+                || ticket.getCustomer().getEmail().isBlank()) return;
         mailService.sendTicketCalled(
-                notification.customerEmail(),
+                ticket.getCustomer().getEmail(),
                 notification.ticketNumber(),
                 notification.branchName(),
                 notification.serviceName(),
@@ -32,7 +43,6 @@ public class TicketNotificationListener {
                 notification.staffName());
         webPushService.sendTicketNotification(
                 notification.ticketId(),
-                notification.customerEmail(),
                 "CALLED",
                 "Đã đến lượt bạn",
                 "Phiếu #" + notification.ticketNumber() + " đang được gọi tại "
@@ -44,7 +54,6 @@ public class TicketNotificationListener {
     public void sendQueueThresholdPush(TicketQueueThresholdNotification notification) {
         webPushService.sendTicketNotification(
                 notification.ticketId(),
-                notification.customerEmail(),
                 "THREE_AHEAD",
                 "Sắp đến lượt bạn",
                 "Phiếu #" + notification.ticketNumber() + " còn "

@@ -17,8 +17,6 @@ class CustomerProfileServiceTest {
     void readsProfileAsSourceOfTruthAndKeepsTransactionFieldsOut() {
         CustomerProfileRepository repository = mock(CustomerProfileRepository.class);
         User user = customer();
-        user.setPermanentAddress("legacy address");
-        user.setAccountNumber("legacy account");
         CustomerProfile profile = new CustomerProfile();
         profile.setUser(user);
         profile.setPermanentAddress("new profile address");
@@ -30,6 +28,18 @@ class CustomerProfileServiceTest {
         assertEquals("new profile address", values.get("PERMANENT_ADDRESS"));
         assertFalse(values.containsKey("ACCOUNT_NUMBER"));
         assertFalse(values.containsKey("CARD_DELIVERY_ADDRESS"));
+    }
+
+    @Test
+    void doesNotFallbackWhenCustomerProfileIsMissing() {
+        CustomerProfileRepository repository = mock(CustomerProfileRepository.class);
+        User user = customer();
+        when(repository.findByUserUserId(7L)).thenReturn(Optional.empty());
+
+        Map<String, String> values = new CustomerProfileService(repository).values(user);
+
+        assertNull(values.get("PERMANENT_ADDRESS"));
+        assertNull(values.get("IDENTITY_NUMBER"));
     }
 
     @Test

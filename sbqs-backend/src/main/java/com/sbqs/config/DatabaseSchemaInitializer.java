@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 public class DatabaseSchemaInitializer {
     private static final String SCHEMA_VERSION = "database-schema-v10-delegation-snapshots";
     private static final String PROFILE_REFACTOR_VERSION = "database-schema-v11-customer-profile-ticket-owner";
+    private static final String LEGACY_USER_CLEANUP_VERSION = "database-schema-v12-legacy-user-cleanup";
+    private static final String TICKET_CUSTOMER_REFACTOR_VERSION = "database-schema-v13-ticket-customer-relations";
     private static final Logger log = LoggerFactory.getLogger(DatabaseSchemaInitializer.class);
 
     private final JdbcTemplate jdbcTemplate;
@@ -32,11 +34,13 @@ public class DatabaseSchemaInitializer {
                 """);
         createCoreTablesIfMissing();
         applyCustomerProfileMigration();
+        applyTicketCustomerRefactorMigration();
         Integer applied = jdbcTemplate.queryForObject(
                 "select count(*) from system_settings where setting_key = ?",
                 Integer.class,
                 SCHEMA_VERSION);
         if (applied != null && applied > 0) {
+            applyLegacyUserCleanup();
             return;
         }
         jdbcTemplate.execute("""
@@ -188,26 +192,7 @@ public class DatabaseSchemaInitializer {
         executeIfPossible("alter table services add column if not exists required_customer_fields varchar(1000)");
         executeIfPossible("alter table services add column if not exists form_schema text not null default '[]'");
         executeIfPossible("alter table appointments alter column service_id drop not null");
-        executeIfPossible("alter table users add column if not exists date_of_birth varchar(30)");
-        executeIfPossible("alter table users add column if not exists gender varchar(30)");
-        executeIfPossible("alter table users add column if not exists nationality varchar(100)");
-        executeIfPossible("alter table users add column if not exists passport_number varchar(50)");
-        executeIfPossible("alter table users add column if not exists visa_number varchar(50)");
-        executeIfPossible("alter table users add column if not exists identity_number varchar(30)");
-        executeIfPossible("alter table users add column if not exists identity_issue_date varchar(30)");
-        executeIfPossible("alter table users add column if not exists identity_issue_place varchar(255)");
-        executeIfPossible("alter table users add column if not exists permanent_address varchar(500)");
         executeIfPossible("alter table users add column if not exists identity_provider varchar(30)");
-        executeIfPossible("alter table users add column if not exists contact_address varchar(500)");
-        executeIfPossible("alter table users add column if not exists occupation varchar(255)");
-        executeIfPossible("alter table users add column if not exists employment_status varchar(100)");
-        executeIfPossible("alter table users add column if not exists employer_name varchar(255)");
-        executeIfPossible("alter table users add column if not exists work_phone varchar(30)");
-        executeIfPossible("alter table users add column if not exists job_title varchar(100)");
-        executeIfPossible("alter table users add column if not exists monthly_income varchar(50)");
-        executeIfPossible("alter table users add column if not exists salary_payment_method varchar(255)");
-        executeIfPossible("alter table users add column if not exists account_number varchar(50)");
-        executeIfPossible("alter table users add column if not exists card_delivery_address varchar(500)");
         executeIfPossible("alter table queue_machines add column if not exists last_ticket_number integer not null default 0");
         executeIfPossible("alter table counters add column if not exists queue_machine_id bigint");
         executeIfPossible("alter table counters add column if not exists current_ticket_id bigint");
@@ -261,6 +246,7 @@ public class DatabaseSchemaInitializer {
                     counter_id bigint,
                     service_id bigint,
                     staff_id bigint,
+                    customer_id bigint references users(user_id),
                     customer_email varchar(255),
                     branch_name varchar(255),
                     queue_machine_name varchar(255),
@@ -380,10 +366,10 @@ public class DatabaseSchemaInitializer {
         // Các chỉ mục phục vụ trực tiếp màn hình hàng đợi và lịch sử thường xuyên được polling.
         jdbcTemplate.execute("create index if not exists idx_tickets_branch_status on tickets(branch_id, status)");
         jdbcTemplate.execute("create index if not exists idx_tickets_machine_status on tickets(queue_machine_id, status)");
-        jdbcTemplate.execute("create index if not exists idx_tickets_customer_status_created on tickets(customer_email, status, created_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_tickets_customer_status_created on tickets(customer_id, status, created_at desc)");
         jdbcTemplate.execute("create index if not exists idx_histories_branch_completed on service_histories(branch_id, completed_at desc)");
         jdbcTemplate.execute("create index if not exists idx_histories_staff_completed on service_histories(staff_id, completed_at desc)");
-        jdbcTemplate.execute("create index if not exists idx_histories_customer_completed on service_histories(customer_email, completed_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_histories_customer_completed on service_histories(customer_id, completed_at desc)");
 
         jdbcTemplate.execute("""
                 create table if not exists transaction_drafts (
@@ -519,6 +505,7 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.update(
                 "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
                 SCHEMA_VERSION);
+        applyLegacyUserCleanup();
     }
 
     /** Chạy migration tương thích dữ liệu legacy; lỗi do dữ liệu cũ không làm backend dừng khởi động. */
@@ -650,7 +637,6 @@ public class DatabaseSchemaInitializer {
                 "permanent_address varchar(500)", "contact_address varchar(500)", "occupation varchar(255)",
                 "employment_status varchar(100)", "employer_name varchar(255)", "work_phone varchar(30)",
                 "job_title varchar(100)", "monthly_income varchar(50)", "salary_payment_method varchar(255)",
-                "account_number varchar(50)", "card_delivery_address varchar(500)",
                 "identity_provider varchar(30)" }) {
             jdbcTemplate.execute("alter table users add column if not exists " + definition);
         }
@@ -758,6 +744,86 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.update(
                 "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
                 PROFILE_REFACTOR_VERSION);
+    }
+
+    /** Contract migration: users retains account/authentication data only. */
+    private void applyLegacyUserCleanup() {
+        Integer applied = jdbcTemplate.queryForObject(
+                "select count(*) from system_settings where setting_key = ?",
+                Integer.class,
+                LEGACY_USER_CLEANUP_VERSION);
+        if (applied != null && applied > 0) return;
+
+        Integer profileMigrationCompleted = jdbcTemplate.queryForObject(
+                "select count(*) from system_settings where setting_key = ? and setting_value = 'completed'",
+                Integer.class,
+                PROFILE_REFACTOR_VERSION);
+        if (profileMigrationCompleted == null || profileMigrationCompleted == 0) {
+            throw new IllegalStateException("Cannot clean legacy user columns before customer-profile migration completes");
+        }
+
+        Long missingProfiles = jdbcTemplate.queryForObject("""
+                select count(*)
+                from users u
+                where upper(u.role) = 'CUSTOMER'
+                  and not exists (
+                      select 1 from customer_profiles cp where cp.user_id = u.user_id)
+                """, Long.class);
+        if (missingProfiles != null && missingProfiles > 0) {
+            throw new IllegalStateException(
+                    "Cannot clean legacy user columns: " + missingProfiles + " customer profile(s) were not backfilled");
+        }
+
+        for (String column : new String[] {
+                "date_of_birth", "gender", "nationality", "passport_number", "visa_number",
+                "identity_number", "identity_issue_date", "identity_issue_place",
+                "permanent_address", "contact_address", "occupation", "employment_status",
+                "employer_name", "work_phone", "job_title", "monthly_income",
+                "salary_payment_method", "account_number", "card_delivery_address" }) {
+            jdbcTemplate.execute("alter table users drop column if exists " + column);
+        }
+
+        jdbcTemplate.update(
+                "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
+                LEGACY_USER_CLEANUP_VERSION);
+        log.info("Legacy user cleanup completed: 19 profile/transaction columns removed; tickets.customer_email retained");
+    }
+
+    /** Moves customer relations and indexes to user_id while retaining email snapshot columns. */
+    private void applyTicketCustomerRefactorMigration() {
+        Integer applied = jdbcTemplate.queryForObject(
+                "select count(*) from system_settings where setting_key = ?",
+                Integer.class,
+                TICKET_CUSTOMER_REFACTOR_VERSION);
+        if (applied != null && applied > 0) return;
+
+        jdbcTemplate.execute("alter table service_histories add column if not exists customer_id bigint");
+        executeIfPossible("""
+                do $$ begin
+                    if not exists (select 1 from pg_constraint where conname = 'fk_histories_customer') then
+                        alter table service_histories add constraint fk_histories_customer
+                            foreign key (customer_id) references users(user_id);
+                    end if;
+                end $$
+                """);
+        jdbcTemplate.update("""
+                update service_histories h
+                set customer_id = t.customer_id
+                from tickets t
+                where h.ticket_id = t.ticket_id
+                  and h.customer_id is null
+                  and t.customer_id is not null
+                """);
+
+        // v10 used this name for an email index, so replace it with the customer relation index.
+        jdbcTemplate.execute("drop index if exists idx_tickets_customer_status_created");
+        jdbcTemplate.execute("create index idx_tickets_customer_status_created on tickets(customer_id, status, created_at desc)");
+        jdbcTemplate.execute("drop index if exists idx_histories_customer_completed");
+        jdbcTemplate.execute("create index idx_histories_customer_completed on service_histories(customer_id, completed_at desc)");
+
+        jdbcTemplate.update(
+                "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
+                TICKET_CUSTOMER_REFACTOR_VERSION);
     }
 
     private void executeIfPossible(String sql) {

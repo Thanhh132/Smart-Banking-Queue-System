@@ -35,13 +35,6 @@
           },
           "configurations": {
             "production": {
-              "assets": [
-                {
-                  "glob": "**/*",
-                  "input": "public",
-                  "ignore": ["dev-login-accounts.local.json"]
-                }
-              ],
               "budgets": [
                 {
                   "type": "initial",

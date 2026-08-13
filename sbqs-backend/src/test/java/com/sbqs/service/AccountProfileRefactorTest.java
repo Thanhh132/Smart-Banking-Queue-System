@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 class AccountProfileRefactorTest {
@@ -40,8 +39,6 @@ class AccountProfileRefactorTest {
         verify(fixture.profiles).apply(fixture.profile, "PERMANENT_ADDRESS", "New A");
         verify(fixture.profiles).apply(fixture.profile, "CONTACT_ADDRESS", "New B");
         verify(fixture.profiles).save(fixture.profile);
-        assertNull(fixture.user.getPermanentAddress());
-        assertNull(fixture.user.getContactAddress());
     }
 
     @Test
@@ -54,7 +51,6 @@ class AccountProfileRefactorTest {
         assertEquals("0911111111", fixture.user.getPhone());
         assertEquals("Permanent", fixture.profile.getPermanentAddress());
         assertEquals("Contact", fixture.profile.getContactAddress());
-        assertNull(fixture.user.getPermanentAddress());
         verify(fixture.profiles).save(fixture.profile);
     }
 

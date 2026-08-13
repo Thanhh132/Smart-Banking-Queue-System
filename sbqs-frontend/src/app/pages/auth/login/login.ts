@@ -1,22 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { finalize, timeout } from 'rxjs';
 
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService, DevLoginAccount } from '../../../core/services/auth.service';
 import { ApiErrorService } from '../../../core/services/api-error.service';
 
 import { AppIcon } from '../../../shared/components/app-icon/app-icon';
 import { PreventAutofillDirective } from '../../../shared/directives/prevent-autofill.directive';
-
-interface DevLoginAccount {
-  label: string;
-  role: string;
-  email: string;
-  password: string;
-}
 
 @Component({
   selector: 'app-login',
@@ -31,13 +23,14 @@ export class Login implements OnInit {
   private authService = inject(AuthService);
   private apiError = inject(ApiErrorService);
   private cdr = inject(ChangeDetectorRef);
-  private http = inject(HttpClient);
 
   isSubmitting = false;
   isGoogleSubmitting = false;
   errorMessage = '';
   showPassword = false;
   devAccounts: DevLoginAccount[] = [];
+  devLoginAvailable = false;
+  quickLoginUserId: number | null = null;
 
   loginForm = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -45,24 +38,40 @@ export class Login implements OnInit {
   });
 
   ngOnInit(): void {
-    if (!['localhost', '127.0.0.1'].includes(window.location.hostname)) return;
-    this.http.get<DevLoginAccount[]>('/dev-login-accounts.local.json').subscribe({
+    this.loadDevLoginAccounts();
+  }
+
+  loadDevLoginAccounts(): void {
+    this.authService.getDevLoginAccounts().subscribe({
       next: (accounts) => {
-        this.devAccounts = Array.isArray(accounts) ? accounts : [];
+        this.devLoginAvailable = true;
+        this.devAccounts = accounts;
         this.cdr.detectChanges();
       },
       error: () => {
+        this.devLoginAvailable = false;
         this.devAccounts = [];
+        this.cdr.detectChanges();
       },
     });
   }
 
-  fillDevAccount(account: DevLoginAccount): void {
-    this.loginForm.setValue({ email: account.email, password: account.password });
-    this.loginForm.markAsPristine();
-    this.loginForm.markAsUntouched();
+  loginDevAccount(account: DevLoginAccount): void {
+    if (!this.devLoginAvailable || this.quickLoginUserId !== null) return;
     this.errorMessage = '';
-    this.showPassword = false;
+    this.quickLoginUserId = account.userId;
+    this.authService.devLogin(account.userId).pipe(
+      finalize(() => {
+        this.quickLoginUserId = null;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
+      next: (response) => this.router.navigateByUrl(this.authService.getPostLoginRoute(response)),
+      error: (error) => {
+        this.errorMessage = this.apiError.getMessage(error, 'Không thể đăng nhập nhanh tài khoản này.');
+        this.cdr.detectChanges();
+      },
+    });
   }
 
   submit(): void {

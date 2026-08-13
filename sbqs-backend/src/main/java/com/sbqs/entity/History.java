@@ -37,6 +37,11 @@ public class History {
     @Column(name = "staff_id")
     private Long staffId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private User customer;
+
+    /** Email snapshot captured when the history row is created. Never used for ownership. */
     @Column(name = "customer_email")
     private String customerEmail;
 

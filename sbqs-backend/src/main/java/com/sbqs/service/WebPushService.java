@@ -106,18 +106,17 @@ public class WebPushService {
 
     public void sendTicketNotification(
             Long ticketId,
-            String customerEmail,
             String notificationType,
             String title,
             String body) {
-        if (pushClient == null || ticketId == null || customerEmail == null || customerEmail.isBlank()) {
+        if (pushClient == null || ticketId == null) {
             return;
         }
         Ticket ticket = ticketRepository.findById(ticketId).orElse(null);
-        if (ticket == null) return;
+        if (ticket == null || ticket.getCustomer() == null) return;
 
         List<WebPushSubscription> subscriptions =
-                subscriptionRepository.findByUserEmailIgnoreCaseAndActiveTrue(customerEmail);
+                subscriptionRepository.findByUserUserIdAndActiveTrue(ticket.getCustomer().getUserId());
         String payload = payload(title, body, ticketId, notificationType);
         for (WebPushSubscription subscription : subscriptions) {
             sendOnce(ticket, subscription, notificationType, payload);
@@ -217,15 +216,14 @@ public class WebPushService {
     }
 
     private void publishCurrentNearTicket(User user) {
-        ticketRepository.findFirstByCustomerEmailAndStatusInOrderByCreatedAtDesc(
-                        user.getEmail(), List.of("WAITING"))
+        ticketRepository.findFirstByCustomerUserIdAndStatusInOrderByCreatedAtDesc(
+                        user.getUserId(), List.of("WAITING"))
                 .ifPresent(ticket -> {
                     long peopleAhead = ticketRepository.countByQueueMachineAndStatusAndTicketNumberLessThan(
                             ticket.getQueueMachine(), "WAITING", ticket.getTicketNumber());
                     if (peopleAhead <= 3) {
                         applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
-                                ticket.getTicketId(), ticket.getCustomerEmail(),
-                                ticket.getTicketNumber(), peopleAhead));
+                                ticket.getTicketId(), ticket.getTicketNumber(), peopleAhead));
                     }
                 });
     }

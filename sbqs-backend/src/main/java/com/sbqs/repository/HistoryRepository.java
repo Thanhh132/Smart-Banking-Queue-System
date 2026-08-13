@@ -11,13 +11,13 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
 
     List<History> findTop200ByBranchIdOrderByCompletedAtDesc(Long branchId);
 
-    List<History> findTop200ByCustomerEmailIgnoreCaseOrderByCompletedAtDesc(String customerEmail);
+    List<History> findTop200ByCustomerUserIdOrderByCompletedAtDesc(Long customerId);
 
     List<History> findTop200ByStaffIdOrderByCompletedAtDesc(Long staffId);
 
     List<History> findByBranchId(Long branchId);
 
-    List<History> findByCustomerEmailIgnoreCase(String customerEmail);
+    List<History> findByCustomerUserId(Long customerId);
 
     List<History> findByStaffId(Long staffId);
 
@@ -35,8 +35,8 @@ public interface HistoryRepository extends JpaRepository<History, Long> {
         LocalDateTime from,
         LocalDateTime to);
 
-    List<History> findByCustomerEmailIgnoreCaseAndCompletedAtBetween(
-        String customerEmail,
+    List<History> findByCustomerUserIdAndCompletedAtBetween(
+        Long customerId,
         LocalDateTime from,
         LocalDateTime to);
 }
