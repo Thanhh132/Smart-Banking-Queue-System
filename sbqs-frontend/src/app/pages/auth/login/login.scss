@@ -1,4 +1,4 @@
-/* Shared auth layout styles live in src/styles.scss. */
+/* Route-specific login styles. */
 
 .auth-divider {
   display: flex;
@@ -36,7 +36,10 @@
     background: #f8fbfb;
   }
 
-  &:disabled { opacity: .65; cursor: wait; }
+  &:disabled {
+    opacity: 0.65;
+    cursor: wait;
+  }
 }
 
 .google-login__mark {
@@ -100,7 +103,9 @@
   color: #12323d;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover,
   &:focus-visible {

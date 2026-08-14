@@ -62,12 +62,51 @@ describe('ServiceSelection', () => {
       estimatedTime: 10,
       status: 'ACTIVE',
       formSchema: [
-        { key: 'accountNumber', label: 'Số tài khoản', type: 'TEXT', required: true, placeholder: '', section: 'Giao dịch', options: [] },
-        { key: 'deliveryAddress', label: 'Địa chỉ giao thẻ', type: 'TEXT', required: true, placeholder: '', section: 'Giao dịch', options: [] },
+        {
+          key: 'accountNumber',
+          label: 'Số tài khoản',
+          type: 'TEXT',
+          required: true,
+          placeholder: '',
+          section: 'Giao dịch',
+          options: [],
+        },
+        {
+          key: 'deliveryAddress',
+          label: 'Địa chỉ giao thẻ',
+          type: 'TEXT',
+          required: true,
+          placeholder: '',
+          section: 'Giao dịch',
+          options: [],
+        },
       ],
     });
 
     expect(component.transactionForm.get('accountNumber')?.value).toBe('');
     expect(component.transactionForm.get('deliveryAddress')?.value).toBe('');
+  });
+
+  it('does not allow an inactive service to be selected', () => {
+    component.selectService({
+      serviceId: 6,
+      serviceCode: 'INACTIVE_SERVICE',
+      serviceName: 'Dịch vụ tạm ngưng',
+      serviceType: 'TRANSACTION',
+      estimatedTime: 10,
+      status: 'INACTIVE',
+      formSchema: [],
+    });
+
+    expect(component.selectedService).toBeNull();
+  });
+
+  it('navigates back to branch selection when changing branch', () => {
+    const router = (component as any).router;
+    const navigateSpy = vi.spyOn(router, 'navigate');
+
+    component.changeBranch();
+
+    expect(navigateSpy).toHaveBeenCalledWith(['/branches']);
   });
 });

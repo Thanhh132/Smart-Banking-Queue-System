@@ -15,7 +15,7 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon, PreventAutofillDirective],
   templateUrl: './register.html',
-  styleUrl: './register.scss',
+  styleUrls: ['./register.scss', '../../../../styles/feature/_auth.scss'],
 })
 export class Register {
   private fb = inject(FormBuilder);

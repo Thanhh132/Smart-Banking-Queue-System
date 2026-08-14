@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
     private static final Pattern CONSTRAINT_PATTERN = Pattern.compile("constraint \\\"([^\\\"]+)\\\"");
+    private static final String ACTIVE_TICKET_CUSTOMER_INDEX = "ux_tickets_one_active_customer";
+    private static final String TICKET_IDEMPOTENCY_INDEX = "ux_tickets_customer_idempotency";
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex) {
@@ -43,24 +45,68 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(error);
     }
 
+    @ExceptionHandler(TicketRateLimitExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleTicketRateLimit(TicketRateLimitExceededException ex) {
+        ResponseEntity<Map<String, Object>> response = errorResponse(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
+        response.getBody().put("code", "TICKET_RATE_LIMITED");
+        response.getBody().put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        return response;
+    }
+
+    @ExceptionHandler(QueueCapacityExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleQueueCapacity(QueueCapacityExceededException ex) {
+        ResponseEntity<Map<String, Object>> response = errorResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage());
+        response.getBody().put("code", "QUEUE_CAPACITY_REACHED");
+        response.getBody().put("retryAfterSeconds", ex.getRetryAfterSeconds());
+        return response;
+    }
+
+    @ExceptionHandler(ActiveTicketExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleActiveTicketExists(ActiveTicketExistsException ex) {
+        ResponseEntity<Map<String, Object>> response = errorResponse(HttpStatus.CONFLICT, ex.getMessage());
+        response.getBody().put("code", "ACTIVE_TICKET_EXISTS");
+        response.getBody().put("ticketId", ex.getTicketId());
+        return response;
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, Object>> handleDataIntegrityException(
             DataIntegrityViolationException ex) {
+
+        String constraintName = extractConstraintName(rootMessage(ex));
+        if (ACTIVE_TICKET_CUSTOMER_INDEX.equalsIgnoreCase(constraintName)) {
+            ResponseEntity<Map<String, Object>> response = errorResponse(
+                    HttpStatus.CONFLICT,
+                    "Bạn đang có phiếu chưa hoàn thành. Hãy hoàn thành hoặc hủy phiếu hiện tại trước.");
+            response.getBody().put("code", "ACTIVE_TICKET_EXISTS");
+            return response;
+        }
+        if (TICKET_IDEMPOTENCY_INDEX.equalsIgnoreCase(constraintName)) {
+            ResponseEntity<Map<String, Object>> response = errorResponse(
+                    HttpStatus.CONFLICT,
+                    "Yêu cầu lấy số này đã được xử lý trước đó.");
+            response.getBody().put("code", "IDEMPOTENCY_KEY_CONFLICT");
+            return response;
+        }
 
         return badRequest(resolveDataIntegrityMessage(ex));
     }
 
     private ResponseEntity<Map<String, Object>> badRequest(String message) {
+        return errorResponse(HttpStatus.BAD_REQUEST, message);
+    }
+
+    private ResponseEntity<Map<String, Object>> errorResponse(HttpStatus status, String message) {
         Map<String, Object> error = new HashMap<>();
         error.put("timestamp", LocalDateTime.now());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("error", "Bad Request");
+        error.put("status", status.value());
+        error.put("error", status.getReasonPhrase());
         error.put("message", message == null || message.isBlank()
                 ? "Không thể thực hiện thao tác này."
                 : message);
 
         return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
+                .status(status)
                 .body(error);
     }
 

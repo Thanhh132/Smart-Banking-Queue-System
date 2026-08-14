@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
 import { HistoryService } from '../../../core/services/history.service';
+import { CustomerLiveTrackingService } from '../../../core/services/customer-live-tracking.service';
 import { QueueMonitorService } from '../../../core/services/queue-monitor.service';
 import { TicketService } from '../../../core/services/ticket.service';
 import { TicketResult } from './ticket-result';
@@ -16,6 +17,8 @@ describe('TicketResult', () => {
   };
 
   beforeEach(async () => {
+    vi.clearAllMocks();
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [TicketResult],
       providers: [
@@ -45,5 +48,30 @@ describe('TicketResult', () => {
     expect(fixture.nativeElement.querySelector('app-confirm-dialog [role="dialog"]')).toBeTruthy();
     component.confirmCancelTicket();
     expect(ticketService.cancelTicket).toHaveBeenCalledWith(9);
+  });
+
+  it('shows the cancelled status immediately even when polling still has a waiting snapshot', () => {
+    const liveTracking = TestBed.inject(CustomerLiveTrackingService);
+    liveTracking.tracking.set({
+      ticketId: 9,
+      ticketNumber: 108,
+      status: 'WAITING',
+      peopleAhead: 0,
+      counterName: null,
+      branchName: 'BIDV Phú Cường 9',
+      serviceName: 'Làm thẻ vật lý',
+      queueMachineId: 1,
+      queueMachineLocationNote: 'Tầng 1',
+      servingStartedAt: null,
+    });
+    component.ticket = { ticketId: 9, ticketNumber: 108, status: 'WAITING' };
+
+    component.confirmCancelTicket();
+
+    expect(component.ticket.status).toBe('CANCELLED');
+    expect(component.effectiveStatus).toBe('CANCELLED');
+    expect(component.isCancelling).toBe(false);
+    expect(liveTracking.tracking()).toBeNull();
+    expect(sessionStorage.getItem('currentTicket')).toBeNull();
   });
 });

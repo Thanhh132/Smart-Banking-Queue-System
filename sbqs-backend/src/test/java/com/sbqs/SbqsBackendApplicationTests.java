@@ -14,6 +14,7 @@ import com.sbqs.config.PreparedServiceCatalogInitializer;
 				+ "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
 				+ "org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration",
 		"camunda.bpm.enabled=false",
+		"sbqs.ticket.outbox.scheduling-enabled=false",
 		"spring.cache.type=simple",
 		"sbqs.kafka.enabled=false"
 })

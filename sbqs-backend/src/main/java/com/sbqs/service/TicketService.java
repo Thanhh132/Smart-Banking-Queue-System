@@ -12,6 +12,9 @@ import com.sbqs.dto.TicketStaffViewResponse;
 import com.sbqs.dto.TicketTrackingResponse;
 import com.sbqs.event.DomainEventPublisher;
 import com.sbqs.event.TicketQueueThresholdNotification;
+import com.sbqs.exception.ActiveTicketExistsException;
+import com.sbqs.exception.QueueCapacityExceededException;
+import com.sbqs.exception.TicketRateLimitExceededException;
 import com.sbqs.repository.BranchRepository;
 import com.sbqs.repository.CounterRepository;
 import com.sbqs.repository.CounterSessionRepository;
@@ -19,7 +22,9 @@ import com.sbqs.repository.QueueMachineServiceMappingRepository;
 import com.sbqs.repository.QueueMachineRepository;
 import com.sbqs.repository.ServiceRepository;
 import com.sbqs.repository.TicketRepository;
+import com.sbqs.repository.UserRepository;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
@@ -27,13 +32,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class TicketService {
 
     private final TicketRepository ticketRepository;
+    private final UserRepository userRepository;
     private final QueueMachineServiceMappingRepository mappingRepository;
     private final QueueMachineRepository queueMachineRepository;
     private final CounterRepository counterRepository;
@@ -43,13 +52,21 @@ public class TicketService {
     private final CurrentUserService currentUserService;
     private final CounterSessionRepository counterSessionRepository;
     private final TicketWorkflowService ticketWorkflowService;
+    private final TicketOutboxService ticketOutboxService;
     private final DomainEventPublisher eventPublisher;
     private final PreparedTransactionService preparedTransactionService;
     private final BranchOperatingHoursService operatingHoursService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final int maxTicketsPerMinute;
+    private final int maxTicketsPerDay;
+    private final long cancelCooldownSeconds;
+    private final long maxWaitingPerMachine;
+    private final long queueFullRetrySeconds;
+    private final ZoneId businessTimeZone;
 
     public TicketService(
             TicketRepository ticketRepository,
+            UserRepository userRepository,
             QueueMachineServiceMappingRepository mappingRepository,
             QueueMachineRepository queueMachineRepository,
             CounterRepository counterRepository,
@@ -59,12 +76,20 @@ public class TicketService {
             CurrentUserService currentUserService,
             CounterSessionRepository counterSessionRepository,
             TicketWorkflowService ticketWorkflowService,
+            TicketOutboxService ticketOutboxService,
             DomainEventPublisher eventPublisher,
             PreparedTransactionService preparedTransactionService,
             BranchOperatingHoursService operatingHoursService,
-            ApplicationEventPublisher applicationEventPublisher) {
+            ApplicationEventPublisher applicationEventPublisher,
+            @Value("${sbqs.ticket.rate-limit.max-per-minute:3}") int maxTicketsPerMinute,
+            @Value("${sbqs.ticket.rate-limit.max-per-day:5}") int maxTicketsPerDay,
+            @Value("${sbqs.ticket.cancel-cooldown-seconds:120}") long cancelCooldownSeconds,
+            @Value("${sbqs.ticket.max-waiting-per-machine:100}") long maxWaitingPerMachine,
+            @Value("${sbqs.ticket.queue-full-retry-seconds:600}") long queueFullRetrySeconds,
+            @Value("${sbqs.ticket.business-time-zone:Asia/Ho_Chi_Minh}") String businessTimeZone) {
 
         this.ticketRepository = ticketRepository;
+        this.userRepository = userRepository;
         this.mappingRepository = mappingRepository;
         this.queueMachineRepository = queueMachineRepository;
         this.counterRepository = counterRepository;
@@ -74,10 +99,17 @@ public class TicketService {
         this.currentUserService = currentUserService;
         this.counterSessionRepository = counterSessionRepository;
         this.ticketWorkflowService = ticketWorkflowService;
+        this.ticketOutboxService = ticketOutboxService;
         this.eventPublisher = eventPublisher;
         this.preparedTransactionService = preparedTransactionService;
         this.operatingHoursService = operatingHoursService;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.maxTicketsPerMinute = maxTicketsPerMinute;
+        this.maxTicketsPerDay = maxTicketsPerDay;
+        this.cancelCooldownSeconds = cancelCooldownSeconds;
+        this.maxWaitingPerMachine = maxWaitingPerMachine;
+        this.queueFullRetrySeconds = queueFullRetrySeconds;
+        this.businessTimeZone = ZoneId.of(businessTimeZone);
     }
 
     /**
@@ -85,7 +117,7 @@ public class TicketService {
      * snapshot biểu mẫu để thay đổi cấu hình dịch vụ về sau không làm sai hồ sơ cũ.
      */
     @Transactional
-    public Ticket createPreparedTicket(CreatePreparedTicketRequest request) {
+    public Ticket createPreparedTicket(CreatePreparedTicketRequest request, String idempotencyKey) {
         Services service = serviceRepository.findById(request.serviceId())
                 .orElseThrow(() -> new RuntimeException("Khong tim thay dich vu"));
         Map<String, Object> sanitizedValues = preparedTransactionService.validateForm(service, request.values());
@@ -95,9 +127,12 @@ public class TicketService {
         branch.setBranchId(request.branchId());
         ticket.setBranch(branch);
         ticket.setService(service);
-        Ticket savedTicket = createTicket(ticket);
+        TicketIssueResult issueResult = issueTicket(ticket, idempotencyKey);
+        Ticket savedTicket = issueResult.ticket();
 
-        preparedTransactionService.saveDraft(savedTicket, service, savedTicket.getCustomer(), sanitizedValues);
+        if (issueResult.created()) {
+            preparedTransactionService.saveDraft(savedTicket, service, savedTicket.getCustomer(), sanitizedValues);
+        }
         return savedTicket;
     }
 
@@ -111,17 +146,33 @@ public class TicketService {
      * Cấp số cho CUSTOMER: kiểm tra dịch vụ được map vào máy, chống lấy nhiều phiếu
      * đang hoạt động và tăng số thứ tự của đúng máy bốc số trong transaction.
      */
-    public Ticket createTicket(Ticket ticket) {
-        User customer = currentUserService.requireUser();
+    public Ticket createTicket(Ticket ticket, String idempotencyKey) {
+        return issueTicket(ticket, idempotencyKey).ticket();
+    }
+
+    private TicketIssueResult issueTicket(Ticket ticket, String idempotencyKey) {
+        String normalizedIdempotencyKey = requireIdempotencyKey(idempotencyKey);
+        User authenticatedCustomer = currentUserService.requireUser();
+        User customer = userRepository.findByIdForTicketIssuing(authenticatedCustomer.getUserId())
+                .orElseThrow(() -> new RuntimeException("Khong tim thay tai khoan dang dang nhap"));
         if (!"CUSTOMER".equals(customer.getRole())) {
             throw new RuntimeException("Chi khach hang moi co the lay so");
         }
+
+        Ticket idempotentTicket = ticketRepository
+                .findByCustomerUserIdAndIdempotencyKey(customer.getUserId(), normalizedIdempotencyKey)
+                .orElse(null);
+        if (idempotentTicket != null) {
+            return new TicketIssueResult(idempotentTicket, false);
+        }
+
         List<Ticket> activeTickets = ticketRepository.findByCustomerUserIdAndStatusIn(
                 customer.getUserId(), List.of("WAITING", "SERVING"));
 
         if (!activeTickets.isEmpty()) {
-            throw new RuntimeException("Ban dang co ticket chua hoan thanh. Hay cho hoan thanh hoac huy ticket truoc.");
+            throw new ActiveTicketExistsException(activeTickets.getFirst().getTicketId());
         }
+        enforceIssuingLimits(customer);
 
         if (ticket.getBranch() == null || ticket.getBranch().getBranchId() == null) {
             throw new RuntimeException("Chua chon chi nhanh");
@@ -158,30 +209,73 @@ public class TicketService {
                 .orElseThrow(() -> new RuntimeException("Khong tim thay may boc so"));
         ticket.setQueueMachine(queueMachine);
 
+        long waitingTickets = ticketRepository.countByQueueMachineQueueMachineIdAndStatus(
+                queueMachine.getQueueMachineId(), "WAITING");
+        if (waitingTickets >= maxWaitingPerMachine) {
+            throw new QueueCapacityExceededException(queueFullRetrySeconds);
+        }
+
+        LocalDate businessDate = LocalDate.now(businessTimeZone);
+        if (!businessDate.equals(queueMachine.getLastTicketDate())) {
+            queueMachine.setLastTicketDate(businessDate);
+            queueMachine.setLastTicketNumber(0);
+        }
         int nextTicketNumber = queueMachine.getLastTicketNumber() + 1;
         queueMachine.setLastTicketNumber(nextTicketNumber);
         queueMachineRepository.save(queueMachine);
 
         ticket.setTicketNumber(nextTicketNumber);
+        ticket.setBusinessDate(businessDate);
+        ticket.setIdempotencyKey(normalizedIdempotencyKey);
         ticket.setStatus("WAITING");
         ticket.setCustomer(customer);
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        ticketWorkflowService.startTicketApproval(savedTicket);
-        notifyIfAlreadyNearFront(savedTicket);
-        eventPublisher.publish(
-                "TICKET_CREATED",
-                "TICKET",
-                savedTicket.getTicketId().toString(),
-                savedTicket.getBranch().getBranchId(),
-                Map.of(
-                        "ticketNumber", savedTicket.getTicketNumber(),
-                        "customerId", savedTicket.getCustomer().getUserId(),
-                        "serviceName", savedTicket.getService().getServiceName(),
-                        "queueMachineName", savedTicket.getQueueMachine().getMachineName()));
+        ticketOutboxService.enqueueTicketCreated(savedTicket);
 
-        return savedTicket;
+        return new TicketIssueResult(savedTicket, true);
     }
+
+    private String requireIdempotencyKey(String value) {
+        if (value == null || value.isBlank()) {
+            throw new RuntimeException("Thieu Idempotency-Key cho yeu cau lay so");
+        }
+        try {
+            return UUID.fromString(value.trim()).toString();
+        } catch (IllegalArgumentException exception) {
+            throw new RuntimeException("Idempotency-Key khong hop le");
+        }
+    }
+
+    private void enforceIssuingLimits(User customer) {
+        LocalDateTime now = LocalDateTime.now(businessTimeZone);
+        Ticket latestCancelled = ticketRepository
+                .findFirstByCustomerUserIdAndStatusAndCancelledAtIsNotNullOrderByCancelledAtDesc(
+                        customer.getUserId(), "CANCELLED")
+                .orElse(null);
+        if (latestCancelled != null) {
+            long elapsedSeconds = Duration.between(latestCancelled.getCancelledAt(), now).getSeconds();
+            if (elapsedSeconds < cancelCooldownSeconds) {
+                throw new TicketRateLimitExceededException(
+                        "Bạn vừa hủy phiếu. Vui lòng chờ trước khi lấy số mới.",
+                        cancelCooldownSeconds - elapsedSeconds);
+            }
+        }
+
+        if (ticketRepository.countByCustomerUserIdAndCreatedAtGreaterThanEqual(
+                customer.getUserId(), now.minusMinutes(1)) >= maxTicketsPerMinute) {
+            throw new TicketRateLimitExceededException("Bạn đang lấy số quá nhanh. Vui lòng thử lại sau.", 60);
+        }
+        LocalDateTime startOfDay = LocalDate.now(businessTimeZone).atStartOfDay();
+        if (ticketRepository.countByCustomerUserIdAndCreatedAtGreaterThanEqual(
+                customer.getUserId(), startOfDay) >= maxTicketsPerDay) {
+            long retryAfter = Duration.between(now, startOfDay.plusDays(1)).getSeconds();
+            throw new TicketRateLimitExceededException(
+                    "Bạn đã đạt giới hạn lấy số trong ngày.", retryAfter);
+        }
+    }
+
+    private record TicketIssueResult(Ticket ticket, boolean created) { }
 
     public List<Ticket> getTicketsByStatus(String status) {
         return ticketRepository.findByStatus(status);
@@ -204,13 +298,12 @@ public class TicketService {
             throw new RuntimeException("Bạn không có quyền theo dõi phiếu này");
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = ticket.getBusinessDate();
         long peopleAhead = "WAITING".equals(ticket.getStatus())
                 ? ticketRepository.countWaitingAhead(
                         ticket.getQueueMachine(),
                         ticket.getTicketNumber(),
-                        today.atStartOfDay(),
-                        today.plusDays(1).atStartOfDay())
+                        today)
                 : 0;
         String counterName = counterRepository.findFirstByCurrentTicketTicketId(ticketId)
                 .map(Counter::getCounterName)
@@ -296,15 +389,6 @@ public class TicketService {
                 target.getTicketId().toString(),
                 target.getBranch().getBranchId(),
                 Map.of("ticketNumber", target.getTicketNumber(), "peopleAhead", 3));
-    }
-
-    private void notifyIfAlreadyNearFront(Ticket ticket) {
-        long peopleAhead = ticketRepository.countByQueueMachineAndStatusAndTicketNumberLessThan(
-                ticket.getQueueMachine(), "WAITING", ticket.getTicketNumber());
-        if (peopleAhead > 3) return;
-
-        applicationEventPublisher.publishEvent(new TicketQueueThresholdNotification(
-                ticket.getTicketId(), ticket.getTicketNumber(), peopleAhead));
     }
 
     @Transactional(readOnly = true)
@@ -416,6 +500,7 @@ public class TicketService {
         }
 
         ticket.setStatus("CANCELLED");
+        ticket.setCancelledAt(LocalDateTime.now(businessTimeZone));
         ticketWorkflowService.cancelTicket(ticket);
 
         Ticket savedTicket = ticketRepository.save(ticket);

@@ -16,36 +16,39 @@ export interface TicketTracking {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TicketService {
-
   private http = inject(HttpClient);
 
   private apiUrl = `${inject(API_BASE_URL)}/tickets`;
 
-  createTicket(
-    branchId: number,
-    serviceId: number
-  ) {
-
+  createTicket(branchId: number, serviceId: number, idempotencyKey: string = crypto.randomUUID()) {
     const payload = {
       branch: {
-        branchId: branchId
+        branchId: branchId,
       },
       service: {
-        serviceId: serviceId
-      }
+        serviceId: serviceId,
+      },
     };
 
-    return this.http.post(
-      this.apiUrl,
-      payload
-    );
+    return this.http.post(this.apiUrl, payload, { headers: { 'Idempotency-Key': idempotencyKey } });
   }
 
-  createPreparedTicket(branchId: number, serviceId: number, values: Record<string, unknown>) {
-    return this.http.post(`${this.apiUrl}/prepared`, { branchId, serviceId, values });
+  createPreparedTicket(
+    branchId: number,
+    serviceId: number,
+    values: Record<string, unknown>,
+    idempotencyKey: string = crypto.randomUUID(),
+  ) {
+    return this.http.post(
+      `${this.apiUrl}/prepared`,
+      { branchId, serviceId, values },
+      {
+        headers: { 'Idempotency-Key': idempotencyKey },
+      },
+    );
   }
 
   cancelTicket(ticketId: number) {

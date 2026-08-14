@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -30,6 +31,13 @@ public class Ticket {
     @Column(name = "ticket_number", nullable = false)
     private Integer ticketNumber;
 
+    @Column(name = "business_date", nullable = false)
+    private LocalDate businessDate;
+
+    @JsonIgnore
+    @Column(name = "idempotency_key", length = 36)
+    private String idempotencyKey;
+
     @ManyToOne
     @JoinColumn(name = "appointment_id")
     private Appointment appointment;
@@ -52,4 +60,7 @@ public class Ticket {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "cancelled_at")
+    private LocalDateTime cancelledAt;
 }

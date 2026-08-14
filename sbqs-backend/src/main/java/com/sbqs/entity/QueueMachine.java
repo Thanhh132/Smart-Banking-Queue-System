@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -44,6 +45,9 @@ public class QueueMachine {
 
     @Column(name = "last_ticket_number", nullable = false)
     private Integer lastTicketNumber = 0;
+
+    @Column(name = "last_ticket_date")
+    private LocalDate lastTicketDate;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

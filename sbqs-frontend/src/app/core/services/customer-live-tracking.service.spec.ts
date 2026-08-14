@@ -70,6 +70,22 @@ describe('CustomerLiveTrackingService', () => {
     expect(sessionStorage.getItem('currentTicket')).toBeNull();
   });
 
+  it('clears a cancelled ticket immediately and ignores an older polling response', () => {
+    applyTracking(tracking({ ticketId: 10, status: 'WAITING', peopleAhead: 0 }));
+
+    service.clearActiveTicket(10);
+
+    expect(service.tracking()).toBeNull();
+    expect(service.notice()).toBeNull();
+    expect(sessionStorage.getItem('currentTicket')).toBeNull();
+
+    applyTracking(tracking({ ticketId: 10, status: 'WAITING', peopleAhead: 0 }));
+    expect(service.tracking()).toBeNull();
+
+    applyTracking(tracking({ ticketId: 11, status: 'WAITING', peopleAhead: 2 }));
+    expect(service.tracking()?.ticketId).toBe(11);
+  });
+
   function applyTracking(value: TicketTracking): void {
     (service as any).applyTracking(value);
   }

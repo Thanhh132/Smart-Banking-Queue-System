@@ -47,10 +47,11 @@ public class TicketController {
 
     @PostMapping
     public ResponseEntity<Ticket> createTicket(
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody Ticket ticket) {
 
         return ResponseEntity.ok(
-                ticketService.createTicket(ticket));
+                ticketService.createTicket(ticket, idempotencyKey));
     }
 
     /** Gọi phiếu WAITING đầu tiên phù hợp với máy bốc số của quầy nhân viên đang giữ. */
@@ -64,8 +65,9 @@ public class TicketController {
     /** Xác thực biểu mẫu khai trước, cấp số và lưu snapshot dữ liệu giao dịch trong một luồng. */
     @PostMapping("/prepared")
     public ResponseEntity<Ticket> createPreparedTicket(
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
             @Valid @RequestBody CreatePreparedTicketRequest request) {
-        return ResponseEntity.ok(ticketService.createPreparedTicket(request));
+        return ResponseEntity.ok(ticketService.createPreparedTicket(request, idempotencyKey));
     }
 
     @GetMapping("/{ticketId}/staff-view")

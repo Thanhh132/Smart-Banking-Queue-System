@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 @Component
 public class DatabaseSchemaInitializer {
     private static final String SCHEMA_VERSION = "database-schema-v10-delegation-snapshots";
@@ -35,6 +37,9 @@ public class DatabaseSchemaInitializer {
         createCoreTablesIfMissing();
         applyCustomerProfileMigration();
         applyTicketCustomerRefactorMigration();
+        ensureTicketIdempotency();
+        ensureTicketOperationalSchema();
+        ensureSingleActiveTicketPerCustomer();
         Integer applied = jdbcTemplate.queryForObject(
                 "select count(*) from system_settings where setting_key = ?",
                 Integer.class,
@@ -553,6 +558,7 @@ public class DatabaseSchemaInitializer {
                     instruction_note varchar(500),
                     status varchar(255) not null default 'ACTIVE',
                     last_ticket_number integer not null default 0,
+                    last_ticket_date date,
                     created_at timestamp not null default current_timestamp
                 )
                 """);
@@ -606,9 +612,12 @@ public class DatabaseSchemaInitializer {
                     service_id bigint references services(service_id),
                     counter_id bigint references counters(counter_id),
                     ticket_number integer not null,
+                    business_date date not null default current_date,
+                    idempotency_key varchar(36),
                     customer_email varchar(255),
                     status varchar(255) not null default 'WAITING',
                     serving_started_at timestamp,
+                    cancelled_at timestamp,
                     created_at timestamp not null default current_timestamp
                 )
                 """);
@@ -824,6 +833,94 @@ public class DatabaseSchemaInitializer {
         jdbcTemplate.update(
                 "insert into system_settings(setting_key, setting_value) values (?, 'completed') on conflict (setting_key) do nothing",
                 TICKET_CUSTOMER_REFACTOR_VERSION);
+    }
+
+    /**
+     * Database-level invariant for ticket issuing. The service-side lookup gives a
+     * friendly early rejection, while this partial unique index closes the race
+     * where concurrent requests from the same customer both pass that lookup.
+     */
+    void ensureSingleActiveTicketPerCustomer() {
+        List<Long> duplicateCustomerIds = jdbcTemplate.queryForList("""
+                select customer_id
+                from tickets
+                where customer_id is not null
+                  and status in ('WAITING', 'SERVING')
+                group by customer_id
+                having count(*) > 1
+                order by customer_id
+                limit 10
+                """, Long.class);
+
+        if (!duplicateCustomerIds.isEmpty()) {
+            throw new IllegalStateException(
+                    "Cannot enforce one active ticket per customer. Resolve duplicate active tickets for customer IDs: "
+                            + duplicateCustomerIds);
+        }
+
+        jdbcTemplate.execute("""
+                create unique index if not exists ux_tickets_one_active_customer
+                on tickets(customer_id)
+                where customer_id is not null
+                  and status in ('WAITING', 'SERVING')
+                """);
+    }
+
+    /** Adds durable request deduplication without changing historical tickets. */
+    void ensureTicketIdempotency() {
+        jdbcTemplate.execute("alter table tickets add column if not exists idempotency_key varchar(36)");
+        jdbcTemplate.execute("""
+                create unique index if not exists ux_tickets_customer_idempotency
+                on tickets(customer_id, idempotency_key)
+                where customer_id is not null
+                  and idempotency_key is not null
+                """);
+    }
+
+    /** Daily numbering, cooldown timestamps and hot-path indexes for ticket issuing. */
+    void ensureTicketOperationalSchema() {
+        jdbcTemplate.execute("alter table tickets add column if not exists business_date date");
+        jdbcTemplate.execute("update tickets set business_date = created_at::date where business_date is null");
+        jdbcTemplate.execute("alter table tickets alter column business_date set not null");
+        jdbcTemplate.execute("alter table tickets add column if not exists cancelled_at timestamp");
+        jdbcTemplate.execute("alter table queue_machines add column if not exists last_ticket_date date");
+        jdbcTemplate.execute("""
+                update queue_machines qm
+                set last_ticket_date = latest.business_date,
+                    last_ticket_number = latest.last_number
+                from (
+                    select distinct on (queue_machine_id)
+                           queue_machine_id,
+                           business_date,
+                           max(ticket_number) over (partition by queue_machine_id, business_date) as last_number
+                    from tickets
+                    where queue_machine_id is not null
+                    order by queue_machine_id, business_date desc
+                ) latest
+                where qm.queue_machine_id = latest.queue_machine_id
+                """);
+        jdbcTemplate.execute("""
+                create unique index if not exists ux_tickets_machine_day_number
+                on tickets(queue_machine_id, business_date, ticket_number)
+                where queue_machine_id is not null
+                """);
+        jdbcTemplate.execute("create index if not exists idx_tickets_customer_status on tickets(customer_id, status)");
+        jdbcTemplate.execute("create index if not exists idx_tickets_customer_created on tickets(customer_id, created_at desc)");
+        jdbcTemplate.execute("create index if not exists idx_tickets_machine_status_number on tickets(queue_machine_id, status, business_date, ticket_number)");
+        jdbcTemplate.execute("""
+                create table if not exists ticket_outbox_events (
+                    outbox_id bigserial primary key,
+                    ticket_id bigint not null references tickets(ticket_id) on delete cascade,
+                    event_type varchar(50) not null,
+                    status varchar(20) not null default 'PENDING',
+                    attempts integer not null default 0,
+                    available_at timestamp not null default current_timestamp,
+                    created_at timestamp not null default current_timestamp,
+                    processed_at timestamp,
+                    last_error varchar(1000)
+                )
+                """);
+        jdbcTemplate.execute("create index if not exists idx_ticket_outbox_pending on ticket_outbox_events(status, available_at, created_at)");
     }
 
     private void executeIfPossible(String sql) {

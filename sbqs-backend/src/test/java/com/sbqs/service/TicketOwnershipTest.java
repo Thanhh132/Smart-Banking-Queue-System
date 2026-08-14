@@ -2,6 +2,8 @@ package com.sbqs.service;
 
 import com.sbqs.entity.Ticket;
 import com.sbqs.entity.User;
+import com.sbqs.exception.ActiveTicketExistsException;
+import com.sbqs.exception.TicketRateLimitExceededException;
 import com.sbqs.repository.*;
 import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -16,6 +19,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.*;
 
 class TicketOwnershipTest {
+    private static final String IDEMPOTENCY_KEY = "123e4567-e89b-12d3-a456-426614174000";
+
     @Test
     void customerIdIsAuthoritativeAndRejectsAnotherCustomer() {
         TicketService service = mock(TicketService.class, CALLS_REAL_METHODS);
@@ -52,9 +57,66 @@ class TicketOwnershipTest {
 
         when(fixture.tickets.findByCustomerUserIdAndStatusIn(eq(11L), anyList()))
                 .thenReturn(List.of(ticket));
-        assertThrows(RuntimeException.class, () -> fixture.service.createTicket(new Ticket()));
+        when(fixture.users.findByIdForTicketIssuing(11L)).thenReturn(Optional.of(customer));
+        ActiveTicketExistsException exception = assertThrows(
+                ActiveTicketExistsException.class,
+                () -> fixture.service.createTicket(new Ticket(), IDEMPOTENCY_KEY));
+        assertSame(ticket.getTicketId(), exception.getTicketId());
+        verify(fixture.users).findByIdForTicketIssuing(11L);
         verify(fixture.tickets).findByCustomerUserIdAndStatusIn(
                 eq(11L), eq(List.of("WAITING", "SERVING")));
+    }
+
+    @Test
+    void repeatedIdempotencyKeyReturnsTheOriginalTicketBeforeActiveTicketCheck() {
+        Fixture fixture = fixture();
+        User customer = customer(31L, "customer@example.com");
+        Ticket original = ownedTicket(customer, "WAITING");
+        original.setTicketId(301L);
+        when(fixture.currentUser.requireUser()).thenReturn(customer);
+        when(fixture.users.findByIdForTicketIssuing(31L)).thenReturn(Optional.of(customer));
+        when(fixture.tickets.findByCustomerUserIdAndIdempotencyKey(31L, IDEMPOTENCY_KEY))
+                .thenReturn(Optional.of(original));
+
+        Ticket result = fixture.service.createTicket(new Ticket(), IDEMPOTENCY_KEY);
+
+        assertSame(original, result);
+        verify(fixture.tickets, never()).findByCustomerUserIdAndStatusIn(anyLong(), anyList());
+        verify(fixture.tickets, never()).save(any());
+    }
+
+    @Test
+    void enforcesCooldownAfterCustomerCancelsATicket() {
+        Fixture fixture = fixture();
+        User customer = customer(41L, "cooldown@example.com");
+        Ticket cancelled = ownedTicket(customer, "CANCELLED");
+        cancelled.setCancelledAt(LocalDateTime.now().minusSeconds(10));
+        when(fixture.currentUser.requireUser()).thenReturn(customer);
+        when(fixture.users.findByIdForTicketIssuing(41L)).thenReturn(Optional.of(customer));
+        when(fixture.tickets.findFirstByCustomerUserIdAndStatusAndCancelledAtIsNotNullOrderByCancelledAtDesc(
+                41L, "CANCELLED")).thenReturn(Optional.of(cancelled));
+
+        TicketRateLimitExceededException exception = assertThrows(
+                TicketRateLimitExceededException.class,
+                () -> fixture.service.createTicket(new Ticket(), IDEMPOTENCY_KEY));
+
+        assertTrue(exception.getRetryAfterSeconds() > 0);
+        verify(fixture.tickets, never()).save(any());
+    }
+
+    @Test
+    void limitsTicketIssuingAttemptsPerMinute() {
+        Fixture fixture = fixture();
+        User customer = customer(51L, "rate@example.com");
+        when(fixture.currentUser.requireUser()).thenReturn(customer);
+        when(fixture.users.findByIdForTicketIssuing(51L)).thenReturn(Optional.of(customer));
+        when(fixture.tickets.countByCustomerUserIdAndCreatedAtGreaterThanEqual(eq(51L), any()))
+                .thenReturn(3L);
+
+        assertThrows(
+                TicketRateLimitExceededException.class,
+                () -> fixture.service.createTicket(new Ticket(), IDEMPOTENCY_KEY));
+        verify(fixture.tickets, never()).save(any());
     }
 
     @Test
@@ -86,9 +148,11 @@ class TicketOwnershipTest {
 
     private Fixture fixture() {
         TicketRepository tickets = mock(TicketRepository.class);
+        UserRepository users = mock(UserRepository.class);
         CurrentUserService currentUser = mock(CurrentUserService.class);
         TicketService service = new TicketService(
                 tickets,
+                users,
                 mock(QueueMachineServiceMappingRepository.class),
                 mock(QueueMachineRepository.class),
                 mock(CounterRepository.class),
@@ -98,14 +162,25 @@ class TicketOwnershipTest {
                 currentUser,
                 mock(CounterSessionRepository.class),
                 mock(TicketWorkflowService.class),
+                mock(TicketOutboxService.class),
                 mock(com.sbqs.event.DomainEventPublisher.class),
                 mock(PreparedTransactionService.class),
                 mock(BranchOperatingHoursService.class),
-                mock(ApplicationEventPublisher.class));
-        return new Fixture(service, tickets, currentUser);
+                mock(ApplicationEventPublisher.class),
+                3,
+                5,
+                120,
+                100,
+                600,
+                "Asia/Ho_Chi_Minh");
+        return new Fixture(service, tickets, users, currentUser);
     }
 
-    private record Fixture(TicketService service, TicketRepository tickets, CurrentUserService currentUser) { }
+    private record Fixture(
+            TicketService service,
+            TicketRepository tickets,
+            UserRepository users,
+            CurrentUserService currentUser) { }
 
     private User customer(Long id, String email) {
         User user = new User();

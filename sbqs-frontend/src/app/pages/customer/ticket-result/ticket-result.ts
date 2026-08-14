@@ -74,8 +74,8 @@ export class TicketResult implements OnInit, OnDestroy {
     };
 
     if (
-      ['COMPLETED', 'CANCELLED', 'MISSED'].includes(tracking.status)
-      && this.lastTerminalStatus !== tracking.status
+      ['COMPLETED', 'CANCELLED', 'MISSED'].includes(tracking.status) &&
+      this.lastTerminalStatus !== tracking.status
     ) {
       this.lastTerminalStatus = tracking.status;
       this.loadHistory();
@@ -119,7 +119,12 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   get branchName(): string {
-    return this.ticket?.branch?.branchName || this.ticket?.branchName || this.monitor?.branchName || 'Chưa xác định';
+    return (
+      this.ticket?.branch?.branchName ||
+      this.ticket?.branchName ||
+      this.monitor?.branchName ||
+      'Chưa xác định'
+    );
   }
 
   get queueMachineLocationNote(): string {
@@ -138,7 +143,9 @@ export class TicketResult implements OnInit, OnDestroy {
   }
 
   get servingCounterCount(): number {
-    return this.monitor?.servingCounters?.filter((counter) => counter.status === 'SERVING').length || 0;
+    return (
+      this.monitor?.servingCounters?.filter((counter) => counter.status === 'SERVING').length || 0
+    );
   }
 
   getCounterStatusLabel(status: string): string {
@@ -191,7 +198,7 @@ export class TicketResult implements OnInit, OnDestroy {
     this.ticketService.cancelTicket(this.ticket.ticketId).subscribe({
       next: (ticket: any) => {
         this.ticket = ticket;
-        sessionStorage.removeItem('currentTicket');
+        this.liveTracking.clearActiveTicket(ticket.ticketId);
         this.isCancelling = false;
         this.loadHistory();
         this.cdr.detectChanges();
@@ -225,7 +232,7 @@ export class TicketResult implements OnInit, OnDestroy {
     const branchId = Number(
       this.ticket?.branch?.branchId ||
         this.ticket?.branchId ||
-        sessionStorage.getItem('selectedBranchId')
+        sessionStorage.getItem('selectedBranchId'),
     );
 
     if (!branchId) {
@@ -233,7 +240,7 @@ export class TicketResult implements OnInit, OnDestroy {
     }
 
     const queueMachineId = Number(
-      this.tracking?.queueMachineId || this.ticket?.queueMachine?.queueMachineId
+      this.tracking?.queueMachineId || this.ticket?.queueMachine?.queueMachineId,
     );
 
     this.isMonitorLoading = true;

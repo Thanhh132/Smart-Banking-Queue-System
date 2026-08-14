@@ -15,7 +15,7 @@ import { PreventAutofillDirective } from '../../../shared/directives/prevent-aut
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, AppIcon, PreventAutofillDirective],
   templateUrl: './login.html',
-  styleUrl: './login.scss',
+  styleUrls: ['./login.scss', '../../../../styles/feature/_auth.scss'],
 })
 export class Login implements OnInit {
   private fb = inject(FormBuilder);
@@ -60,18 +60,24 @@ export class Login implements OnInit {
     if (!this.devLoginAvailable || this.quickLoginUserId !== null) return;
     this.errorMessage = '';
     this.quickLoginUserId = account.userId;
-    this.authService.devLogin(account.userId).pipe(
-      finalize(() => {
-        this.quickLoginUserId = null;
-        this.cdr.detectChanges();
-      }),
-    ).subscribe({
-      next: (response) => this.router.navigateByUrl(this.authService.getPostLoginRoute(response)),
-      error: (error) => {
-        this.errorMessage = this.apiError.getMessage(error, 'Không thể đăng nhập nhanh tài khoản này.');
-        this.cdr.detectChanges();
-      },
-    });
+    this.authService
+      .devLogin(account.userId)
+      .pipe(
+        finalize(() => {
+          this.quickLoginUserId = null;
+          this.cdr.detectChanges();
+        }),
+      )
+      .subscribe({
+        next: (response) => this.router.navigateByUrl(this.authService.getPostLoginRoute(response)),
+        error: (error) => {
+          this.errorMessage = this.apiError.getMessage(
+            error,
+            'Không thể đăng nhập nhanh tài khoản này.',
+          );
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   submit(): void {
@@ -123,9 +129,10 @@ export class Login implements OnInit {
       }
     } catch (error) {
       this.authService.clearLocalSession();
-      this.errorMessage = error instanceof Error
-        ? error.message
-        : 'Không thể hoàn tất đăng nhập Google. Vui lòng thử lại.';
+      this.errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Không thể hoàn tất đăng nhập Google. Vui lòng thử lại.';
     } finally {
       this.isGoogleSubmitting = false;
       this.cdr.detectChanges();

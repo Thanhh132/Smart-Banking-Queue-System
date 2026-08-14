@@ -1,50 +1,235 @@
-.service-selection-page { display: grid; gap: 1rem; max-width: 72rem; margin: 0 auto; }
+.service-selection-page {
+  display: grid;
+  gap: 0.875rem;
+  max-width: 78rem;
+  margin: 0 auto;
+}
 .service-context,
 .service-options,
-.service-form { border: 1px solid var(--cui-border-color); border-radius: var(--cui-border-radius); background: var(--cui-body-bg); }
-.service-context { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: 0.75rem 1rem; }
-.service-context div { display: grid; gap: 0.125rem; }
+.service-form {
+  border: 1px solid var(--cui-border-color);
+  border-radius: var(--cui-border-radius);
+  background: var(--cui-body-bg);
+}
+.service-journey > span.active {
+  background: var(--cui-primary-bg-subtle);
+  color: var(--cui-primary);
+}
+.service-context {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.625rem 0.875rem;
+}
+.service-context div {
+  display: grid;
+  gap: 0.125rem;
+}
 .service-context span,
-.service-context p,
-.service-options > header p,
-.service-item small,
-.service-item p { margin: 0; color: var(--cui-secondary-color); font-size: 0.8125rem; }
-.service-options { padding: 1rem; }
-.service-options > header { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.75rem; }
+.service-context small,
+.service-item p {
+  margin: 0;
+  color: var(--cui-secondary-color);
+  font-size: 0.8125rem;
+}
+.service-context span {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.service-context strong {
+  color: var(--cui-heading-color);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+.service-context small {
+  line-height: 1.35;
+}
+.service-options {
+  padding: 0.875rem;
+}
+.service-options > header {
+  margin-bottom: 0.75rem;
+}
 .service-options h2,
-.service-item h3 { margin: 0; color: var(--cui-heading-color); font-weight: 600; }
-.service-options h2 { font-size: 1rem; }
-.service-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
-.service-item { display: grid; gap: 0.75rem; min-height: 9rem; padding: 1rem; border: 1px solid var(--cui-border-color); border-radius: var(--cui-border-radius); background: var(--cui-tertiary-bg); color: var(--cui-body-color); text-align: left; white-space: normal; }
-.service-item:hover { border-color: var(--cui-primary); }
-.service-item h3 { margin-top: 0.125rem; font-size: 0.9375rem; }
-.service-item p { margin-top: 0.375rem; }
-.service-item > span { align-self: end; color: var(--cui-primary); font-size: 0.8125rem; font-weight: 600; }
+.service-item h3 {
+  margin: 0;
+  color: var(--cui-heading-color);
+  font-weight: 600;
+}
+.service-options h2 {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: baseline;
+  font-size: 1rem;
+}
+.service-options h2 small {
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+.service-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 28rem));
+  gap: 1rem;
+  justify-content: start;
+}
+.service-item {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--cui-border-color);
+  border-radius: var(--cui-border-radius);
+  background: var(--cui-body-bg);
+}
+.service-item:not(.service-item--disabled):hover {
+  border-color: var(--cui-primary);
+}
+.service-item:focus-within {
+  outline: 0.2rem solid var(--cui-primary-bg-subtle);
+  border-color: var(--cui-primary);
+}
+.service-item--disabled {
+  opacity: 0.68;
+}
+.service-item__content {
+  padding: 1rem 1rem 0.75rem;
+}
+.service-item__group {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--cui-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.service-item h3 {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+.service-item p {
+  margin-top: 0.375rem;
+  line-height: 1.5;
+}
+.service-item__meta {
+  align-self: end;
+  margin: 0 1rem 0.875rem;
+  padding: 0.625rem 0.75rem;
+  background: var(--cui-tertiary-bg);
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+}
+.service-item__meta strong {
+  color: var(--cui-body-color);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.service-item footer {
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  border-top: 1px solid var(--cui-border-color);
+  background: var(--cui-tertiary-bg);
+}
 
-.service-form { gap: 0; }
-.service-form__section { padding: 1rem; }
-.service-profile-details { margin-top: 0.75rem; }
-.service-address-grid { margin-top: 1rem; }
-.service-dynamic-grid { margin-top: 0.75rem; }
-.service-field--wide { grid-column: 1 / -1; }
-.service-choice { margin: 0; padding: 0; border: 0; }
-.service-choice legend { margin-bottom: 0.5rem; font-size: 0.8125rem; font-weight: 500; }
-.service-choice > div { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.service-choice label { cursor: pointer; }
-.service-choice input { position: absolute; opacity: 0; }
-.service-choice label span { display: block; padding: 0.5rem 0.75rem; border: 1px solid var(--cui-border-color); border-radius: var(--cui-border-radius); }
-.service-choice input:checked + span { border-color: var(--cui-primary); background: var(--cui-primary-bg-subtle); color: var(--cui-primary); }
-.service-checkbox { display: flex; gap: 0.625rem; align-items: flex-start; padding: 0.75rem; border: 1px solid var(--cui-border-color); border-radius: var(--cui-border-radius); }
-.service-checkbox input { margin-top: 0.1875rem; accent-color: var(--cui-primary); }
-.service-checkbox span { display: grid; }
-.service-checkbox strong { font-size: 0.8125rem; font-weight: 500; }
-.service-checkbox small { color: var(--cui-secondary-color); font-size: 0.75rem; }
-.service-form__actions { padding: 0.875rem 1rem; border-top: 1px solid var(--cui-border-color); background: var(--cui-tertiary-bg); }
+.service-form {
+  gap: 0;
+}
+.service-form__section {
+  padding: 1rem;
+}
+.service-profile-details {
+  margin-top: 0.75rem;
+}
+.service-address-grid {
+  margin-top: 1rem;
+}
+.service-dynamic-grid {
+  margin-top: 0.75rem;
+}
+.service-field--wide {
+  grid-column: 1 / -1;
+}
+.service-choice {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.service-choice legend {
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.service-choice > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.service-choice label {
+  cursor: pointer;
+}
+.service-choice input {
+  position: absolute;
+  opacity: 0;
+}
+.service-choice label span {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: var(--cui-border-radius);
+}
+.service-choice input:checked + span {
+  border-color: var(--cui-primary);
+  background: var(--cui-primary-bg-subtle);
+  color: var(--cui-primary);
+}
+.service-checkbox {
+  display: flex;
+  gap: 0.625rem;
+  align-items: flex-start;
+  padding: 0.75rem;
+  border: 1px solid var(--cui-border-color);
+  border-radius: var(--cui-border-radius);
+}
+.service-checkbox input {
+  margin-top: 0.1875rem;
+  accent-color: var(--cui-primary);
+}
+.service-checkbox span {
+  display: grid;
+}
+.service-checkbox strong {
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.service-checkbox small {
+  color: var(--cui-secondary-color);
+  font-size: 0.75rem;
+}
+.service-form__actions {
+  padding: 0.875rem 1rem;
+  border-top: 1px solid var(--cui-border-color);
+  background: var(--cui-tertiary-bg);
+}
 
 @media (max-width: 767.98px) {
   .service-context,
-  .service-options > header { align-items: stretch; flex-direction: column; }
-  .service-grid { grid-template-columns: 1fr; }
-  .service-field--wide { grid-column: auto; }
-  .service-form__actions app-button { flex: 1 1 100%; }
+  .service-options > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .service-grid {
+    grid-template-columns: 1fr;
+  }
+  .service-item footer app-button {
+    width: 100%;
+  }
+  .service-field--wide {
+    grid-column: auto;
+  }
+  .service-form__actions app-button {
+    flex: 1 1 100%;
+  }
 }

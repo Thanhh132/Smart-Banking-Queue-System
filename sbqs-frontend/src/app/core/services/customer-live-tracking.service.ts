@@ -20,6 +20,7 @@ export class CustomerLiveTrackingService {
   private previousTicketId: number | null = null;
   private previousStatus = '';
   private previousPeopleAhead: number | null = null;
+  private suppressedTicketId: number | null = null;
 
   readonly tracking = signal<TicketTracking | null>(null);
   readonly notice = signal<LiveTicketNotice | null>(null);
@@ -38,11 +39,13 @@ export class CustomerLiveTrackingService {
     this.pollingSubscription = timer(0, CustomerLiveTrackingService.POLLING_INTERVAL_MS)
       .pipe(
         filter(() => document.visibilityState === 'visible'),
-        exhaustMap(() => this.loadTracking())
+        exhaustMap(() => this.loadTracking()),
       )
       .subscribe((tracking) => {
         if (tracking) {
           this.applyTracking(tracking);
+        } else {
+          this.clearTrackingState();
         }
       });
   }
@@ -62,7 +65,22 @@ export class CustomerLiveTrackingService {
     this.notice.set(null);
   }
 
+  /**
+   * Xóa ngay ticket vừa hủy và bỏ qua snapshot WAITING có thể đang bay về từ
+   * một request polling cũ. Ticket mới có ID khác vẫn được theo dõi bình thường.
+   */
+  clearActiveTicket(ticketId: number): void {
+    this.suppressedTicketId = ticketId;
+    sessionStorage.removeItem('currentTicket');
+    this.clearTrackingState();
+  }
+
   private resetState(): void {
+    this.suppressedTicketId = null;
+    this.clearTrackingState();
+  }
+
+  private clearTrackingState(): void {
     this.previousTicketId = null;
     this.previousStatus = '';
     this.previousPeopleAhead = null;
@@ -79,7 +97,7 @@ export class CustomerLiveTrackingService {
         catchError(() => {
           sessionStorage.removeItem('currentTicket');
           return this.loadCurrentTicketTracking();
-        })
+        }),
       );
     }
 
@@ -95,7 +113,7 @@ export class CustomerLiveTrackingService {
         sessionStorage.setItem('currentTicket', JSON.stringify(ticket));
         return this.ticketService.getTracking(ticket.ticketId);
       }),
-      catchError(() => of(null))
+      catchError(() => of(null)),
     );
   }
 
@@ -104,6 +122,11 @@ export class CustomerLiveTrackingService {
    * chuyển trạng thái hoặc khi số người phía trước vừa giảm xuống ngưỡng cảnh báo.
    */
   private applyTracking(tracking: TicketTracking): void {
+    if (tracking.ticketId === this.suppressedTicketId) {
+      return;
+    }
+    this.suppressedTicketId = null;
+
     if (this.previousTicketId !== tracking.ticketId) {
       this.previousTicketId = tracking.ticketId;
       this.previousStatus = '';
@@ -129,17 +152,18 @@ export class CustomerLiveTrackingService {
         message: `Phiếu #${tracking.ticketNumber} đang được gọi tại ${tracking.counterName || 'quầy phục vụ'}.`,
       });
     } else if (
-      tracking.status === 'WAITING'
-      && tracking.peopleAhead <= 3
-      && (previousPeopleAhead === null || previousPeopleAhead > 3)
+      tracking.status === 'WAITING' &&
+      tracking.peopleAhead <= 3 &&
+      (previousPeopleAhead === null || previousPeopleAhead > 3)
     ) {
       this.showNotice({
         key: `near:${tracking.ticketId}:${tracking.peopleAhead}`,
         level: 'warning',
         title: 'Sắp đến lượt bạn',
-        message: tracking.peopleAhead === 0
-          ? `Phiếu #${tracking.ticketNumber} đang ở lượt tiếp theo.`
-          : `Còn ${tracking.peopleAhead} phiếu đang chờ trước bạn.`,
+        message:
+          tracking.peopleAhead === 0
+            ? `Phiếu #${tracking.ticketNumber} đang ở lượt tiếp theo.`
+            : `Còn ${tracking.peopleAhead} phiếu đang chờ trước bạn.`,
       });
     } else if (tracking.status === 'COMPLETED' && previousStatus !== 'COMPLETED') {
       this.showNotice({
@@ -160,7 +184,8 @@ export class CustomerLiveTrackingService {
         key: `missed:${tracking.ticketId}`,
         level: 'warning',
         title: 'Bạn đã lỡ lượt',
-        message: 'Nhân viên đã ghi nhận bạn không đến quầy. Vui lòng lấy số mới nếu vẫn cần giao dịch.',
+        message:
+          'Nhân viên đã ghi nhận bạn không đến quầy. Vui lòng lấy số mới nếu vẫn cần giao dịch.',
       });
     }
 
@@ -188,7 +213,9 @@ export class CustomerLiveTrackingService {
         sessionStorage.getItem(CustomerLiveTrackingService.SEEN_NOTICE_KEYS) || '[]',
       );
       const seenKeys = new Set<string>(
-        Array.isArray(values) ? values.filter((value): value is string => typeof value === 'string') : [],
+        Array.isArray(values)
+          ? values.filter((value): value is string => typeof value === 'string')
+          : [],
       );
       const legacyKey = sessionStorage.getItem('sbqs:last-live-notice');
       if (legacyKey) seenKeys.add(legacyKey);
@@ -214,14 +241,17 @@ export class CustomerLiveTrackingService {
 
   private updateCachedTicket(tracking: TicketTracking): void {
     const cachedTicket = this.readCachedTicket() || {};
-    sessionStorage.setItem('currentTicket', JSON.stringify({
-      ...cachedTicket,
-      ticketId: tracking.ticketId,
-      ticketNumber: tracking.ticketNumber,
-      status: tracking.status,
-      counterName: tracking.counterName,
-      queueMachineLocationNote: tracking.queueMachineLocationNote,
-      servingStartedAt: tracking.servingStartedAt,
-    }));
+    sessionStorage.setItem(
+      'currentTicket',
+      JSON.stringify({
+        ...cachedTicket,
+        ticketId: tracking.ticketId,
+        ticketNumber: tracking.ticketNumber,
+        status: tracking.status,
+        counterName: tracking.counterName,
+        queueMachineLocationNote: tracking.queueMachineLocationNote,
+        servingStartedAt: tracking.servingStartedAt,
+      }),
+    );
   }
 }

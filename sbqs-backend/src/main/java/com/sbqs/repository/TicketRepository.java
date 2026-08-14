@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import jakarta.persistence.LockModeType;
@@ -27,6 +28,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     long countByQueueMachineQueueMachineIdAndStatus(
             Long queueMachineId,
+            String status);
+
+    long countByCustomerUserIdAndCreatedAtGreaterThanEqual(Long customerId, LocalDateTime createdAfter);
+
+    Optional<Ticket> findFirstByCustomerUserIdAndStatusAndCancelledAtIsNotNullOrderByCancelledAtDesc(
+            Long customerId,
             String status);
 
     @Query("""
@@ -74,14 +81,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
             where t.queueMachine = :queueMachine
               and t.status = 'WAITING'
               and t.ticketNumber < :ticketNumber
-              and t.createdAt >= :startOfDay
-              and t.createdAt < :startOfNextDay
+              and t.businessDate = :businessDate
             """)
     long countWaitingAhead(
             @Param("queueMachine") QueueMachine queueMachine,
             @Param("ticketNumber") Integer ticketNumber,
-            @Param("startOfDay") LocalDateTime startOfDay,
-            @Param("startOfNextDay") LocalDateTime startOfNextDay);
+            @Param("businessDate") LocalDate businessDate);
 
     List<Ticket> findByBranch(Branch branch);
 
@@ -92,6 +97,8 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findByStatus(String status);
 
     List<Ticket> findByCustomerUserIdAndStatusIn(Long customerId, List<String> statuses);
+
+    Optional<Ticket> findByCustomerUserIdAndIdempotencyKey(Long customerId, String idempotencyKey);
 
     Optional<Ticket> findFirstByCustomerUserIdAndStatusInOrderByCreatedAtDesc(
             Long customerId,
